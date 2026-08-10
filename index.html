@@ -1,58 +1,166 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>Works</title>
+  <meta charset="UTF-8">
 
-<!-- Add to Home Screen support (works even on older iOS/Safari) -->
-<link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Works">
-<meta name="theme-color" content="#faf9f6">
-<link rel="apple-touch-icon" href="icon.png">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
+  >
 
-<link rel="stylesheet" href="style.css">
+  <title>Works</title>
+
+  <link rel="manifest" href="manifest.json">
+
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+  >
+
+  <meta
+    name="apple-mobile-web-app-title"
+    content="Works"
+  >
+
+  <meta
+    name="theme-color"
+    content="#faf9f6"
+  >
+
+  <link
+    rel="apple-touch-icon"
+    href="icon.png"
+  >
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
+
 <body>
 
-<header class="site-header">
-  <h1>Works</h1>
-</header>
+  <header class="site-header">
+    <h1>Works</h1>
+  </header>
 
-<div class="controls">
-  <div id="collections" class="chips" role="tablist" aria-label="Filter by collection"></div>
+  <div class="controls">
 
-  <div class="sort-wrap">
-    <select id="sort" class="sort-select" aria-label="Sort works">
-      <option value="year-desc">Year, newest</option>
-      <option value="year-asc">Year, oldest</option>
-      <option value="price-desc">Price, high to low</option>
-      <option value="price-asc">Price, low to high</option>
-    </select>
+    <div
+      id="collections"
+      class="chips"
+      role="tablist"
+      aria-label="Filter by collection"
+    ></div>
+
+    <div class="sort-wrap">
+
+      <select
+        id="sort"
+        class="sort-select"
+        aria-label="Sort works"
+      >
+        <option value="year-desc">
+          Year, newest
+        </option>
+
+        <option value="year-asc">
+          Year, oldest
+        </option>
+
+        <option value="price-desc">
+          Price, high to low
+        </option>
+
+        <option value="price-asc">
+          Price, low to high
+        </option>
+      </select>
+
+    </div>
+
   </div>
-</div>
 
-<main id="grid" class="grid" aria-label="Artwork grid"></main>
+  <main
+    id="grid"
+    class="grid"
+    aria-label="Artwork grid"
+  ></main>
 
-<div id="viewer" class="viewer" hidden>
-  <button id="viewer-close" class="viewer-close" aria-label="Close">&times;</button>
-  <div id="viewer-stage" class="viewer-stage">
-    <img id="viewer-img" class="viewer-img" src="" alt="">
+  <div
+    id="viewer"
+    class="viewer"
+    hidden
+  >
+
+    <button
+      id="viewer-close"
+      class="viewer-close"
+      aria-label="Close"
+    >
+      &times;
+    </button>
+
+    <div
+      id="viewer-stage"
+      class="viewer-stage"
+    >
+
+      <img
+        id="viewer-img"
+        class="viewer-img"
+        src=""
+        alt=""
+      >
+
+    </div>
+
+    <div
+      id="viewer-caption"
+      class="viewer-caption"
+    ></div>
+
+    <a
+      id="viewer-ar"
+      class="viewer-ar"
+      rel="ar"
+      href="#"
+      hidden
+    >
+
+      <img
+        src="icon.png"
+        alt=""
+      >
+
+      View in AR
+
+    </a>
+
   </div>
-  <div id="viewer-caption" class="viewer-caption"></div>
-  <a id="viewer-ar" class="viewer-ar" rel="ar" href="#">
-    <img src="icon.png" alt="">
-    View in AR
-  </a>
-</div>
 
-<footer class="site-footer">
-  <a href="admin.html">Admin</a>
-</footer>
+  <footer class="site-footer">
 
-<script src="script.js"></script>
+    <a href="admin.html">
+      Admin
+    </a>
+
+  </footer>
+
+  <!-- IMPORTANT: artworks.js must load BEFORE script.js -->
+  <script src="artworks.js"></script>
+  <script src="script.js"></script>
+
 </body>
 </html>
