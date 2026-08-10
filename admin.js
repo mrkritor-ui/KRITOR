@@ -989,3 +989,4 @@
   loadArtworks();
 
 })();
+const refreshBtn = document.getElementById("refresh");
