@@ -409,8 +409,28 @@
     "click",
     closeViewer
   );
+function cacheArtworkImages() {
+  if (
+    !("serviceWorker" in navigator) ||
+    !navigator.serviceWorker.controller
+  ) {
+    return;
+  }
 
+  const images = ARTWORKS
+    .map(function (work) {
+      return work.image;
+    })
+    .filter(Boolean);
+
+  navigator.serviceWorker.controller.postMessage({
+    type: "CACHE_IMAGES",
+    images: images
+  });
+}
   // Load catalogue from artworks.js
-  render();
+render();
+
+cacheArtworkImages();
 
 })();
