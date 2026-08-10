@@ -157,8 +157,25 @@
   </footer>
 
   <!-- IMPORTANT: artworks.js must load BEFORE script.js -->
-  <script src="artworks.js"></script>
-  <script src="script.js"></script>
+ <script src="artworks.js"></script>
+<script src="script.js"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./sw.js")
+      .then(function () {
+        console.log("Works offline system ready.");
+      })
+      .catch(function (error) {
+        console.error(
+          "Offline system failed:",
+          error
+        );
+      });
+  });
+}
+</script>
 
 </body>
 </html>
