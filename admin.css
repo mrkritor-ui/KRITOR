@@ -1,10 +1,14 @@
-/* ---------------------------------------------------------
+/* =========================================================
    ADMIN
---------------------------------------------------------- */
+========================================================= */
 
 .admin-body {
   padding-bottom: 40px;
 }
+
+/* =========================================================
+   HEADER
+========================================================= */
 
 .admin-header {
   display: flex;
@@ -13,38 +17,37 @@
   padding-right: var(--gap-lg);
 }
 
-/* ---------------------------------------------------------
-   SETTINGS
---------------------------------------------------------- */
-
 .settings-toggle {
   appearance: none;
   -webkit-appearance: none;
 
-  border: 1px solid var(--line);
-  background: var(--chip-bg);
-  color: var(--muted);
-
   width: 32px;
   height: 32px;
-
-  border-radius: 50%;
-
-  font-size: 14px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
+  border: 1px solid var(--line);
+  border-radius: 50%;
+
+  background: var(--chip-bg);
+  color: var(--muted);
+
+  font-size: 14px;
+
   cursor: pointer;
   touch-action: manipulation;
 }
 
-.settings-toggle:active {
-  transform: scale(0.96);
-}
+/* =========================================================
+   SETTINGS PANEL
+========================================================= */
 
 .settings-panel {
+  position: relative;
+  z-index: 9999;
+
   margin: 0 var(--gap-lg) 18px;
   padding: 16px;
 
@@ -56,16 +59,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-
-  position: relative;
-  z-index: 20;
 }
 
-/*
-  IMPORTANT:
-  .settings-panel uses display:flex, so the browser's
-  default [hidden] rule can otherwise be overridden.
-*/
 .settings-panel[hidden] {
   display: none !important;
 }
@@ -86,31 +81,31 @@
   font-size: 10.5px;
 }
 
+/* =========================================================
+   ALL FORM FIELDS
+========================================================= */
+
 .field {
   display: flex;
   flex-direction: column;
   gap: 4px;
 
+  min-width: 0;
+
   font-size: 11px;
   color: var(--muted);
-
   letter-spacing: 0.02em;
-
-  min-width: 0;
 }
 
 .field input,
 .field select {
-  appearance: none;
-  -webkit-appearance: none;
+  box-sizing: border-box;
 
   width: 100%;
   min-width: 0;
 
-  box-sizing: border-box;
-
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 16px;
 
   color: var(--ink);
   background: var(--bg);
@@ -120,17 +115,19 @@
 
   padding: 10px;
 
+  opacity: 1;
+
   pointer-events: auto;
-  touch-action: manipulation;
+
+  -webkit-appearance: none;
+  appearance: none;
 
   -webkit-user-select: text;
   user-select: text;
 
-  cursor: text;
-}
+  -webkit-touch-callout: default;
 
-.field select {
-  cursor: pointer;
+  touch-action: manipulation;
 }
 
 .field input:focus,
@@ -139,15 +136,39 @@
   outline-offset: 1px;
 }
 
+/* Specifically protect the settings inputs on iOS */
+
+.settings-panel input {
+  position: relative;
+  z-index: 10000;
+
+  display: block;
+
+  width: 100%;
+
+  font-size: 16px;
+
+  pointer-events: auto;
+
+  -webkit-user-select: text;
+  user-select: text;
+
+  touch-action: manipulation;
+}
+
+/* =========================================================
+   SETTINGS BUTTONS
+========================================================= */
+
 .settings-actions {
   display: flex;
   gap: 8px;
   margin-top: 4px;
 }
 
-/* ---------------------------------------------------------
+/* =========================================================
    BUTTONS
---------------------------------------------------------- */
+========================================================= */
 
 .btn {
   appearance: none;
@@ -169,10 +190,6 @@
   touch-action: manipulation;
 }
 
-.btn:active {
-  transform: scale(0.98);
-}
-
 .btn-primary {
   background: var(--ink);
   border-color: var(--ink);
@@ -192,12 +209,11 @@
 
 .btn:disabled {
   opacity: 0.5;
-  cursor: default;
 }
 
-/* ---------------------------------------------------------
+/* =========================================================
    STATUS
---------------------------------------------------------- */
+========================================================= */
 
 .status-bar {
   margin: 0 var(--gap-lg) 16px;
@@ -224,9 +240,9 @@
   color: var(--sold);
 }
 
-/* ---------------------------------------------------------
+/* =========================================================
    TOOLBAR
---------------------------------------------------------- */
+========================================================= */
 
 .admin-toolbar {
   display: flex;
@@ -235,9 +251,9 @@
   padding: 0 var(--gap-lg) 16px;
 }
 
-/* ---------------------------------------------------------
+/* =========================================================
    LIST
---------------------------------------------------------- */
+========================================================= */
 
 .admin-main {
   padding-bottom: 20px;
@@ -254,9 +270,9 @@
   border-bottom: 1px solid var(--line);
 }
 
-/* ---------------------------------------------------------
+/* =========================================================
    ITEM HEADER
---------------------------------------------------------- */
+========================================================= */
 
 .admin-item-row {
   appearance: none;
@@ -279,7 +295,11 @@
   color: inherit;
 
   cursor: pointer;
+
   touch-action: manipulation;
+
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .admin-item-row img {
@@ -357,9 +377,9 @@
   transform: rotate(90deg);
 }
 
-/* ---------------------------------------------------------
+/* =========================================================
    EDIT FORM
---------------------------------------------------------- */
+========================================================= */
 
 .admin-edit {
   display: none;
@@ -377,6 +397,18 @@
 
 .admin-edit .field.full {
   grid-column: 1 / -1;
+}
+
+.admin-edit input,
+.admin-edit select {
+  font-size: 16px;
+
+  -webkit-user-select: text;
+  user-select: text;
+
+  pointer-events: auto;
+
+  touch-action: manipulation;
 }
 
 .admin-edit-preview {
@@ -401,6 +433,7 @@
 
   display: flex;
   justify-content: space-between;
+
   gap: 8px;
 
   margin-top: 6px;
@@ -431,9 +464,9 @@
   color: var(--muted);
 }
 
-/* ---------------------------------------------------------
-   MOBILE
---------------------------------------------------------- */
+/* =========================================================
+   iPAD / SMALL SCREENS
+========================================================= */
 
 @media (max-width: 480px) {
 
