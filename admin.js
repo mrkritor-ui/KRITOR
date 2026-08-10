@@ -1,71 +1,134 @@
 (function () {
-  const DATA_PATH = "data/artworks.json";
+  "use strict";
+
+  /* ---------------------------------------------------------
+     CONFIG
+  --------------------------------------------------------- */
+
+  const DATA_PATH = "artworks.js";
 
   const settingsToggle = document.getElementById("settings-toggle");
   const settingsPanel = document.getElementById("settings-panel");
+
   const setOwner = document.getElementById("set-owner");
   const setRepo = document.getElementById("set-repo");
   const setBranch = document.getElementById("set-branch");
   const setToken = document.getElementById("set-token");
+
   const settingsSave = document.getElementById("settings-save");
   const settingsClear = document.getElementById("settings-clear");
 
   const statusBar = document.getElementById("status-bar");
   const list = document.getElementById("admin-list");
+
   const addBtn = document.getElementById("add-work");
   const refreshBtn = document.getElementById("refresh");
 
   let ARTWORKS = [];
-  let sha = null; // current sha of data/artworks.json, needed to commit updates
+  let fileSha = null;
+  let fileText = "";
   let busy = false;
 
-  /* ---------------- settings / auth ---------------- */
+
+  /* ---------------------------------------------------------
+     SETTINGS
+  --------------------------------------------------------- */
 
   function getSettings() {
     return {
       owner: localStorage.getItem("works_gh_owner") || "",
       repo: localStorage.getItem("works_gh_repo") || "",
       branch: localStorage.getItem("works_gh_branch") || "main",
-      token: localStorage.getItem("works_gh_token") || "",
+      token: localStorage.getItem("works_gh_token") || ""
     };
   }
 
   function haveSettings() {
     const s = getSettings();
-    return !!(s.owner && s.repo && s.token);
+
+    return !!(
+      s.owner &&
+      s.repo &&
+      s.branch &&
+      s.token
+    );
   }
 
   function fillSettingsForm() {
     const s = getSettings();
+
     setOwner.value = s.owner;
     setRepo.value = s.repo;
     setBranch.value = s.branch;
     setToken.value = s.token;
   }
 
-  settingsToggle.addEventListener("click", () => {
-    settingsPanel.hidden = !settingsPanel.hidden;
+  function openSettings() {
+    settingsPanel.hidden = false;
+    settingsToggle.setAttribute("aria-expanded", "true");
+
+    setTimeout(function () {
+      if (!setOwner.value) {
+        setOwner.focus();
+      }
+    }, 50);
+  }
+
+  function closeSettings() {
+    settingsPanel.hidden = true;
+    settingsToggle.setAttribute("aria-expanded", "false");
+  }
+
+  settingsToggle.addEventListener("click", function () {
+    if (settingsPanel.hidden) {
+      openSettings();
+    } else {
+      closeSettings();
+    }
   });
 
-  settingsSave.addEventListener("click", () => {
-    localStorage.setItem("works_gh_owner", setOwner.value.trim());
-    localStorage.setItem("works_gh_repo", setRepo.value.trim());
-    localStorage.setItem("works_gh_branch", setBranch.value.trim() || "main");
-    localStorage.setItem("works_gh_token", setToken.value.trim());
-    settingsPanel.hidden = true;
+  settingsSave.addEventListener("click", function () {
+    const owner = setOwner.value.trim();
+    const repo = setRepo.value.trim();
+    const branch = setBranch.value.trim() || "main";
+    const token = setToken.value.trim();
+
+    if (!owner || !repo || !token) {
+      setStatus(
+        "Enter the repo owner, repo name and access token.",
+        "error"
+      );
+      return;
+    }
+
+    localStorage.setItem("works_gh_owner", owner);
+    localStorage.setItem("works_gh_repo", repo);
+    localStorage.setItem("works_gh_branch", branch);
+    localStorage.setItem("works_gh_token", token);
+
+    closeSettings();
+
     loadArtworks();
   });
 
-  settingsClear.addEventListener("click", () => {
+  settingsClear.addEventListener("click", function () {
     localStorage.removeItem("works_gh_token");
+
     setToken.value = "";
-    setStatus("Token forgotten. Add it again to save changes.", "info");
+
+    setStatus(
+      "Token forgotten.",
+      "info"
+    );
   });
 
-  /* ---------------- status bar ---------------- */
 
-  function setStatus(msg, kind) {
-    statusBar.textContent = msg;
+  /* ---------------------------------------------------------
+     STATUS
+  --------------------------------------------------------- */
+
+  function setStatus(message, kind) {
+    statusBar.textContent = message;
     statusBar.className = "status-bar " + (kind || "info");
     statusBar.hidden = false;
   }
@@ -74,341 +137,855 @@
     statusBar.hidden = true;
   }
 
-  /* ---------------- GitHub Contents API ---------------- */
+
+  /* ---------------------------------------------------------
+     GITHUB
+  --------------------------------------------------------- */
 
   function apiBase() {
     const s = getSettings();
-    return `https://api.github.com/repos/${s.owner}/${s.repo}/contents/`;
+
+    return (
+      "https://api.github.com/repos/" +
+      encodeURIComponent(s.owner) +
+      "/" +
+      encodeURIComponent(s.repo) +
+      "/contents/"
+    );
   }
 
   function authHeaders() {
     const s = getSettings();
+
     return {
-      Authorization: `Bearer ${s.token}`,
-      Accept: "application/vnd.github+json",
+      Authorization: "Bearer " + s.token,
+      Accept: "application/vnd.github+json"
     };
   }
 
-  function b64EncodeUnicode(str) {
-    return btoa(unescape(encodeURIComponent(str)));
+  function encodeBase64(text) {
+    const bytes = new TextEncoder().encode(text);
+
+    let binary = "";
+
+    const chunkSize = 0x8000;
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(
+        ...bytes.subarray(i, i + chunkSize)
+      );
+    }
+
+    return btoa(binary);
   }
 
-  function b64DecodeUnicode(str) {
-    return decodeURIComponent(escape(atob(str.replace(/\n/g, ""))));
+  function encodeBinary(arrayBuffer) {
+    const bytes = new Uint8Array(arrayBuffer);
+
+    let binary = "";
+
+    const chunkSize = 0x8000;
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(
+        ...bytes.subarray(i, i + chunkSize)
+      );
+    }
+
+    return btoa(binary);
   }
 
-  // GET a file's metadata (and content, if text). Returns null on 404.
+  function decodeBase64(base64) {
+    const clean = base64.replace(/\s/g, "");
+
+    const binary = atob(clean);
+
+    const bytes = new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new TextDecoder().decode(bytes);
+  }
+
   async function ghGet(path) {
     const s = getSettings();
-    const res = await fetch(apiBase() + path + "?ref=" + encodeURIComponent(s.branch), {
-      headers: authHeaders(),
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`GitHub GET ${path} failed: ${res.status}`);
-    return res.json();
-  }
 
-  // PUT (create or update) a file. contentB64 must already be base64.
-  async function ghPut(path, contentB64, message, existingSha) {
-    const s = getSettings();
-    const body = {
-      message,
-      content: contentB64,
-      branch: s.branch,
-    };
-    if (existingSha) body.sha = existingSha;
-    const res = await fetch(apiBase() + path, {
-      method: "PUT",
-      headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+    const url =
+      apiBase() +
+      path +
+      "?ref=" +
+      encodeURIComponent(s.branch);
+
+    const response = await fetch(url, {
+      headers: authHeaders()
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`GitHub PUT ${path} failed: ${res.status} ${errText}`);
+
+    if (response.status === 404) {
+      return null;
     }
-    return res.json();
+
+    if (!response.ok) {
+      const text = await response.text();
+
+      throw new Error(
+        "GitHub GET failed: " +
+        response.status +
+        " " +
+        text
+      );
+    }
+
+    return response.json();
   }
 
-  async function ghDelete(path, message, existingSha) {
+  async function ghPut(
+    path,
+    contentBase64,
+    message,
+    existingSha
+  ) {
     const s = getSettings();
-    const res = await fetch(apiBase() + path, {
-      method: "DELETE",
-      headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ message, sha: existingSha, branch: s.branch }),
-    });
-    if (!res.ok) throw new Error(`GitHub DELETE ${path} failed: ${res.status}`);
-    return res.json();
+
+    const body = {
+      message: message,
+      content: contentBase64,
+      branch: s.branch
+    };
+
+    if (existingSha) {
+      body.sha = existingSha;
+    }
+
+    const response = await fetch(
+      apiBase() + path,
+      {
+        method: "PUT",
+        headers: {
+          ...authHeaders(),
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+
+      throw new Error(
+        "GitHub save failed: " +
+        response.status +
+        " " +
+        text
+      );
+    }
+
+    return response.json();
   }
 
-  /* ---------------- load / save catalog ---------------- */
+
+  /* ---------------------------------------------------------
+     ARTWORKS.JS PARSING
+  --------------------------------------------------------- */
+
+  function parseArtworksJS(text) {
+    /*
+      Finds:
+
+      const ARTWORKS = [
+        ...
+      ];
+
+      and extracts the array.
+
+      JSON.parse works because the existing catalogue uses
+      normal JSON-compatible objects.
+    */
+
+    const match = text.match(
+      /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
+    );
+
+    if (!match) {
+      throw new Error(
+        "Couldn't find the ARTWORKS array in artworks.js."
+      );
+    }
+
+    try {
+      return JSON.parse(match[1]);
+    } catch (error) {
+      throw new Error(
+        "artworks.js contains an invalid artwork list."
+      );
+    }
+  }
+
+  function buildArtworksJS(originalText, artworks) {
+    const replacement =
+      "const ARTWORKS = " +
+      JSON.stringify(artworks, null, 2) +
+      ";";
+
+    const match = originalText.match(
+      /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
+    );
+
+    if (!match) {
+      throw new Error(
+        "Couldn't find the ARTWORKS array in artworks.js."
+      );
+    }
+
+    return originalText.replace(
+      match[0],
+      replacement
+    );
+  }
+
+
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
 
   async function loadArtworks() {
     if (!haveSettings()) {
-      setStatus("Add your repo owner, name, and access token to connect.", "info");
-      settingsPanel.hidden = false;
+      setStatus(
+        "Connect this admin to your GitHub repository.",
+        "info"
+      );
+
+      openSettings();
+
       list.innerHTML = "";
+
       return;
     }
-    setStatus("Loading catalog\u2026", "info");
+
+    setStatus(
+      "Loading catalogue…",
+      "info"
+    );
+
     try {
       const file = await ghGet(DATA_PATH);
+
       if (!file) {
-        ARTWORKS = [];
-        sha = null;
-        setStatus("No data/artworks.json found yet — add a work to create it.", "info");
-      } else {
-        ARTWORKS = JSON.parse(b64DecodeUnicode(file.content));
-        sha = file.sha;
-        clearStatus();
+        throw new Error(
+          "artworks.js was not found in the repository."
+        );
       }
+
+      fileSha = file.sha;
+      fileText = decodeBase64(file.content);
+
+      ARTWORKS = parseArtworksJS(fileText);
+
+      clearStatus();
+
       renderList();
-    } catch (err) {
-      console.error(err);
-      setStatus("Couldn't load the catalog — check your settings and token.", "error");
+
+    } catch (error) {
+      console.error(error);
+
+      setStatus(
+        error.message ||
+        "Couldn't load the catalogue.",
+        "error"
+      );
     }
   }
 
+
+  /* ---------------------------------------------------------
+     SAVE ARTWORKS.JS
+  --------------------------------------------------------- */
+
   async function commitArtworks(message) {
-    const content = b64EncodeUnicode(JSON.stringify(ARTWORKS, null, 2));
-    const result = await ghPut(DATA_PATH, content, message, sha);
-    sha = result.content.sha;
+    const latest = await ghGet(DATA_PATH);
+
+    if (!latest) {
+      throw new Error(
+        "artworks.js no longer exists in the repository."
+      );
+    }
+
+    const latestText = decodeBase64(latest.content);
+
+    const newText = buildArtworksJS(
+      latestText,
+      ARTWORKS
+    );
+
+    const encoded = encodeBase64(newText);
+
+    const result = await ghPut(
+      DATA_PATH,
+      encoded,
+      message,
+      latest.sha
+    );
+
+    fileSha = result.content.sha;
+    fileText = newText;
   }
 
-  /* ---------------- rendering ---------------- */
 
-  const STATUS_LABEL = { available: "Available", sold: "Sold", na: "Not for sale" };
+  /* ---------------------------------------------------------
+     HTML ESCAPING
+  --------------------------------------------------------- */
+
+  function esc(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+
+  /* ---------------------------------------------------------
+     RENDER LIST
+  --------------------------------------------------------- */
 
   function renderList() {
     list.innerHTML = "";
+
     if (!ARTWORKS.length) {
-      list.innerHTML = '<p class="empty-admin">No works yet. Tap "+ Add work" to start the catalog.</p>';
+      list.innerHTML =
+        '<div class="empty-admin">' +
+        'No works yet. Tap "+ Add work".' +
+        "</div>";
+
       return;
     }
-    ARTWORKS.forEach((work, index) => list.appendChild(buildItem(work, index)));
+
+    ARTWORKS.forEach(function (work, index) {
+      list.appendChild(
+        buildItem(work, index)
+      );
+    });
   }
 
   function buildItem(work, index) {
     const item = document.createElement("div");
+
     item.className = "admin-item";
 
     const row = document.createElement("button");
+
     row.type = "button";
     row.className = "admin-item-row";
-    row.innerHTML = `
-      <img src="${work.image || ""}" alt="">
-      <span class="admin-item-dot ${work.status}"></span>
-      <span class="admin-item-info">
-        <span class="title">${work.title || "Untitled"}</span>
-        <span class="sub">${[work.year, work.collection].filter(Boolean).join(" \u00b7 ")}</span>
-      </span>
-      <span class="admin-item-chevron">&#8250;</span>
-    `;
-    row.addEventListener("click", () => item.classList.toggle("open"));
 
-    const form = buildEditForm(work, index);
+    const status =
+      work.status || "available";
+
+    row.innerHTML = `
+      <img
+        src="${esc(work.image || "")}"
+        alt=""
+      >
+
+      <span class="admin-item-dot ${esc(status)}"></span>
+
+      <span class="admin-item-info">
+        <span class="title">
+          ${esc(work.title || "Untitled")}
+        </span>
+
+        <span class="sub">
+          ${esc(
+            [work.year, work.collection]
+              .filter(Boolean)
+              .join(" · ")
+          )}
+        </span>
+      </span>
+
+      <span class="admin-item-chevron">
+        ›
+      </span>
+    `;
+
+    row.addEventListener("click", function () {
+      item.classList.toggle("open");
+    });
 
     item.appendChild(row);
-    item.appendChild(form);
+
+    item.appendChild(
+      buildEditForm(work, index)
+    );
+
     return item;
   }
 
+
+  /* ---------------------------------------------------------
+     EDIT FORM
+  --------------------------------------------------------- */
+
   function buildEditForm(work, index) {
     const form = document.createElement("div");
+
     form.className = "admin-edit";
 
     form.innerHTML = `
-      <img class="admin-edit-preview" src="${work.image || ""}" alt="">
+      <img
+        class="admin-edit-preview"
+        src="${esc(work.image || "")}"
+        alt=""
+      >
 
       <label class="field full">
-        <span>Cropped image</span>
-        <input type="file" accept="image/*" class="f-image-upload">
-        <input type="text" class="f-image" value="${work.image || ""}" placeholder="images/work-01.png">
+        <span>Artwork image</span>
+
+        <input
+          type="file"
+          accept="image/*"
+          class="f-image-upload"
+        >
+
+        <input
+          type="text"
+          class="f-image"
+          value="${esc(work.image || "")}"
+          placeholder="images/work-01.png"
+        >
       </label>
 
       <label class="field">
         <span>Title</span>
-        <input type="text" class="f-title" value="${work.title || ""}">
+
+        <input
+          type="text"
+          class="f-title"
+          value="${esc(work.title || "")}"
+        >
       </label>
+
       <label class="field">
         <span>Year</span>
-        <input type="number" class="f-year" value="${work.year || ""}">
+
+        <input
+          type="number"
+          class="f-year"
+          value="${work.year || ""}"
+        >
       </label>
 
       <label class="field">
         <span>Status</span>
+
         <select class="f-status">
-          <option value="available" ${work.status === "available" ? "selected" : ""}>Available</option>
-          <option value="sold" ${work.status === "sold" ? "selected" : ""}>Sold</option>
-          <option value="na" ${work.status === "na" ? "selected" : ""}>Not for sale</option>
+          <option
+            value="available"
+            ${work.status === "available" ? "selected" : ""}
+          >Available</option>
+
+          <option
+            value="sold"
+            ${work.status === "sold" ? "selected" : ""}
+          >Sold</option>
+
+          <option
+            value="na"
+            ${work.status === "na" ? "selected" : ""}
+          >Not for sale</option>
         </select>
       </label>
+
       <label class="field">
         <span>Price (AUD)</span>
-        <input type="number" class="f-price" value="${work.price || 0}">
+
+        <input
+          type="number"
+          min="0"
+          step="1"
+          class="f-price"
+          value="${work.price || 0}"
+        >
       </label>
 
       <label class="field full">
         <span>Collection</span>
-        <input type="text" class="f-collection" value="${work.collection || ""}" placeholder="Leave blank for standalone">
-      </label>
 
-      <label class="field">
-        <span>Size label</span>
-        <input type="text" class="f-size" value="${work.size || ""}" placeholder="60 \u00d7 90 cm">
+        <input
+          type="text"
+          class="f-collection"
+          value="${esc(work.collection || "")}"
+          placeholder="Leave blank for standalone"
+        >
       </label>
-      <label class="field"></label>
-
-      <label class="field">
-        <span>Real width (cm)</span>
-        <input type="number" step="0.1" class="f-width" value="${work.width_cm || 0}">
-      </label>
-      <label class="field">
-        <span>Real height (cm)</span>
-        <input type="number" step="0.1" class="f-height" value="${work.height_cm || 0}">
-      </label>
-
-      <p class="ar-note">Width/height must match the physical canvas exactly — AR Quick Look scales the model to these numbers. Generate the .usdz in Reality Composer at this exact size, then upload it below.</p>
 
       <label class="field full">
-        <span>AR model (.usdz)</span>
-        <input type="file" accept=".usdz" class="f-usdz-upload">
-        <input type="text" class="f-usdz" value="${work.usdz || ""}" placeholder="work-01.usdz">
+        <span>Size</span>
+
+        <input
+          type="text"
+          class="f-size"
+          value="${esc(work.size || "")}"
+          placeholder="60 × 90 cm"
+        >
       </label>
 
       <div class="admin-edit-actions">
         <div class="left">
-          <button type="button" class="btn btn-primary f-save">Save changes</button>
-          <button type="button" class="btn btn-danger f-delete">Delete</button>
+
+          <button
+            type="button"
+            class="btn btn-primary f-save"
+          >
+            Save changes
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-danger f-delete"
+          >
+            Delete
+          </button>
+
         </div>
       </div>
     `;
 
-    const $ = (sel) => form.querySelector(sel);
+    const $ = function (selector) {
+      return form.querySelector(selector);
+    };
+
     const preview = $(".admin-edit-preview");
 
-    $(".f-save").addEventListener("click", async () => {
-      const w = ARTWORKS[index];
-      w.title = $(".f-title").value.trim();
-      w.year = Number($(".f-year").value) || 0;
-      w.status = $(".f-status").value;
-      w.price = Number($(".f-price").value) || 0;
-      w.collection = $(".f-collection").value.trim();
-      w.size = $(".f-size").value.trim();
-      w.width_cm = Number($(".f-width").value) || 0;
-      w.height_cm = Number($(".f-height").value) || 0;
-      w.image = $(".f-image").value.trim();
-      w.usdz = $(".f-usdz").value.trim();
 
-      await withBusy(async () => {
-        setStatus(`Saving "${w.title || "Untitled"}"\u2026`, "info");
-        await commitArtworks(`Update ${w.title || w.id || "artwork"}`);
-        setStatus("Saved.", "success");
-        renderList();
-      });
-    });
+    /* -------------------------------------------------------
+       SAVE
+    ------------------------------------------------------- */
 
-    $(".f-delete").addEventListener("click", async () => {
-      const w = ARTWORKS[index];
-      if (!confirm(`Delete "${w.title || "this work"}"? This can't be undone here.`)) return;
-      await withBusy(async () => {
-        setStatus("Deleting\u2026", "info");
-        ARTWORKS.splice(index, 1);
-        await commitArtworks(`Remove ${w.title || w.id || "artwork"}`);
-        setStatus("Deleted.", "success");
-        renderList();
-      });
-    });
+    $(".f-save").addEventListener(
+      "click",
+      async function () {
 
-    $(".f-image-upload").addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      await withBusy(async () => {
-        setStatus("Uploading image\u2026", "info");
-        const path = await uploadBinaryFile(file, "images", ARTWORKS[index].id);
-        $(".f-image").value = path;
-        preview.src = path;
-        setStatus("Image uploaded — remember to Save changes.", "success");
-      });
-    });
+        const current = ARTWORKS[index];
 
-    $(".f-usdz-upload").addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      await withBusy(async () => {
-        setStatus("Uploading AR model\u2026", "info");
-        const path = await uploadBinaryFile(file, "models", ARTWORKS[index].id);
-        $(".f-usdz").value = path.replace(/^models\//, "");
-        setStatus("Model uploaded — remember to Save changes.", "success");
-      });
-    });
+        current.title =
+          $(".f-title").value.trim();
+
+        current.year =
+          Number($(".f-year").value) || 0;
+
+        current.status =
+          $(".f-status").value;
+
+        current.price =
+          Number($(".f-price").value) || 0;
+
+        current.collection =
+          $(".f-collection").value.trim();
+
+        current.size =
+          $(".f-size").value.trim();
+
+        current.image =
+          $(".f-image").value.trim();
+
+
+        await withBusy(async function () {
+
+          setStatus(
+            'Saving "' +
+            (current.title || "Untitled") +
+            '"…',
+            "info"
+          );
+
+          await commitArtworks(
+            "Update " +
+            (current.title || "artwork")
+          );
+
+          setStatus(
+            "Saved to GitHub.",
+            "success"
+          );
+
+          renderList();
+
+        });
+      }
+    );
+
+
+    /* -------------------------------------------------------
+       DELETE
+    ------------------------------------------------------- */
+
+    $(".f-delete").addEventListener(
+      "click",
+      async function () {
+
+        const current = ARTWORKS[index];
+
+        const confirmed = confirm(
+          'Delete "' +
+          (current.title || "Untitled") +
+          '"?\n\nThis will permanently remove it from the catalogue.'
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        await withBusy(async function () {
+
+          setStatus(
+            "Deleting…",
+            "info"
+          );
+
+          ARTWORKS.splice(index, 1);
+
+          await commitArtworks(
+            "Remove " +
+            (current.title || "artwork")
+          );
+
+          setStatus(
+            "Deleted.",
+            "success"
+          );
+
+          renderList();
+        });
+      }
+    );
+
+
+    /* -------------------------------------------------------
+       IMAGE UPLOAD
+    ------------------------------------------------------- */
+
+    $(".f-image-upload").addEventListener(
+      "change",
+      async function (event) {
+
+        const file =
+          event.target.files[0];
+
+        if (!file) {
+          return;
+        }
+
+        await withBusy(async function () {
+
+          setStatus(
+            "Uploading image…",
+            "info"
+          );
+
+          const path =
+            await uploadBinaryFile(
+              file,
+              "images",
+              index
+            );
+
+          $(".f-image").value =
+            path;
+
+          preview.src =
+            path;
+
+          setStatus(
+            "Image uploaded. Save changes to update the catalogue.",
+            "success"
+          );
+        });
+      }
+    );
+
 
     return form;
   }
 
-  async function uploadBinaryFile(file, folder, id) {
-    const ext = file.name.split(".").pop();
-    const path = `${folder}/${id || "work"}.${ext}`;
-    const dataUrl = await new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result);
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
-    const base64 = dataUrl.split(",")[1];
-    const existing = await ghGet(path);
-    await ghPut(path, base64, `Upload ${path}`, existing ? existing.sha : undefined);
+
+  /* ---------------------------------------------------------
+     IMAGE UPLOAD
+  --------------------------------------------------------- */
+
+  async function uploadBinaryFile(
+    file,
+    folder,
+    index
+  ) {
+    const extension =
+      file.name
+        .split(".")
+        .pop()
+        .toLowerCase();
+
+    const artwork =
+      ARTWORKS[index];
+
+    let filename =
+      artwork.image
+        ? artwork.image
+            .split("/")
+            .pop()
+        : "";
+
+    if (!filename) {
+      filename =
+        "work-" +
+        String(index + 1).padStart(2, "0") +
+        "." +
+        extension;
+    } else {
+      filename =
+        filename.replace(
+          /\.[^.]+$/,
+          "." + extension
+        );
+    }
+
+    const path =
+      folder +
+      "/" +
+      filename;
+
+    const existing =
+      await ghGet(path);
+
+    const buffer =
+      await file.arrayBuffer();
+
+    const encoded =
+      encodeBinary(buffer);
+
+    await ghPut(
+      path,
+      encoded,
+      "Upload " + path,
+      existing ? existing.sha : undefined
+    );
+
     return path;
   }
 
+
+  /* ---------------------------------------------------------
+     ADD WORK
+  --------------------------------------------------------- */
+
+  addBtn.addEventListener(
+    "click",
+    async function () {
+
+      if (!haveSettings()) {
+
+        openSettings();
+
+        setStatus(
+          "Connect to GitHub first.",
+          "info"
+        );
+
+        return;
+      }
+
+      const newWork = {
+        title: "Untitled",
+        year: new Date().getFullYear(),
+        price: 0,
+        status: "available",
+        collection: "",
+        size: "— × — cm",
+        image: ""
+      };
+
+      ARTWORKS.unshift(newWork);
+
+      renderList();
+
+      const first =
+        list.querySelector(
+          ".admin-item"
+        );
+
+      if (first) {
+
+        first.classList.add("open");
+
+        first.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+
+      setStatus(
+        'New work added. Fill it in and press "Save changes".',
+        "info"
+      );
+    }
+  );
+
+
+  /* ---------------------------------------------------------
+     REFRESH
+  --------------------------------------------------------- */
+
+  refreshBtn.addEventListener(
+    "click",
+    loadArtworks
+  );
+
+
+  /* ---------------------------------------------------------
+     BUSY
+  --------------------------------------------------------- */
+
   async function withBusy(fn) {
-    if (busy) return;
+
+    if (busy) {
+      return;
+    }
+
     busy = true;
+
+    addBtn.disabled = true;
+    refreshBtn.disabled = true;
+
     try {
+
       await fn();
-    } catch (err) {
-      console.error(err);
-      setStatus(err.message || "Something went wrong.", "error");
+
+    } catch (error) {
+
+      console.error(error);
+
+      setStatus(
+        error.message ||
+        "Something went wrong.",
+        "error"
+      );
+
     } finally {
+
       busy = false;
+
+      addBtn.disabled = false;
+      refreshBtn.disabled = false;
     }
   }
 
-  /* ---------------- add work ---------------- */
 
-  addBtn.addEventListener("click", async () => {
-    if (!haveSettings()) {
-      settingsPanel.hidden = false;
-      setStatus("Connect to GitHub first.", "info");
-      return;
-    }
-    const id = "work-" + Date.now().toString(36);
-    const blank = {
-      id,
-      title: "Untitled",
-      year: new Date().getFullYear(),
-      price: 0,
-      status: "available",
-      collection: "",
-      size: "\u2014 \u00d7 \u2014 cm",
-      width_cm: 0,
-      height_cm: 0,
-      image: "",
-      usdz: "",
-    };
-    ARTWORKS.unshift(blank);
-    renderList();
-    const first = list.querySelector(".admin-item");
-    if (first) {
-      first.classList.add("open");
-      first.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    setStatus('New work added below — fill it in, upload an image, then Save.', "info");
-  });
-
-  refreshBtn.addEventListener("click", loadArtworks);
-
-  /* ---------------- init ---------------- */
+  /* ---------------------------------------------------------
+     INIT
+  --------------------------------------------------------- */
 
   fillSettingsForm();
+
   loadArtworks();
+
 })();
