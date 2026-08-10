@@ -68,7 +68,7 @@ const ARTWORKS = [
     "year": 2022,
     "price": 950,
     "status": "sold",
-    "collection": "",
+    "collection": "Studio Series",
     "size": "— × — cm",
     "image": "images/work-06.png",
     "id": "work-06"
