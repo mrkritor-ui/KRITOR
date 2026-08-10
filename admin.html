@@ -1,128 +1,230 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="default"
+  >
+
+  <meta
+    name="apple-mobile-web-app-title"
+    content="Works Admin"
+  >
+
+  <meta
+    name="theme-color"
+    content="#faf9f6"
+  >
 
   <title>Works — Admin</title>
 
-  <link rel="apple-touch-icon" href="icon.png">
-  <meta name="theme-color" content="#faf9f6">
+  <link
+    rel="apple-touch-icon"
+    href="icon.png"
+  >
 
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="admin.css">
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+  <link
+    rel="stylesheet"
+    href="admin.css"
+  >
 </head>
 
 <body class="admin-body">
 
-<header class="site-header admin-header">
-  <h1>Admin</h1>
+  <header class="site-header admin-header">
 
-  <button
-    id="settings-toggle"
-    class="settings-toggle"
-    type="button"
-    aria-label="Connection settings"
-    aria-expanded="false"
-  >⚙</button>
-</header>
+    <h1>Admin</h1>
 
-<section id="settings-panel" class="settings-panel" hidden>
-
-  <p class="settings-note">
-    Stored only in this browser. Your token needs GitHub repository
-    Contents read/write access.
-  </p>
-
-  <label class="field">
-    <span>Repo owner</span>
-    <input
-      id="set-owner"
-      type="text"
-      autocomplete="off"
-      autocapitalize="off"
-      autocorrect="off"
-      spellcheck="false"
-      placeholder="yourname"
+    <button
+      id="settings-toggle"
+      class="settings-toggle"
+      type="button"
+      aria-label="Connection settings"
     >
-  </label>
-
-  <label class="field">
-    <span>Repo name</span>
-    <input
-      id="set-repo"
-      type="text"
-      autocomplete="off"
-      autocapitalize="off"
-      autocorrect="off"
-      spellcheck="false"
-      placeholder="works"
-    >
-  </label>
-
-  <label class="field">
-    <span>Branch</span>
-    <input
-      id="set-branch"
-      type="text"
-      value="main"
-      autocomplete="off"
-      autocapitalize="off"
-      autocorrect="off"
-      spellcheck="false"
-      placeholder="main"
-    >
-  </label>
-
-  <label class="field">
-    <span>Access token</span>
-    <input
-      id="set-token"
-      type="password"
-      autocomplete="off"
-      autocapitalize="off"
-      autocorrect="off"
-      spellcheck="false"
-      placeholder="github_pat_..."
-    >
-  </label>
-
-  <div class="settings-actions">
-    <button id="settings-save" class="btn btn-primary" type="button">
-      Save & connect
+      ⚙
     </button>
 
-    <button id="settings-clear" class="btn btn-ghost" type="button">
-      Forget token
-    </button>
-  </div>
+  </header>
 
-</section>
 
-<div id="status-bar" class="status-bar" hidden></div>
+  <section
+    id="settings-panel"
+    class="settings-panel"
+  >
 
-<main class="admin-main">
+    <p class="settings-note">
+      Stored only in this browser. Connect this admin
+      to the GitHub repository containing your catalogue.
+    </p>
 
-  <div class="admin-toolbar">
-    <button id="add-work" class="btn btn-primary" type="button">
-      + Add work
-    </button>
 
-    <button id="refresh" class="btn btn-ghost" type="button">
-      Refresh
-    </button>
-  </div>
+    <label class="field">
+      <span>Repo owner</span>
 
-  <div id="admin-list" class="admin-list"></div>
+      <input
+        id="set-owner"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="none"
+        spellcheck="false"
+        enterkeyhint="next"
+        placeholder="yourname"
+      >
+    </label>
 
-</main>
 
-<footer class="site-footer">
-  <a href="index.html" class="footer-link">View catalog</a>
-  <a href="ar.html" class="footer-link">View in AR</a>
-</footer>
+    <label class="field">
+      <span>Repo name</span>
 
-<script src="admin.js"></script>
+      <input
+        id="set-repo"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="none"
+        spellcheck="false"
+        enterkeyhint="next"
+        placeholder="works"
+      >
+    </label>
+
+
+    <label class="field">
+      <span>Branch</span>
+
+      <input
+        id="set-branch"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="none"
+        spellcheck="false"
+        enterkeyhint="next"
+        placeholder="main"
+      >
+    </label>
+
+
+    <label class="field">
+      <span>Access token</span>
+
+      <input
+        id="set-token"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="none"
+        spellcheck="false"
+        enterkeyhint="done"
+        placeholder="GitHub token"
+      >
+    </label>
+
+
+    <div class="settings-actions">
+
+      <button
+        id="settings-save"
+        class="btn btn-primary"
+        type="button"
+      >
+        Save & connect
+      </button>
+
+      <button
+        id="settings-clear"
+        class="btn btn-ghost"
+        type="button"
+      >
+        Forget token
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <div
+    id="status-bar"
+    class="status-bar"
+    hidden
+  ></div>
+
+
+  <main class="admin-main">
+
+    <div class="admin-toolbar">
+
+      <button
+        id="add-work"
+        class="btn btn-primary"
+        type="button"
+      >
+        + Add work
+      </button>
+
+      <button
+        id="refresh"
+        class="btn btn-ghost"
+        type="button"
+      >
+        Refresh
+      </button>
+
+    </div>
+
+
+    <div
+      id="admin-list"
+      class="admin-list"
+    ></div>
+
+  </main>
+
+
+  <footer class="site-footer">
+
+    <a
+      href="index.html"
+      class="footer-link"
+    >
+      View catalog
+    </a>
+
+    <a
+      href="ar.html"
+      class="footer-link"
+    >
+      View in AR
+    </a>
+
+  </footer>
+
+
+  <script src="admin.js"></script>
 
 </body>
 </html>
