@@ -518,7 +518,11 @@
     item.appendChild(
       buildEditForm(work, index)
     );
+/* iPad/iOS keyboard support for dynamically-created fields */
 
+form.querySelectorAll("input, select").forEach(function (input) {
+  enableIOSInputFocus(input);
+});
     return item;
   }
 
@@ -990,3 +994,29 @@
 
 })();
 const refreshBtn = document.getElementById("refresh");
+/* =========================================================
+   iOS / iPAD INPUT FOCUS
+========================================================= */
+
+function enableIOSInputFocus(input) {
+  if (!input) return;
+
+  input.addEventListener(
+    "touchend",
+    function (event) {
+      event.stopPropagation();
+
+      setTimeout(function () {
+        input.focus();
+      }, 0);
+    },
+    { passive: true }
+  );
+}
+
+[
+  setOwner,
+  setRepo,
+  setBranch,
+  setToken
+].forEach(enableIOSInputFocus);
