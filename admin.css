@@ -4,7 +4,9 @@
 
 .admin-body {
   padding-bottom: 40px;
+  -webkit-text-size-adjust: 100%;
 }
+
 
 /* =========================================================
    HEADER
@@ -18,36 +20,28 @@
 }
 
 .settings-toggle {
-  appearance: none;
-  -webkit-appearance: none;
-
-  width: 32px;
-  height: 32px;
-
+  border: 1px solid var(--line);
+  background: var(--chip-bg);
+  color: var(--muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border: 1px solid var(--line);
-  border-radius: 50%;
-
-  background: var(--chip-bg);
-  color: var(--muted);
-
-  font-size: 14px;
-
   cursor: pointer;
-  touch-action: manipulation;
+
+  -webkit-appearance: none;
+  appearance: none;
 }
 
+
 /* =========================================================
-   SETTINGS PANEL
+   SETTINGS
 ========================================================= */
 
 .settings-panel {
-  position: relative;
-  z-index: 9999;
-
   margin: 0 var(--gap-lg) 18px;
   padding: 16px;
 
@@ -59,10 +53,9 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
 
-.settings-panel[hidden] {
-  display: none !important;
+  position: relative;
+  z-index: 50;
 }
 
 .settings-note {
@@ -75,37 +68,42 @@
 }
 
 .settings-note code {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(0,0,0,0.06);
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 10.5px;
 }
 
+
 /* =========================================================
-   ALL FORM FIELDS
+   INPUT FIELDS
 ========================================================= */
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-
-  min-width: 0;
+  gap: 5px;
 
   font-size: 11px;
   color: var(--muted);
   letter-spacing: 0.02em;
+
+  position: relative;
+  z-index: 2;
 }
 
 .field input,
 .field select {
-  box-sizing: border-box;
+  display: block;
 
   width: 100%;
-  min-width: 0;
+  min-height: 42px;
+
+  box-sizing: border-box;
 
   font-family: var(--sans);
   font-size: 16px;
+  line-height: 1.2;
 
   color: var(--ink);
   background: var(--bg);
@@ -113,21 +111,29 @@
   border: 1px solid var(--line);
   border-radius: 7px;
 
-  padding: 10px;
-
-  opacity: 1;
-
-  pointer-events: auto;
-
-  -webkit-appearance: none;
-  appearance: none;
+  padding: 10px 11px;
 
   -webkit-user-select: text;
   user-select: text;
 
   -webkit-touch-callout: default;
 
+  pointer-events: auto;
+
   touch-action: manipulation;
+
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field input[type="number"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field input[type="file"] {
+  font-size: 13px;
+  min-height: 44px;
 }
 
 .field input:focus,
@@ -136,25 +142,6 @@
   outline-offset: 1px;
 }
 
-/* Specifically protect the settings inputs on iOS */
-
-.settings-panel input {
-  position: relative;
-  z-index: 10000;
-
-  display: block;
-
-  width: 100%;
-
-  font-size: 16px;
-
-  pointer-events: auto;
-
-  -webkit-user-select: text;
-  user-select: text;
-
-  touch-action: manipulation;
-}
 
 /* =========================================================
    SETTINGS BUTTONS
@@ -166,19 +153,17 @@
   margin-top: 4px;
 }
 
+
 /* =========================================================
    BUTTONS
 ========================================================= */
 
 .btn {
-  appearance: none;
-  -webkit-appearance: none;
-
   font-family: var(--sans);
   font-size: 11px;
   letter-spacing: 0.04em;
 
-  padding: 9px 16px;
+  padding: 10px 16px;
 
   border-radius: 100px;
   border: 1px solid var(--line);
@@ -186,7 +171,11 @@
   background: var(--chip-bg);
   color: var(--ink);
 
+  -webkit-appearance: none;
+  appearance: none;
+
   cursor: pointer;
+
   touch-action: manipulation;
 }
 
@@ -211,12 +200,14 @@
   opacity: 0.5;
 }
 
+
 /* =========================================================
    STATUS
 ========================================================= */
 
 .status-bar {
   margin: 0 var(--gap-lg) 16px;
+
   padding: 10px 14px;
 
   border-radius: 8px;
@@ -240,6 +231,7 @@
   color: var(--sold);
 }
 
+
 /* =========================================================
    TOOLBAR
 ========================================================= */
@@ -250,6 +242,7 @@
 
   padding: 0 var(--gap-lg) 16px;
 }
+
 
 /* =========================================================
    LIST
@@ -270,24 +263,22 @@
   border-bottom: 1px solid var(--line);
 }
 
+
 /* =========================================================
-   ITEM HEADER
+   ARTWORK ROW
 ========================================================= */
 
 .admin-item-row {
-  appearance: none;
-  -webkit-appearance: none;
-
   display: flex;
   align-items: center;
   gap: 12px;
-
-  width: 100%;
 
   padding: 12px 0;
 
   background: none;
   border: 0;
+
+  width: 100%;
 
   text-align: left;
 
@@ -296,10 +287,10 @@
 
   cursor: pointer;
 
-  touch-action: manipulation;
+  -webkit-appearance: none;
+  appearance: none;
 
-  -webkit-user-select: none;
-  user-select: none;
+  touch-action: manipulation;
 }
 
 .admin-item-row img {
@@ -325,17 +316,15 @@
 
   font-family: var(--serif);
   font-style: italic;
-  font-size: 13.5px;
 
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 13.5px;
 }
 
 .admin-item-info .sub {
   display: block;
 
   font-size: 10.5px;
+
   color: var(--muted);
 
   margin-top: 2px;
@@ -373,9 +362,11 @@
   flex: 0 0 auto;
 }
 
-.admin-item.open .admin-item-chevron {
+.admin-item.open
+.admin-item-chevron {
   transform: rotate(90deg);
 }
+
 
 /* =========================================================
    EDIT FORM
@@ -389,6 +380,9 @@
   gap: 10px;
 
   padding: 4px 0 22px;
+
+  position: relative;
+  z-index: 10;
 }
 
 .admin-item.open .admin-edit {
@@ -397,18 +391,6 @@
 
 .admin-edit .field.full {
   grid-column: 1 / -1;
-}
-
-.admin-edit input,
-.admin-edit select {
-  font-size: 16px;
-
-  -webkit-user-select: text;
-  user-select: text;
-
-  pointer-events: auto;
-
-  touch-action: manipulation;
 }
 
 .admin-edit-preview {
@@ -420,12 +402,8 @@
   object-fit: contain;
 
   background: var(--chip-bg);
-  border-radius: 8px;
-}
 
-.admin-edit input[type="file"] {
-  font-size: 11px;
-  padding: 7px;
+  border-radius: 8px;
 }
 
 .admin-edit-actions {
@@ -448,6 +426,7 @@
   grid-column: 1 / -1;
 
   font-size: 10.5px;
+
   color: var(--muted);
 
   line-height: 1.5;
@@ -461,32 +440,31 @@
   text-align: center;
 
   font-size: 12px;
+
   color: var(--muted);
 }
 
+
 /* =========================================================
-   iPAD / SMALL SCREENS
+   IPAD / IOS
 ========================================================= */
 
-@media (max-width: 480px) {
+.settings-panel,
+.settings-panel *,
+.admin-edit,
+.admin-edit *,
+.field,
+.field input,
+.field select {
+  pointer-events: auto;
+}
 
-  .admin-edit {
-    grid-template-columns: 1fr;
+@media (max-width: 600px) {
+
+  .field input,
+  .field select {
+    font-size: 16px;
+    min-height: 44px;
   }
 
-  .admin-edit .field.full {
-    grid-column: auto;
-  }
-
-  .admin-edit-actions {
-    flex-direction: column;
-  }
-
-  .admin-edit-actions .left {
-    width: 100%;
-  }
-
-  .admin-edit-actions .btn {
-    flex: 1;
-  }
 }
