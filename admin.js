@@ -457,76 +457,183 @@
      ARTWORKS.JS PARSER
   ========================================================= */
 
-  function parseArtworksJS(text) {
+function parseArtworksJS(text) {
 
-    const match =
-      text.match(
-        /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
-      );
+  try {
 
+    const factory = new Function(
+      text + "\nreturn ARTWORKS;"
+    );
 
-    if (!match) {
+    const result = factory();
 
+    if (!Array.isArray(result)) {
       throw new Error(
-        "ARTWORKS array not found in artworks.js."
+        "ARTWORKS is not an array."
       );
-
     }
 
+    return result;
 
-    try {
+  } catch (error) {
 
-      return JSON.parse(
-        match[1]
-      );
+    console.error(
+      "artworks.js parsing error:",
+      error
+    );
 
-    } catch (error) {
-
-      throw new Error(
-        "artworks.js contains invalid artwork data."
-      );
-
-    }
-
-  }
-
-
-  function buildArtworksJS(
-    original,
-    artworks
-  ) {
-
-    const match =
-      original.match(
-        /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
-      );
-
-
-    if (!match) {
-
-      throw new Error(
-        "ARTWORKS array not found."
-      );
-
-    }
-
-
-    const replacement =
-      "const ARTWORKS = " +
-      JSON.stringify(
-        artworks,
-        null,
-        2
-      ) +
-      ";";
-
-
-    return original.replace(
-      match[0],
-      replacement
+    throw new Error(
+      "Could not read artworks.js."
     );
 
   }
+
+}
+
+
+function buildArtworksJS(
+  original,
+  artworks
+) {
+
+  const start =
+    original.indexOf(
+      "const ARTWORKS ="
+    );
+
+  if (start === -1) {
+
+    throw new Error(
+      "const ARTWORKS was not found in artworks.js."
+    );
+
+  }
+
+
+  const arrayStart =
+    original.indexOf(
+      "[",
+      start
+    );
+
+  if (arrayStart === -1) {
+
+    throw new Error(
+      "ARTWORKS array was not found."
+    );
+
+  }
+
+
+  let depth = 0;
+  let inString = false;
+  let stringChar = "";
+  let escaped = false;
+  let arrayEnd = -1;
+
+
+  for (
+    let i = arrayStart;
+    i < original.length;
+    i++
+  ) {
+
+    const char =
+      original[i];
+
+
+    if (inString) {
+
+      if (escaped) {
+
+        escaped = false;
+
+      } else if (
+        char === "\\"
+      ) {
+
+        escaped = true;
+
+      } else if (
+        char === stringChar
+      ) {
+
+        inString = false;
+
+      }
+
+      continue;
+
+    }
+
+
+    if (
+      char === '"' ||
+      char === "'" ||
+      char === "`"
+    ) {
+
+      inString = true;
+      stringChar = char;
+      continue;
+
+    }
+
+
+    if (char === "[") {
+
+      depth++;
+
+    }
+
+
+    if (char === "]") {
+
+      depth--;
+
+      if (depth === 0) {
+
+        arrayEnd = i;
+        break;
+
+      }
+
+    }
+
+  }
+
+
+  if (arrayEnd === -1) {
+
+    throw new Error(
+      "Could not find the end of ARTWORKS."
+    );
+
+  }
+
+
+  const newArray =
+    JSON.stringify(
+      artworks,
+      null,
+      2
+    );
+
+
+  return (
+    original.slice(
+      0,
+      arrayStart
+    ) +
+
+    newArray +
+
+    original.slice(
+      arrayEnd + 1
+    )
+  );
+
+}
 
 
   /* =========================================================
