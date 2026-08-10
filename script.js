@@ -7,6 +7,8 @@
   const viewerImg = document.getElementById("viewer-img");
   const viewerCaption = document.getElementById("viewer-caption");
   const viewerClose = document.getElementById("viewer-close");
+  const viewerAr = document.getElementById("viewer-ar");
+  const viewerArPoster = document.getElementById("viewer-ar-poster");
 
   const STATUS_LABEL = { available: "Available", sold: "Sold", na: "Not for sale" };
 
@@ -15,6 +17,7 @@
     sort: "year-desc",
   };
 
+  let ARTWORKS = [];
   let flatList = []; // current filtered+sorted list, used for viewer navigation
 
   function formatPrice(work) {
@@ -239,6 +242,15 @@
     viewerImg.src = work.image;
     viewerImg.alt = work.title || "";
     viewerCaption.innerHTML = captionHTML(work);
+    // re-append the AR button since captionHTML overwrote innerHTML above
+    viewerCaption.appendChild(viewerAr);
+    if (work.usdz) {
+      viewerAr.href = "models/" + work.usdz;
+      viewerArPoster.src = work.image;
+      viewerAr.hidden = false;
+    } else {
+      viewerAr.hidden = true;
+    }
     viewer.hidden = false;
     document.body.style.overflow = "hidden";
   }
@@ -252,11 +264,24 @@
 
   viewer.addEventListener("click", (e) => {
     if (e.target === viewerClose) return;
+    if (e.target === viewerAr || e.target === viewerArPoster || viewerAr.contains(e.target)) return;
     if (scale > 1) return; // while zoomed, only the close button closes
     if (dragged) { dragged = false; return; } // ignore the click that follows a drag
     closeViewer();
   });
   viewerClose.addEventListener("click", closeViewer);
 
-  render();
+  fetch("data/artworks.json")
+    .then((res) => {
+      if (!res.ok) throw new Error("Could not load artworks.json");
+      return res.json();
+    })
+    .then((data) => {
+      ARTWORKS = data;
+      render();
+    })
+    .catch((err) => {
+      grid.innerHTML = '<p class="empty">Couldn\'t load the catalog. Check data/artworks.json.</p>';
+      console.error(err);
+    });
 })();
