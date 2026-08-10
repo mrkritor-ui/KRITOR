@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Works</title>
+
+<!-- Add to Home Screen support (works even on older iOS/Safari) -->
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Works">
+<meta name="theme-color" content="#faf9f6">
+<link rel="apple-touch-icon" href="icon.png">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Works</h1>
+</header>
+
+<main id="grid" class="grid" aria-label="Artwork grid"></main>
+
+<div id="viewer" class="viewer" hidden>
+  <button id="viewer-close" class="viewer-close" aria-label="Close">&times;</button>
+  <img id="viewer-img" class="viewer-img" src="" alt="">
+  <div id="viewer-caption" class="viewer-caption"></div>
+</div>
+
+<script src="artworks.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
