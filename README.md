@@ -25,22 +25,33 @@ Hosted free on GitHub Pages, added to your iPad homescreen so it opens like an a
 const ARTWORKS = [
   {
     title: "Untitled I",
-    year: "2024",
+    year: 2024,
+    price: 1200,          // AUD, plain number — ignored if status isn't "available"
+    status: "available",  // "available" | "sold" | "na"
+    collection: "Studio Series",  // leave "" for a standalone piece
     size: "60 × 90 cm",
     image: "images/work-01.jpg"
-  },
-  {
-    title: "Untitled II",
-    year: "2024",
-    size: "40 × 40 cm",
-    image: "images/work-02.jpg"
   },
 ];
 ```
 
-The order in the list is the order they appear on the page. Commit the change
-(or upload the edited file) and the live site updates automatically, usually
-within a minute.
+Commit the change (or re-upload the edited file) and the live site updates
+automatically, usually within a minute.
+
+## Sorting, collections, and status
+
+- **Collections**: give two or more works the same `collection` name and
+  they're grouped under a heading when a client views "All". The chip bar at
+  the top lets them jump straight to one collection.
+- **Sort**: the dropdown reorders by year or price, newest/highest first by
+  default. It applies within each collection group.
+- **Status ticker**: a small dot on each thumbnail — green for available, red
+  for sold, amber for not-for-sale — with the full word and price shown once
+  a work is opened. Sold and NA pieces hide the price automatically.
+- **Pinch to zoom**: once a work is open fullscreen, pinch with two fingers
+  to zoom in (double-tap also toggles zoom). Tap the × to close — while
+  zoomed in, tapping the image pans instead of closing, so nothing closes by
+  accident mid-zoom.
 
 ## 3. Add it to your iPad homescreen
 

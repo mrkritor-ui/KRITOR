@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title> KRITOR Works</title>
+<title>Works</title>
 
 <!-- Add to Home Screen support (works even on older iOS/Safari) -->
 <link rel="manifest" href="manifest.json">
@@ -22,11 +22,26 @@
   <h1>Works</h1>
 </header>
 
+<div class="controls">
+  <div id="collections" class="chips" role="tablist" aria-label="Filter by collection"></div>
+
+  <div class="sort-wrap">
+    <select id="sort" class="sort-select" aria-label="Sort works">
+      <option value="year-desc">Year, newest</option>
+      <option value="year-asc">Year, oldest</option>
+      <option value="price-desc">Price, high to low</option>
+      <option value="price-asc">Price, low to high</option>
+    </select>
+  </div>
+</div>
+
 <main id="grid" class="grid" aria-label="Artwork grid"></main>
 
 <div id="viewer" class="viewer" hidden>
   <button id="viewer-close" class="viewer-close" aria-label="Close">&times;</button>
-  <img id="viewer-img" class="viewer-img" src="" alt="">
+  <div id="viewer-stage" class="viewer-stage">
+    <img id="viewer-img" class="viewer-img" src="" alt="">
+  </div>
   <div id="viewer-caption" class="viewer-caption"></div>
 </div>
 
