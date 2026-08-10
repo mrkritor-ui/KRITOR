@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      CONFIG
-  --------------------------------------------------------- */
+  ========================================================= */
 
   const DATA_PATH = "artworks.js";
 
@@ -25,14 +25,40 @@
   const refreshBtn = document.getElementById("refresh");
 
   let ARTWORKS = [];
-  let fileSha = null;
-  let fileText = "";
   let busy = false;
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
+     iOS / iPAD INPUT FOCUS
+  ========================================================= */
+
+  function enableIOSInputFocus(input) {
+    if (!input) return;
+
+    input.addEventListener(
+      "touchend",
+      function (event) {
+        event.stopPropagation();
+
+        setTimeout(function () {
+          input.focus();
+        }, 0);
+      },
+      { passive: true }
+    );
+  }
+
+  [
+    setOwner,
+    setRepo,
+    setBranch,
+    setToken
+  ].forEach(enableIOSInputFocus);
+
+
+  /* =========================================================
      SETTINGS
-  --------------------------------------------------------- */
+  ========================================================= */
 
   function getSettings() {
     return {
@@ -65,71 +91,110 @@
 
   function openSettings() {
     settingsPanel.hidden = false;
-    settingsToggle.setAttribute("aria-expanded", "true");
+
+    settingsToggle.setAttribute(
+      "aria-expanded",
+      "true"
+    );
 
     setTimeout(function () {
       if (!setOwner.value) {
         setOwner.focus();
       }
-    }, 50);
+    }, 100);
   }
 
   function closeSettings() {
     settingsPanel.hidden = true;
-    settingsToggle.setAttribute("aria-expanded", "false");
+
+    settingsToggle.setAttribute(
+      "aria-expanded",
+      "false"
+    );
   }
 
-  settingsToggle.addEventListener("click", function () {
-    if (settingsPanel.hidden) {
-      openSettings();
-    } else {
-      closeSettings();
+  settingsToggle.addEventListener(
+    "click",
+    function () {
+      if (settingsPanel.hidden) {
+        openSettings();
+      } else {
+        closeSettings();
+      }
     }
-  });
+  );
 
-  settingsSave.addEventListener("click", function () {
-    const owner = setOwner.value.trim();
-    const repo = setRepo.value.trim();
-    const branch = setBranch.value.trim() || "main";
-    const token = setToken.value.trim();
+  settingsSave.addEventListener(
+    "click",
+    function () {
+      const owner = setOwner.value.trim();
+      const repo = setRepo.value.trim();
+      const branch =
+        setBranch.value.trim() || "main";
+      const token = setToken.value.trim();
 
-    if (!owner || !repo || !token) {
-      setStatus(
-        "Enter the repo owner, repo name and access token.",
-        "error"
+      if (!owner || !repo || !token) {
+        setStatus(
+          "Enter the repo owner, repo name and access token.",
+          "error"
+        );
+
+        return;
+      }
+
+      localStorage.setItem(
+        "works_gh_owner",
+        owner
       );
-      return;
+
+      localStorage.setItem(
+        "works_gh_repo",
+        repo
+      );
+
+      localStorage.setItem(
+        "works_gh_branch",
+        branch
+      );
+
+      localStorage.setItem(
+        "works_gh_token",
+        token
+      );
+
+      closeSettings();
+
+      loadArtworks();
     }
+  );
 
-    localStorage.setItem("works_gh_owner", owner);
-    localStorage.setItem("works_gh_repo", repo);
-    localStorage.setItem("works_gh_branch", branch);
-    localStorage.setItem("works_gh_token", token);
+  settingsClear.addEventListener(
+    "click",
+    function () {
+      localStorage.removeItem(
+        "works_gh_token"
+      );
 
-    closeSettings();
+      setToken.value = "";
 
-    loadArtworks();
-  });
-
-  settingsClear.addEventListener("click", function () {
-    localStorage.removeItem("works_gh_token");
-
-    setToken.value = "";
-
-    setStatus(
-      "Token forgotten.",
-      "info"
-    );
-  });
+      setStatus(
+        "Token forgotten.",
+        "info"
+      );
+    }
+  );
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      STATUS
-  --------------------------------------------------------- */
+  ========================================================= */
 
   function setStatus(message, kind) {
     statusBar.textContent = message;
-    statusBar.className = "status-bar " + (kind || "info");
+
+    statusBar.className =
+      "status-bar " + (kind || "info");
+
     statusBar.hidden = false;
   }
 
@@ -138,9 +203,9 @@
   }
 
 
-  /* ---------------------------------------------------------
-     GITHUB
-  --------------------------------------------------------- */
+  /* =========================================================
+     GITHUB API
+  ========================================================= */
 
   function apiBase() {
     const s = getSettings();
@@ -158,37 +223,56 @@
     const s = getSettings();
 
     return {
-      Authorization: "Bearer " + s.token,
-      Accept: "application/vnd.github+json"
+      Authorization:
+        "Bearer " + s.token,
+
+      Accept:
+        "application/vnd.github+json"
     };
   }
 
   function encodeBase64(text) {
-    const bytes = new TextEncoder().encode(text);
+    const bytes =
+      new TextEncoder().encode(text);
 
     let binary = "";
 
     const chunkSize = 0x8000;
 
-    for (let i = 0; i < bytes.length; i += chunkSize) {
+    for (
+      let i = 0;
+      i < bytes.length;
+      i += chunkSize
+    ) {
       binary += String.fromCharCode(
-        ...bytes.subarray(i, i + chunkSize)
+        ...bytes.subarray(
+          i,
+          i + chunkSize
+        )
       );
     }
 
     return btoa(binary);
   }
 
-  function encodeBinary(arrayBuffer) {
-    const bytes = new Uint8Array(arrayBuffer);
+  function encodeBinary(buffer) {
+    const bytes =
+      new Uint8Array(buffer);
 
     let binary = "";
 
     const chunkSize = 0x8000;
 
-    for (let i = 0; i < bytes.length; i += chunkSize) {
+    for (
+      let i = 0;
+      i < bytes.length;
+      i += chunkSize
+    ) {
       binary += String.fromCharCode(
-        ...bytes.subarray(i, i + chunkSize)
+        ...bytes.subarray(
+          i,
+          i + chunkSize
+        )
       );
     }
 
@@ -196,44 +280,61 @@
   }
 
   function decodeBase64(base64) {
-    const clean = base64.replace(/\s/g, "");
+    const clean =
+      base64.replace(/\s/g, "");
 
-    const binary = atob(clean);
+    const binary =
+      atob(clean);
 
-    const bytes = new Uint8Array(binary.length);
+    const bytes =
+      new Uint8Array(
+        binary.length
+      );
 
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+    for (
+      let i = 0;
+      i < binary.length;
+      i++
+    ) {
+      bytes[i] =
+        binary.charCodeAt(i);
     }
 
-    return new TextDecoder().decode(bytes);
+    return new TextDecoder().decode(
+      bytes
+    );
   }
 
   async function ghGet(path) {
     const s = getSettings();
 
-    const url =
-      apiBase() +
-      path +
-      "?ref=" +
-      encodeURIComponent(s.branch);
-
-    const response = await fetch(url, {
-      headers: authHeaders()
-    });
+    const response =
+      await fetch(
+        apiBase() +
+          path +
+          "?ref=" +
+          encodeURIComponent(
+            s.branch
+          ),
+        {
+          headers:
+            authHeaders()
+        }
+      );
 
     if (response.status === 404) {
       return null;
     }
 
     if (!response.ok) {
-      const text = await response.text();
+      const text =
+        await response.text();
 
       throw new Error(
         "GitHub GET failed: " +
-        response.status +
-        " " +
-        text
+          response.status +
+          " " +
+          text
       );
     }
 
@@ -258,26 +359,32 @@
       body.sha = existingSha;
     }
 
-    const response = await fetch(
-      apiBase() + path,
-      {
-        method: "PUT",
-        headers: {
-          ...authHeaders(),
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-      }
-    );
+    const response =
+      await fetch(
+        apiBase() + path,
+        {
+          method: "PUT",
+
+          headers: {
+            ...authHeaders(),
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify(body)
+        }
+      );
 
     if (!response.ok) {
-      const text = await response.text();
+      const text =
+        await response.text();
 
       throw new Error(
         "GitHub save failed: " +
-        response.status +
-        " " +
-        text
+          response.status +
+          " " +
+          text
       );
     }
 
@@ -285,27 +392,15 @@
   }
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      ARTWORKS.JS PARSING
-  --------------------------------------------------------- */
+  ========================================================= */
 
   function parseArtworksJS(text) {
-    /*
-      Finds:
-
-      const ARTWORKS = [
-        ...
-      ];
-
-      and extracts the array.
-
-      JSON.parse works because the existing catalogue uses
-      normal JSON-compatible objects.
-    */
-
-    const match = text.match(
-      /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
-    );
+    const match =
+      text.match(
+        /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
+      );
 
     if (!match) {
       throw new Error(
@@ -314,7 +409,9 @@
     }
 
     try {
-      return JSON.parse(match[1]);
+      return JSON.parse(
+        match[1]
+      );
     } catch (error) {
       throw new Error(
         "artworks.js contains an invalid artwork list."
@@ -322,15 +419,23 @@
     }
   }
 
-  function buildArtworksJS(originalText, artworks) {
+  function buildArtworksJS(
+    originalText,
+    artworks
+  ) {
     const replacement =
       "const ARTWORKS = " +
-      JSON.stringify(artworks, null, 2) +
+      JSON.stringify(
+        artworks,
+        null,
+        2
+      ) +
       ";";
 
-    const match = originalText.match(
-      /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
-    );
+    const match =
+      originalText.match(
+        /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
+      );
 
     if (!match) {
       throw new Error(
@@ -345,9 +450,9 @@
   }
 
 
-  /* ---------------------------------------------------------
-     LOAD
-  --------------------------------------------------------- */
+  /* =========================================================
+     LOAD CATALOGUE
+  ========================================================= */
 
   async function loadArtworks() {
     if (!haveSettings()) {
@@ -369,7 +474,8 @@
     );
 
     try {
-      const file = await ghGet(DATA_PATH);
+      const file =
+        await ghGet(DATA_PATH);
 
       if (!file) {
         throw new Error(
@@ -377,10 +483,15 @@
         );
       }
 
-      fileSha = file.sha;
-      fileText = decodeBase64(file.content);
+      const fileText =
+        decodeBase64(
+          file.content
+        );
 
-      ARTWORKS = parseArtworksJS(fileText);
+      ARTWORKS =
+        parseArtworksJS(
+          fileText
+        );
 
       clearStatus();
 
@@ -391,19 +502,29 @@
 
       setStatus(
         error.message ||
-        "Couldn't load the catalogue.",
+          "Couldn't load the catalogue.",
         "error"
       );
     }
   }
 
 
-  /* ---------------------------------------------------------
-     SAVE ARTWORKS.JS
-  --------------------------------------------------------- */
+  /* =========================================================
+     SAVE CATALOGUE
+  ========================================================= */
 
-  async function commitArtworks(message) {
-    const latest = await ghGet(DATA_PATH);
+  async function commitArtworks(
+    message
+  ) {
+    /*
+      Re-fetch the file immediately before
+      saving so we always use the newest SHA.
+    */
+
+    const latest =
+      await ghGet(
+        DATA_PATH
+      );
 
     if (!latest) {
       throw new Error(
@@ -411,44 +532,65 @@
       );
     }
 
-    const latestText = decodeBase64(latest.content);
+    const latestText =
+      decodeBase64(
+        latest.content
+      );
 
-    const newText = buildArtworksJS(
-      latestText,
-      ARTWORKS
-    );
+    const newText =
+      buildArtworksJS(
+        latestText,
+        ARTWORKS
+      );
 
-    const encoded = encodeBase64(newText);
+    const encoded =
+      encodeBase64(
+        newText
+      );
 
-    const result = await ghPut(
+    await ghPut(
       DATA_PATH,
       encoded,
       message,
       latest.sha
     );
-
-    fileSha = result.content.sha;
-    fileText = newText;
   }
 
 
-  /* ---------------------------------------------------------
-     HTML ESCAPING
-  --------------------------------------------------------- */
+  /* =========================================================
+     HTML ESCAPE
+  ========================================================= */
 
   function esc(value) {
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+    return String(
+      value ?? ""
+    )
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
   }
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      RENDER LIST
-  --------------------------------------------------------- */
+  ========================================================= */
 
   function renderList() {
     list.innerHTML = "";
@@ -462,25 +604,43 @@
       return;
     }
 
-    ARTWORKS.forEach(function (work, index) {
-      list.appendChild(
-        buildItem(work, index)
-      );
-    });
+    ARTWORKS.forEach(
+      function (work, index) {
+        list.appendChild(
+          buildItem(
+            work,
+            index
+          )
+        );
+      }
+    );
   }
 
-  function buildItem(work, index) {
-    const item = document.createElement("div");
+  function buildItem(
+    work,
+    index
+  ) {
+    const item =
+      document.createElement(
+        "div"
+      );
 
-    item.className = "admin-item";
+    item.className =
+      "admin-item";
 
-    const row = document.createElement("button");
+    const row =
+      document.createElement(
+        "button"
+      );
 
     row.type = "button";
-    row.className = "admin-item-row";
+
+    row.className =
+      "admin-item-row";
 
     const status =
-      work.status || "available";
+      work.status ||
+      "available";
 
     row.innerHTML = `
       <img
@@ -488,20 +648,30 @@
         alt=""
       >
 
-      <span class="admin-item-dot ${esc(status)}"></span>
+      <span
+        class="admin-item-dot ${esc(status)}"
+      ></span>
 
       <span class="admin-item-info">
+
         <span class="title">
-          ${esc(work.title || "Untitled")}
+          ${esc(
+            work.title ||
+              "Untitled"
+          )}
         </span>
 
         <span class="sub">
           ${esc(
-            [work.year, work.collection]
+            [
+              work.year,
+              work.collection
+            ]
               .filter(Boolean)
               .join(" · ")
           )}
         </span>
+
       </span>
 
       <span class="admin-item-chevron">
@@ -509,32 +679,43 @@
       </span>
     `;
 
-    row.addEventListener("click", function () {
-      item.classList.toggle("open");
-    });
+    row.addEventListener(
+      "click",
+      function () {
+        item.classList.toggle(
+          "open"
+        );
+      }
+    );
 
     item.appendChild(row);
 
     item.appendChild(
-      buildEditForm(work, index)
+      buildEditForm(
+        work,
+        index
+      )
     );
-/* iPad/iOS keyboard support for dynamically-created fields */
 
-form.querySelectorAll("input, select").forEach(function (input) {
-  enableIOSInputFocus(input);
-});
     return item;
   }
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      EDIT FORM
-  --------------------------------------------------------- */
+  ========================================================= */
 
-  function buildEditForm(work, index) {
-    const form = document.createElement("div");
+  function buildEditForm(
+    work,
+    index
+  ) {
+    const form =
+      document.createElement(
+        "div"
+      );
 
-    form.className = "admin-edit";
+    form.className =
+      "admin-edit";
 
     form.innerHTML = `
       <img
@@ -544,7 +725,10 @@ form.querySelectorAll("input, select").forEach(function (input) {
       >
 
       <label class="field full">
-        <span>Artwork image</span>
+
+        <span>
+          Artwork image
+        </span>
 
         <input
           type="file"
@@ -555,54 +739,97 @@ form.querySelectorAll("input, select").forEach(function (input) {
         <input
           type="text"
           class="f-image"
-          value="${esc(work.image || "")}"
+          value="${esc(
+            work.image || ""
+          )}"
           placeholder="images/work-01.png"
         >
+
       </label>
 
       <label class="field">
-        <span>Title</span>
+
+        <span>
+          Title
+        </span>
 
         <input
           type="text"
           class="f-title"
-          value="${esc(work.title || "")}"
+          value="${esc(
+            work.title || ""
+          )}"
         >
+
       </label>
 
       <label class="field">
-        <span>Year</span>
+
+        <span>
+          Year
+        </span>
 
         <input
           type="number"
           class="f-year"
           value="${work.year || ""}"
         >
+
       </label>
 
       <label class="field">
-        <span>Status</span>
+
+        <span>
+          Status
+        </span>
 
         <select class="f-status">
+
           <option
             value="available"
-            ${work.status === "available" ? "selected" : ""}
-          >Available</option>
+            ${
+              work.status ===
+              "available"
+                ? "selected"
+                : ""
+            }
+          >
+            Available
+          </option>
 
           <option
             value="sold"
-            ${work.status === "sold" ? "selected" : ""}
-          >Sold</option>
+            ${
+              work.status ===
+              "sold"
+                ? "selected"
+                : ""
+            }
+          >
+            Sold
+          </option>
 
           <option
             value="na"
-            ${work.status === "na" ? "selected" : ""}
-          >Not for sale</option>
+            ${
+              work.status ===
+              "na"
+                ? "selected"
+                : ""
+            }
+          >
+            Not for sale
+          </option>
+
         </select>
+
       </label>
 
       <label class="field">
-        <span>Price (AUD)</span>
+
+        <span>
+          Price (AUD)
+        </span>
 
         <input
           type="number"
@@ -611,31 +838,45 @@ form.querySelectorAll("input, select").forEach(function (input) {
           class="f-price"
           value="${work.price || 0}"
         >
+
       </label>
 
       <label class="field full">
-        <span>Collection</span>
+
+        <span>
+          Collection
+        </span>
 
         <input
           type="text"
           class="f-collection"
-          value="${esc(work.collection || "")}"
+          value="${esc(
+            work.collection || ""
+          )}"
           placeholder="Leave blank for standalone"
         >
+
       </label>
 
       <label class="field full">
-        <span>Size</span>
+
+        <span>
+          Size
+        </span>
 
         <input
           type="text"
           class="f-size"
-          value="${esc(work.size || "")}"
+          value="${esc(
+            work.size || ""
+          )}"
           placeholder="60 × 90 cm"
         >
+
       </label>
 
       <div class="admin-edit-actions">
+
         <div class="left">
 
           <button
@@ -653,14 +894,22 @@ form.querySelectorAll("input, select").forEach(function (input) {
           </button>
 
         </div>
+
       </div>
     `;
 
-    const $ = function (selector) {
-      return form.querySelector(selector);
-    };
+    function $(
+      selector
+    ) {
+      return form.querySelector(
+        selector
+      );
+    }
 
-    const preview = $(".admin-edit-preview");
+    const preview =
+      $(
+        ".admin-edit-preview"
+      );
 
 
     /* -------------------------------------------------------
@@ -671,52 +920,72 @@ form.querySelectorAll("input, select").forEach(function (input) {
       "click",
       async function () {
 
-        const current = ARTWORKS[index];
+        const current =
+          ARTWORKS[index];
 
         current.title =
-          $(".f-title").value.trim();
+          $(".f-title")
+            .value
+            .trim();
 
         current.year =
-          Number($(".f-year").value) || 0;
+          Number(
+            $(".f-year").value
+          ) || 0;
 
         current.status =
           $(".f-status").value;
 
         current.price =
-          Number($(".f-price").value) || 0;
+          Number(
+            $(".f-price").value
+          ) || 0;
 
         current.collection =
-          $(".f-collection").value.trim();
+          $(".f-collection")
+            .value
+            .trim();
 
         current.size =
-          $(".f-size").value.trim();
+          $(".f-size")
+            .value
+            .trim();
 
         current.image =
-          $(".f-image").value.trim();
+          $(".f-image")
+            .value
+            .trim();
 
 
-        await withBusy(async function () {
+        await withBusy(
+          async function () {
 
-          setStatus(
-            'Saving "' +
-            (current.title || "Untitled") +
-            '"…',
-            "info"
-          );
+            setStatus(
+              'Saving "' +
+                (
+                  current.title ||
+                  "Untitled"
+                ) +
+                '"…',
+              "info"
+            );
 
-          await commitArtworks(
-            "Update " +
-            (current.title || "artwork")
-          );
+            await commitArtworks(
+              "Update " +
+                (
+                  current.title ||
+                  "artwork"
+                )
+            );
 
-          setStatus(
-            "Saved to GitHub.",
-            "success"
-          );
+            setStatus(
+              "Saved to GitHub.",
+              "success"
+            );
 
-          renderList();
-
-        });
+            renderList();
+          }
+        );
       }
     );
 
@@ -729,39 +998,52 @@ form.querySelectorAll("input, select").forEach(function (input) {
       "click",
       async function () {
 
-        const current = ARTWORKS[index];
+        const current =
+          ARTWORKS[index];
 
-        const confirmed = confirm(
-          'Delete "' +
-          (current.title || "Untitled") +
-          '"?\n\nThis will permanently remove it from the catalogue.'
-        );
+        const confirmed =
+          confirm(
+            'Delete "' +
+              (
+                current.title ||
+                "Untitled"
+              ) +
+              '"?\n\nThis will permanently remove it from the catalogue.'
+          );
 
         if (!confirmed) {
           return;
         }
 
-        await withBusy(async function () {
+        await withBusy(
+          async function () {
 
-          setStatus(
-            "Deleting…",
-            "info"
-          );
+            setStatus(
+              "Deleting…",
+              "info"
+            );
 
-          ARTWORKS.splice(index, 1);
+            ARTWORKS.splice(
+              index,
+              1
+            );
 
-          await commitArtworks(
-            "Remove " +
-            (current.title || "artwork")
-          );
+            await commitArtworks(
+              "Remove " +
+                (
+                  current.title ||
+                  "artwork"
+                )
+            );
 
-          setStatus(
-            "Deleted.",
-            "success"
-          );
+            setStatus(
+              "Deleted.",
+              "success"
+            );
 
-          renderList();
-        });
+            renderList();
+          }
+        );
       }
     );
 
@@ -770,53 +1052,77 @@ form.querySelectorAll("input, select").forEach(function (input) {
        IMAGE UPLOAD
     ------------------------------------------------------- */
 
-    $(".f-image-upload").addEventListener(
-      "change",
-      async function (event) {
+    $(".f-image-upload")
+      .addEventListener(
+        "change",
+        async function (
+          event
+        ) {
 
-        const file =
-          event.target.files[0];
+          const file =
+            event.target
+              .files[0];
 
-        if (!file) {
-          return;
+          if (!file) {
+            return;
+          }
+
+          await withBusy(
+            async function () {
+
+              setStatus(
+                "Uploading image…",
+                "info"
+              );
+
+              const path =
+                await uploadBinaryFile(
+                  file,
+                  "images",
+                  index
+                );
+
+              $(".f-image")
+                .value = path;
+
+              preview.src =
+                path;
+
+              setStatus(
+                "Image uploaded. Save changes to update the catalogue.",
+                "success"
+              );
+            }
+          );
         }
+      );
 
-        await withBusy(async function () {
 
-          setStatus(
-            "Uploading image…",
-            "info"
+    /* -------------------------------------------------------
+       iPAD / iOS KEYBOARD
+       Apply to dynamically-created fields.
+    ------------------------------------------------------- */
+
+    form
+      .querySelectorAll(
+        "input, select"
+      )
+      .forEach(
+        function (input) {
+          enableIOSInputFocus(
+            input
           );
-
-          const path =
-            await uploadBinaryFile(
-              file,
-              "images",
-              index
-            );
-
-          $(".f-image").value =
-            path;
-
-          preview.src =
-            path;
-
-          setStatus(
-            "Image uploaded. Save changes to update the catalogue.",
-            "success"
-          );
-        });
-      }
-    );
+        }
+      );
 
 
     return form;
   }
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      IMAGE UPLOAD
-  --------------------------------------------------------- */
+  ========================================================= */
 
   async function uploadBinaryFile(
     file,
@@ -840,12 +1146,20 @@ form.querySelectorAll("input, select").forEach(function (input) {
         : "";
 
     if (!filename) {
+
       filename =
         "work-" +
-        String(index + 1).padStart(2, "0") +
+        String(
+          index + 1
+        ).padStart(
+          2,
+          "0"
+        ) +
         "." +
         extension;
+
     } else {
+
       filename =
         filename.replace(
           /\.[^.]+$/,
@@ -871,20 +1185,22 @@ form.querySelectorAll("input, select").forEach(function (input) {
       path,
       encoded,
       "Upload " + path,
-      existing ? existing.sha : undefined
+      existing
+        ? existing.sha
+        : undefined
     );
 
     return path;
   }
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      ADD WORK
-  --------------------------------------------------------- */
+  ========================================================= */
 
   addBtn.addEventListener(
     "click",
-    async function () {
+    function () {
 
       if (!haveSettings()) {
 
@@ -900,7 +1216,9 @@ form.querySelectorAll("input, select").forEach(function (input) {
 
       const newWork = {
         title: "Untitled",
-        year: new Date().getFullYear(),
+        year:
+          new Date()
+            .getFullYear(),
         price: 0,
         status: "available",
         collection: "",
@@ -908,7 +1226,9 @@ form.querySelectorAll("input, select").forEach(function (input) {
         image: ""
       };
 
-      ARTWORKS.unshift(newWork);
+      ARTWORKS.unshift(
+        newWork
+      );
 
       renderList();
 
@@ -919,7 +1239,9 @@ form.querySelectorAll("input, select").forEach(function (input) {
 
       if (first) {
 
-        first.classList.add("open");
+        first.classList.add(
+          "open"
+        );
 
         first.scrollIntoView({
           behavior: "smooth",
@@ -935,9 +1257,9 @@ form.querySelectorAll("input, select").forEach(function (input) {
   );
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      REFRESH
-  --------------------------------------------------------- */
+  ========================================================= */
 
   refreshBtn.addEventListener(
     "click",
@@ -945,11 +1267,13 @@ form.querySelectorAll("input, select").forEach(function (input) {
   );
 
 
-  /* ---------------------------------------------------------
-     BUSY
-  --------------------------------------------------------- */
+  /* =========================================================
+     BUSY STATE
+  ========================================================= */
 
-  async function withBusy(fn) {
+  async function withBusy(
+    fn
+  ) {
 
     if (busy) {
       return;
@@ -970,7 +1294,7 @@ form.querySelectorAll("input, select").forEach(function (input) {
 
       setStatus(
         error.message ||
-        "Something went wrong.",
+          "Something went wrong.",
         "error"
       );
 
@@ -984,39 +1308,12 @@ form.querySelectorAll("input, select").forEach(function (input) {
   }
 
 
-  /* ---------------------------------------------------------
-     INIT
-  --------------------------------------------------------- */
+  /* =========================================================
+     START
+  ========================================================= */
 
   fillSettingsForm();
 
   loadArtworks();
 
 })();
-const refreshBtn = document.getElementById("refresh");
-/* =========================================================
-   iOS / iPAD INPUT FOCUS
-========================================================= */
-
-function enableIOSInputFocus(input) {
-  if (!input) return;
-
-  input.addEventListener(
-    "touchend",
-    function (event) {
-      event.stopPropagation();
-
-      setTimeout(function () {
-        input.focus();
-      }, 0);
-    },
-    { passive: true }
-  );
-}
-
-[
-  setOwner,
-  setRepo,
-  setBranch,
-  setToken
-].forEach(enableIOSInputFocus);
