@@ -1,10 +1,6 @@
 (function () {
   "use strict";
 
-  /* =========================================================
-     CONFIG
-  ========================================================= */
-
   const DATA_PATH = "artworks.js";
 
   const settingsToggle = document.getElementById("settings-toggle");
@@ -20,40 +16,11 @@
 
   const statusBar = document.getElementById("status-bar");
   const list = document.getElementById("admin-list");
-
   const addBtn = document.getElementById("add-work");
   const refreshBtn = document.getElementById("refresh");
 
   let ARTWORKS = [];
   let busy = false;
-
-
-  /* =========================================================
-     iOS / iPAD INPUT FOCUS
-  ========================================================= */
-
-  function enableIOSInputFocus(input) {
-    if (!input) return;
-
-    input.addEventListener(
-      "touchend",
-      function (event) {
-        event.stopPropagation();
-
-        setTimeout(function () {
-          input.focus();
-        }, 0);
-      },
-      { passive: true }
-    );
-  }
-
-  [
-    setOwner,
-    setRepo,
-    setBranch,
-    setToken
-  ].forEach(enableIOSInputFocus);
 
 
   /* =========================================================
@@ -71,13 +38,7 @@
 
   function haveSettings() {
     const s = getSettings();
-
-    return !!(
-      s.owner &&
-      s.repo &&
-      s.branch &&
-      s.token
-    );
+    return !!(s.owner && s.repo && s.token);
   }
 
   function fillSettingsForm() {
@@ -89,100 +50,50 @@
     setToken.value = s.token;
   }
 
-  function openSettings() {
-    settingsPanel.hidden = false;
+  settingsToggle.addEventListener("click", function (event) {
+    event.preventDefault();
 
-    settingsToggle.setAttribute(
-      "aria-expanded",
-      "true"
-    );
+    settingsPanel.hidden = !settingsPanel.hidden;
 
-    setTimeout(function () {
-      if (!setOwner.value) {
-        setOwner.focus();
-      }
-    }, 100);
-  }
+    if (!settingsPanel.hidden) {
+      setOwner.focus();
+    }
+  });
 
-  function closeSettings() {
+  settingsSave.addEventListener("click", function () {
+    const owner = setOwner.value.trim();
+    const repo = setRepo.value.trim();
+    const branch = setBranch.value.trim() || "main";
+    const token = setToken.value.trim();
+
+    if (!owner || !repo || !token) {
+      setStatus(
+        "Enter the repo owner, repo name and access token.",
+        "error"
+      );
+      return;
+    }
+
+    localStorage.setItem("works_gh_owner", owner);
+    localStorage.setItem("works_gh_repo", repo);
+    localStorage.setItem("works_gh_branch", branch);
+    localStorage.setItem("works_gh_token", token);
+
     settingsPanel.hidden = true;
 
-    settingsToggle.setAttribute(
-      "aria-expanded",
-      "false"
+    loadArtworks();
+  });
+
+  settingsClear.addEventListener("click", function () {
+    localStorage.removeItem("works_gh_token");
+
+    setToken.value = "";
+
+    setStatus(
+      "Token forgotten.",
+      "info"
     );
-  }
-
-  settingsToggle.addEventListener(
-    "click",
-    function () {
-      if (settingsPanel.hidden) {
-        openSettings();
-      } else {
-        closeSettings();
-      }
-    }
-  );
-
-  settingsSave.addEventListener(
-    "click",
-    function () {
-      const owner = setOwner.value.trim();
-      const repo = setRepo.value.trim();
-      const branch =
-        setBranch.value.trim() || "main";
-      const token = setToken.value.trim();
-
-      if (!owner || !repo || !token) {
-        setStatus(
-          "Enter the repo owner, repo name and access token.",
-          "error"
-        );
-
-        return;
-      }
-
-      localStorage.setItem(
-        "works_gh_owner",
-        owner
-      );
-
-      localStorage.setItem(
-        "works_gh_repo",
-        repo
-      );
-
-      localStorage.setItem(
-        "works_gh_branch",
-        branch
-      );
-
-      localStorage.setItem(
-        "works_gh_token",
-        token
-      );
-
-      closeSettings();
-
-      loadArtworks();
-    }
-  );
-
-  settingsClear.addEventListener(
-    "click",
-    function () {
-      localStorage.removeItem(
-        "works_gh_token"
-      );
-
-      setToken.value = "";
-
-      setStatus(
-        "Token forgotten.",
-        "info"
-      );
-    }
-  );
+  });
 
 
   /* =========================================================
@@ -191,10 +102,7 @@
 
   function setStatus(message, kind) {
     statusBar.textContent = message;
-
-    statusBar.className =
-      "status-bar " + (kind || "info");
-
+    statusBar.className = "status-bar " + (kind || "info");
     statusBar.hidden = false;
   }
 
@@ -223,32 +131,19 @@
     const s = getSettings();
 
     return {
-      Authorization:
-        "Bearer " + s.token,
-
-      Accept:
-        "application/vnd.github+json"
+      Authorization: "Bearer " + s.token,
+      Accept: "application/vnd.github+json"
     };
   }
 
   function encodeBase64(text) {
-    const bytes =
-      new TextEncoder().encode(text);
+    const bytes = new TextEncoder().encode(text);
 
     let binary = "";
 
-    const chunkSize = 0x8000;
-
-    for (
-      let i = 0;
-      i < bytes.length;
-      i += chunkSize
-    ) {
+    for (let i = 0; i < bytes.length; i += 0x8000) {
       binary += String.fromCharCode(
-        ...bytes.subarray(
-          i,
-          i + chunkSize
-        )
+        ...bytes.subarray(i, i + 0x8000)
       );
     }
 
@@ -256,23 +151,13 @@
   }
 
   function encodeBinary(buffer) {
-    const bytes =
-      new Uint8Array(buffer);
+    const bytes = new Uint8Array(buffer);
 
     let binary = "";
 
-    const chunkSize = 0x8000;
-
-    for (
-      let i = 0;
-      i < bytes.length;
-      i += chunkSize
-    ) {
+    for (let i = 0; i < bytes.length; i += 0x8000) {
       binary += String.fromCharCode(
-        ...bytes.subarray(
-          i,
-          i + chunkSize
-        )
+        ...bytes.subarray(i, i + 0x8000)
       );
     }
 
@@ -280,61 +165,43 @@
   }
 
   function decodeBase64(base64) {
-    const clean =
-      base64.replace(/\s/g, "");
+    const clean = base64.replace(/\s/g, "");
+    const binary = atob(clean);
 
-    const binary =
-      atob(clean);
+    const bytes = new Uint8Array(binary.length);
 
-    const bytes =
-      new Uint8Array(
-        binary.length
-      );
-
-    for (
-      let i = 0;
-      i < binary.length;
-      i++
-    ) {
-      bytes[i] =
-        binary.charCodeAt(i);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
     }
 
-    return new TextDecoder().decode(
-      bytes
-    );
+    return new TextDecoder().decode(bytes);
   }
 
   async function ghGet(path) {
     const s = getSettings();
 
-    const response =
-      await fetch(
-        apiBase() +
-          path +
-          "?ref=" +
-          encodeURIComponent(
-            s.branch
-          ),
-        {
-          headers:
-            authHeaders()
-        }
-      );
+    const response = await fetch(
+      apiBase() +
+      path +
+      "?ref=" +
+      encodeURIComponent(s.branch),
+      {
+        headers: authHeaders()
+      }
+    );
 
     if (response.status === 404) {
       return null;
     }
 
     if (!response.ok) {
-      const text =
-        await response.text();
+      const text = await response.text();
 
       throw new Error(
         "GitHub GET failed: " +
-          response.status +
-          " " +
-          text
+        response.status +
+        " " +
+        text
       );
     }
 
@@ -359,32 +226,28 @@
       body.sha = existingSha;
     }
 
-    const response =
-      await fetch(
-        apiBase() + path,
-        {
-          method: "PUT",
+    const response = await fetch(
+      apiBase() + path,
+      {
+        method: "PUT",
 
-          headers: {
-            ...authHeaders(),
-            "Content-Type":
-              "application/json"
-          },
+        headers: {
+          ...authHeaders(),
+          "Content-Type": "application/json"
+        },
 
-          body:
-            JSON.stringify(body)
-        }
-      );
+        body: JSON.stringify(body)
+      }
+    );
 
     if (!response.ok) {
-      const text =
-        await response.text();
+      const text = await response.text();
 
       throw new Error(
         "GitHub save failed: " +
-          response.status +
-          " " +
-          text
+        response.status +
+        " " +
+        text
       );
     }
 
@@ -393,53 +256,42 @@
 
 
   /* =========================================================
-     ARTWORKS.JS PARSING
+     ARTWORKS.JS
   ========================================================= */
 
   function parseArtworksJS(text) {
-    const match =
-      text.match(
-        /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
-      );
+    const match = text.match(
+      /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
+    );
 
     if (!match) {
       throw new Error(
-        "Couldn't find the ARTWORKS array in artworks.js."
+        "Couldn't find ARTWORKS in artworks.js."
       );
     }
 
     try {
-      return JSON.parse(
-        match[1]
-      );
+      return JSON.parse(match[1]);
     } catch (error) {
       throw new Error(
-        "artworks.js contains an invalid artwork list."
+        "artworks.js contains invalid artwork data."
       );
     }
   }
 
-  function buildArtworksJS(
-    originalText,
-    artworks
-  ) {
+  function buildArtworksJS(originalText, artworks) {
     const replacement =
       "const ARTWORKS = " +
-      JSON.stringify(
-        artworks,
-        null,
-        2
-      ) +
+      JSON.stringify(artworks, null, 2) +
       ";";
 
-    const match =
-      originalText.match(
-        /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
-      );
+    const match = originalText.match(
+      /const\s+ARTWORKS\s*=\s*(\[[\s\S]*?\])\s*;/
+    );
 
     if (!match) {
       throw new Error(
-        "Couldn't find the ARTWORKS array in artworks.js."
+        "Couldn't find ARTWORKS in artworks.js."
       );
     }
 
@@ -451,7 +303,7 @@
 
 
   /* =========================================================
-     LOAD CATALOGUE
+     LOAD
   ========================================================= */
 
   async function loadArtworks() {
@@ -461,8 +313,7 @@
         "info"
       );
 
-      openSettings();
-
+      settingsPanel.hidden = false;
       list.innerHTML = "";
 
       return;
@@ -474,8 +325,7 @@
     );
 
     try {
-      const file =
-        await ghGet(DATA_PATH);
+      const file = await ghGet(DATA_PATH);
 
       if (!file) {
         throw new Error(
@@ -483,15 +333,9 @@
         );
       }
 
-      const fileText =
-        decodeBase64(
-          file.content
-        );
+      const text = decodeBase64(file.content);
 
-      ARTWORKS =
-        parseArtworksJS(
-          fileText
-        );
+      ARTWORKS = parseArtworksJS(text);
 
       clearStatus();
 
@@ -502,7 +346,7 @@
 
       setStatus(
         error.message ||
-          "Couldn't load the catalogue.",
+        "Couldn't load the catalogue.",
         "error"
       );
     }
@@ -510,32 +354,20 @@
 
 
   /* =========================================================
-     SAVE CATALOGUE
+     SAVE
   ========================================================= */
 
-  async function commitArtworks(
-    message
-  ) {
-    /*
-      Re-fetch the file immediately before
-      saving so we always use the newest SHA.
-    */
-
-    const latest =
-      await ghGet(
-        DATA_PATH
-      );
+  async function commitArtworks(message) {
+    const latest = await ghGet(DATA_PATH);
 
     if (!latest) {
       throw new Error(
-        "artworks.js no longer exists in the repository."
+        "artworks.js no longer exists."
       );
     }
 
     const latestText =
-      decodeBase64(
-        latest.content
-      );
+      decodeBase64(latest.content);
 
     const newText =
       buildArtworksJS(
@@ -543,14 +375,9 @@
         ARTWORKS
       );
 
-    const encoded =
-      encodeBase64(
-        newText
-      );
-
     await ghPut(
       DATA_PATH,
-      encoded,
+      encodeBase64(newText),
       message,
       latest.sha
     );
@@ -562,34 +389,17 @@
   ========================================================= */
 
   function esc(value) {
-    return String(
-      value ?? ""
-    )
-      .replace(
-        /&/g,
-        "&amp;"
-      )
-      .replace(
-        /</g,
-        "&lt;"
-      )
-      .replace(
-        />/g,
-        "&gt;"
-      )
-      .replace(
-        /"/g,
-        "&quot;"
-      )
-      .replace(
-        /'/g,
-        "&#039;"
-      );
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
 
   /* =========================================================
-     RENDER LIST
+     LIST
   ========================================================= */
 
   function renderList() {
@@ -604,43 +414,24 @@
       return;
     }
 
-    ARTWORKS.forEach(
-      function (work, index) {
-        list.appendChild(
-          buildItem(
-            work,
-            index
-          )
-        );
-      }
-    );
+    ARTWORKS.forEach(function (work, index) {
+      list.appendChild(
+        buildItem(work, index)
+      );
+    });
   }
 
-  function buildItem(
-    work,
-    index
-  ) {
+  function buildItem(work, index) {
     const item =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
-    item.className =
-      "admin-item";
+    item.className = "admin-item";
 
     const row =
-      document.createElement(
-        "button"
-      );
+      document.createElement("button");
 
     row.type = "button";
-
-    row.className =
-      "admin-item-row";
-
-    const status =
-      work.status ||
-      "available";
+    row.className = "admin-item-row";
 
     row.innerHTML = `
       <img
@@ -648,17 +439,13 @@
         alt=""
       >
 
-      <span
-        class="admin-item-dot ${esc(status)}"
-      ></span>
+      <span class="admin-item-dot ${esc(
+        work.status || "available"
+      )}"></span>
 
       <span class="admin-item-info">
-
         <span class="title">
-          ${esc(
-            work.title ||
-              "Untitled"
-          )}
+          ${esc(work.title || "Untitled")}
         </span>
 
         <span class="sub">
@@ -671,30 +458,19 @@
               .join(" · ")
           )}
         </span>
-
       </span>
 
-      <span class="admin-item-chevron">
-        ›
-      </span>
+      <span class="admin-item-chevron">›</span>
     `;
 
-    row.addEventListener(
-      "click",
-      function () {
-        item.classList.toggle(
-          "open"
-        );
-      }
-    );
+    row.addEventListener("click", function () {
+      item.classList.toggle("open");
+    });
 
     item.appendChild(row);
 
     item.appendChild(
-      buildEditForm(
-        work,
-        index
-      )
+      buildEditForm(work, index)
     );
 
     return item;
@@ -705,17 +481,11 @@
      EDIT FORM
   ========================================================= */
 
-  function buildEditForm(
-    work,
-    index
-  ) {
+  function buildEditForm(work, index) {
     const form =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
-    form.className =
-      "admin-edit";
+    form.className = "admin-edit";
 
     form.innerHTML = `
       <img
@@ -725,10 +495,7 @@
       >
 
       <label class="field full">
-
-        <span>
-          Artwork image
-        </span>
+        <span>Artwork image</span>
 
         <input
           type="file"
@@ -739,97 +506,63 @@
         <input
           type="text"
           class="f-image"
-          value="${esc(
-            work.image || ""
-          )}"
+          value="${esc(work.image || "")}"
           placeholder="images/work-01.png"
         >
-
       </label>
 
       <label class="field">
-
-        <span>
-          Title
-        </span>
+        <span>Title</span>
 
         <input
           type="text"
           class="f-title"
-          value="${esc(
-            work.title || ""
-          )}"
+          value="${esc(work.title || "")}"
         >
-
       </label>
 
       <label class="field">
-
-        <span>
-          Year
-        </span>
+        <span>Year</span>
 
         <input
           type="number"
           class="f-year"
           value="${work.year || ""}"
         >
-
       </label>
 
       <label class="field">
-
-        <span>
-          Status
-        </span>
+        <span>Status</span>
 
         <select class="f-status">
-
-          <option
-            value="available"
-            ${
-              work.status ===
-              "available"
-                ? "selected"
-                : ""
-            }
-          >
+          <option value="available" ${
+            work.status === "available"
+              ? "selected"
+              : ""
+          }>
             Available
           </option>
 
-          <option
-            value="sold"
-            ${
-              work.status ===
-              "sold"
-                ? "selected"
-                : ""
-            }
-          >
+          <option value="sold" ${
+            work.status === "sold"
+              ? "selected"
+              : ""
+          }>
             Sold
           </option>
 
-          <option
-            value="na"
-            ${
-              work.status ===
-              "na"
-                ? "selected"
-                : ""
-            }
-          >
+          <option value="na" ${
+            work.status === "na"
+              ? "selected"
+              : ""
+          }>
             Not for sale
           </option>
-
         </select>
-
       </label>
 
       <label class="field">
-
-        <span>
-          Price (AUD)
-        </span>
+        <span>Price (AUD)</span>
 
         <input
           type="number"
@@ -838,45 +571,31 @@
           class="f-price"
           value="${work.price || 0}"
         >
-
       </label>
 
       <label class="field full">
-
-        <span>
-          Collection
-        </span>
+        <span>Collection</span>
 
         <input
           type="text"
           class="f-collection"
-          value="${esc(
-            work.collection || ""
-          )}"
+          value="${esc(work.collection || "")}"
           placeholder="Leave blank for standalone"
         >
-
       </label>
 
       <label class="field full">
-
-        <span>
-          Size
-        </span>
+        <span>Size</span>
 
         <input
           type="text"
           class="f-size"
-          value="${esc(
-            work.size || ""
-          )}"
+          value="${esc(work.size || "")}"
           placeholder="60 × 90 cm"
         >
-
       </label>
 
       <div class="admin-edit-actions">
-
         <div class="left">
 
           <button
@@ -894,22 +613,20 @@
           </button>
 
         </div>
-
       </div>
     `;
 
-    function $(
-      selector
-    ) {
-      return form.querySelector(
-        selector
-      );
+
+    /* -------------------------------------------------------
+       FIELD HELPERS
+    ------------------------------------------------------- */
+
+    function $(selector) {
+      return form.querySelector(selector);
     }
 
     const preview =
-      $(
-        ".admin-edit-preview"
-      );
+      $(".admin-edit-preview");
 
 
     /* -------------------------------------------------------
@@ -924,9 +641,7 @@
           ARTWORKS[index];
 
         current.title =
-          $(".f-title")
-            .value
-            .trim();
+          $(".f-title").value.trim();
 
         current.year =
           Number(
@@ -943,39 +658,30 @@
 
         current.collection =
           $(".f-collection")
-            .value
-            .trim();
+            .value.trim();
 
         current.size =
           $(".f-size")
-            .value
-            .trim();
+            .value.trim();
 
         current.image =
           $(".f-image")
-            .value
-            .trim();
-
+            .value.trim();
 
         await withBusy(
           async function () {
 
             setStatus(
-              'Saving "' +
-                (
-                  current.title ||
-                  "Untitled"
-                ) +
-                '"…',
+              "Saving…",
               "info"
             );
 
             await commitArtworks(
               "Update " +
-                (
-                  current.title ||
-                  "artwork"
-                )
+              (
+                current.title ||
+                "artwork"
+              )
             );
 
             setStatus(
@@ -1001,17 +707,16 @@
         const current =
           ARTWORKS[index];
 
-        const confirmed =
-          confirm(
+        if (
+          !confirm(
             'Delete "' +
-              (
-                current.title ||
-                "Untitled"
-              ) +
-              '"?\n\nThis will permanently remove it from the catalogue.'
-          );
-
-        if (!confirmed) {
+            (
+              current.title ||
+              "Untitled"
+            ) +
+            '"?'
+          )
+        ) {
           return;
         }
 
@@ -1030,10 +735,10 @@
 
             await commitArtworks(
               "Remove " +
-                (
-                  current.title ||
-                  "artwork"
-                )
+              (
+                current.title ||
+                "artwork"
+              )
             );
 
             setStatus(
@@ -1055,17 +760,12 @@
     $(".f-image-upload")
       .addEventListener(
         "change",
-        async function (
-          event
-        ) {
+        async function (event) {
 
           const file =
-            event.target
-              .files[0];
+            event.target.files[0];
 
-          if (!file) {
-            return;
-          }
+          if (!file) return;
 
           await withBusy(
             async function () {
@@ -1082,14 +782,14 @@
                   index
                 );
 
-              $(".f-image")
-                .value = path;
+              $(".f-image").value =
+                path;
 
               preview.src =
                 path;
 
               setStatus(
-                "Image uploaded. Save changes to update the catalogue.",
+                "Image uploaded. Press Save changes.",
                 "success"
               );
             }
@@ -1098,30 +798,20 @@
       );
 
 
-    /* -------------------------------------------------------
-       iPAD / iOS KEYBOARD
-       Apply to dynamically-created fields.
-    ------------------------------------------------------- */
-
-    form
-      .querySelectorAll(
-        "input, select"
-      )
-      .forEach(
-        function (input) {
-          enableIOSInputFocus(
-            input
-          );
-        }
-      );
-
+    /*
+      IMPORTANT:
+      No programmatic focus.
+      No setTimeout.
+      No touchend focus.
+      Safari gets the native input directly.
+    */
 
     return form;
   }
 
 
   /* =========================================================
-     IMAGE UPLOAD
+     UPLOAD IMAGE
   ========================================================= */
 
   async function uploadBinaryFile(
@@ -1138,39 +828,28 @@
     const artwork =
       ARTWORKS[index];
 
-    let filename =
-      artwork.image
-        ? artwork.image
-            .split("/")
-            .pop()
-        : "";
+    let filename = "";
 
-    if (!filename) {
-
+    if (artwork.image) {
+      filename =
+        artwork.image
+          .split("/")
+          .pop()
+          .replace(
+            /\.[^.]+$/,
+            "." + extension
+          );
+    } else {
       filename =
         "work-" +
-        String(
-          index + 1
-        ).padStart(
-          2,
-          "0"
-        ) +
+        String(index + 1)
+          .padStart(2, "0") +
         "." +
         extension;
-
-    } else {
-
-      filename =
-        filename.replace(
-          /\.[^.]+$/,
-          "." + extension
-        );
     }
 
     const path =
-      folder +
-      "/" +
-      filename;
+      folder + "/" + filename;
 
     const existing =
       await ghGet(path);
@@ -1178,12 +857,9 @@
     const buffer =
       await file.arrayBuffer();
 
-    const encoded =
-      encodeBinary(buffer);
-
     await ghPut(
       path,
-      encoded,
+      encodeBinary(buffer),
       "Upload " + path,
       existing
         ? existing.sha
@@ -1195,7 +871,7 @@
 
 
   /* =========================================================
-     ADD WORK
+     ADD
   ========================================================= */
 
   addBtn.addEventListener(
@@ -1204,7 +880,8 @@
 
       if (!haveSettings()) {
 
-        openSettings();
+        settingsPanel.hidden =
+          false;
 
         setStatus(
           "Connect to GitHub first.",
@@ -1214,7 +891,7 @@
         return;
       }
 
-      const newWork = {
+      ARTWORKS.unshift({
         title: "Untitled",
         year:
           new Date()
@@ -1224,11 +901,7 @@
         collection: "",
         size: "— × — cm",
         image: ""
-      };
-
-      ARTWORKS.unshift(
-        newWork
-      );
+      });
 
       renderList();
 
@@ -1268,16 +941,12 @@
 
 
   /* =========================================================
-     BUSY STATE
+     BUSY
   ========================================================= */
 
-  async function withBusy(
-    fn
-  ) {
+  async function withBusy(fn) {
 
-    if (busy) {
-      return;
-    }
+    if (busy) return;
 
     busy = true;
 
@@ -1285,16 +954,14 @@
     refreshBtn.disabled = true;
 
     try {
-
       await fn();
-
     } catch (error) {
 
       console.error(error);
 
       setStatus(
         error.message ||
-          "Something went wrong.",
+        "Something went wrong.",
         "error"
       );
 
@@ -1309,7 +976,7 @@
 
 
   /* =========================================================
-     START
+     INIT
   ========================================================= */
 
   fillSettingsForm();
