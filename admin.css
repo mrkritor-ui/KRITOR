@@ -1,16 +1,7 @@
-/* =========================================================
-   ADMIN
-========================================================= */
-
 .admin-body {
   padding-bottom: 40px;
   -webkit-text-size-adjust: 100%;
 }
-
-
-/* =========================================================
-   HEADER
-========================================================= */
 
 .admin-header {
   display: flex;
@@ -30,24 +21,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-
   -webkit-appearance: none;
   appearance: none;
+  cursor: pointer;
 }
 
-
-/* =========================================================
-   SETTINGS
-========================================================= */
+/* SETTINGS */
 
 .settings-panel {
   margin: 0 var(--gap-lg) 18px;
   padding: 16px;
-
   border: 1px solid var(--line);
   border-radius: 10px;
-
   background: var(--chip-bg);
 
   display: flex;
@@ -55,15 +40,13 @@
   gap: 10px;
 
   position: relative;
-  z-index: 50;
+  z-index: 999;
 }
 
 .settings-note {
   margin: 0 0 4px;
-
   font-size: 11px;
   line-height: 1.5;
-
   color: var(--muted);
 }
 
@@ -74,10 +57,7 @@
   font-size: 10.5px;
 }
 
-
-/* =========================================================
-   INPUT FIELDS
-========================================================= */
+/* INPUTS */
 
 .field {
   display: flex;
@@ -89,7 +69,7 @@
   letter-spacing: 0.02em;
 
   position: relative;
-  z-index: 2;
+  z-index: 1000;
 }
 
 .field input,
@@ -97,7 +77,7 @@
   display: block;
 
   width: 100%;
-  min-height: 42px;
+  min-height: 44px;
 
   box-sizing: border-box;
 
@@ -113,27 +93,19 @@
 
   padding: 10px 11px;
 
+  opacity: 1;
+
   -webkit-user-select: text;
   user-select: text;
 
   -webkit-touch-callout: default;
 
+  -webkit-appearance: none;
+  appearance: none;
+
   pointer-events: auto;
 
   touch-action: manipulation;
-
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.field input[type="number"] {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.field input[type="file"] {
-  font-size: 13px;
-  min-height: 44px;
 }
 
 .field input:focus,
@@ -142,10 +114,23 @@
   outline-offset: 1px;
 }
 
+/* Make text fields especially reliable in iPadOS standalone mode */
 
-/* =========================================================
-   SETTINGS BUTTONS
-========================================================= */
+input[type="text"],
+input[type="password"],
+input[type="number"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  pointer-events: auto !important;
+}
+
+input[type="file"] {
+  min-height: 44px;
+  font-size: 13px;
+}
+
+/* BUTTONS */
 
 .settings-actions {
   display: flex;
@@ -153,21 +138,13 @@
   margin-top: 4px;
 }
 
-
-/* =========================================================
-   BUTTONS
-========================================================= */
-
 .btn {
   font-family: var(--sans);
   font-size: 11px;
   letter-spacing: 0.04em;
-
   padding: 10px 16px;
-
   border-radius: 100px;
   border: 1px solid var(--line);
-
   background: var(--chip-bg);
   color: var(--ink);
 
@@ -175,7 +152,6 @@
   appearance: none;
 
   cursor: pointer;
-
   touch-action: manipulation;
 }
 
@@ -200,18 +176,12 @@
   opacity: 0.5;
 }
 
-
-/* =========================================================
-   STATUS
-========================================================= */
+/* STATUS */
 
 .status-bar {
   margin: 0 var(--gap-lg) 16px;
-
   padding: 10px 14px;
-
   border-radius: 8px;
-
   font-size: 11.5px;
   letter-spacing: 0.02em;
 }
@@ -231,22 +201,15 @@
   color: var(--sold);
 }
 
-
-/* =========================================================
-   TOOLBAR
-========================================================= */
+/* TOOLBAR */
 
 .admin-toolbar {
   display: flex;
   gap: 8px;
-
   padding: 0 var(--gap-lg) 16px;
 }
 
-
-/* =========================================================
-   LIST
-========================================================= */
+/* LIST */
 
 .admin-main {
   padding-bottom: 20px;
@@ -255,7 +218,6 @@
 .admin-list {
   display: flex;
   flex-direction: column;
-
   padding: 0 var(--gap-lg);
 }
 
@@ -263,25 +225,17 @@
   border-bottom: 1px solid var(--line);
 }
 
-
-/* =========================================================
-   ARTWORK ROW
-========================================================= */
-
 .admin-item-row {
   display: flex;
   align-items: center;
   gap: 12px;
-
   padding: 12px 0;
 
   background: none;
   border: 0;
-
   width: 100%;
 
   text-align: left;
-
   font: inherit;
   color: inherit;
 
@@ -296,13 +250,9 @@
 .admin-item-row img {
   width: 44px;
   height: 44px;
-
   object-fit: cover;
-
   border-radius: 6px;
-
   background: var(--line);
-
   flex: 0 0 auto;
 }
 
@@ -313,31 +263,23 @@
 
 .admin-item-info .title {
   display: block;
-
   font-family: var(--serif);
   font-style: italic;
-
   font-size: 13.5px;
 }
 
 .admin-item-info .sub {
   display: block;
-
   font-size: 10.5px;
-
   color: var(--muted);
-
   margin-top: 2px;
-
   letter-spacing: 0.02em;
 }
 
 .admin-item-dot {
   width: 8px;
   height: 8px;
-
   border-radius: 50%;
-
   flex: 0 0 auto;
 }
 
@@ -356,33 +298,26 @@
 .admin-item-chevron {
   color: var(--muted);
   font-size: 12px;
-
   transition: transform 0.15s ease;
-
   flex: 0 0 auto;
 }
 
-.admin-item.open
-.admin-item-chevron {
+.admin-item.open .admin-item-chevron {
   transform: rotate(90deg);
 }
 
-
-/* =========================================================
-   EDIT FORM
-========================================================= */
+/* EDIT */
 
 .admin-edit {
   display: none;
 
   grid-template-columns: 1fr 1fr;
-
   gap: 10px;
 
   padding: 4px 0 22px;
 
   position: relative;
-  z-index: 10;
+  z-index: 100;
 }
 
 .admin-item.open .admin-edit {
@@ -395,14 +330,10 @@
 
 .admin-edit-preview {
   grid-column: 1 / -1;
-
   width: 100%;
   max-height: 220px;
-
   object-fit: contain;
-
   background: var(--chip-bg);
-
   border-radius: 8px;
 }
 
@@ -411,7 +342,6 @@
 
   display: flex;
   justify-content: space-between;
-
   gap: 8px;
 
   margin-top: 6px;
@@ -422,32 +352,14 @@
   gap: 8px;
 }
 
-.ar-note {
-  grid-column: 1 / -1;
-
-  font-size: 10.5px;
-
-  color: var(--muted);
-
-  line-height: 1.5;
-
-  margin: -2px 0 2px;
-}
-
 .empty-admin {
   padding: 40px 0;
-
   text-align: center;
-
   font-size: 12px;
-
   color: var(--muted);
 }
 
-
-/* =========================================================
-   IPAD / IOS
-========================================================= */
+/* IPAD / STANDALONE */
 
 .settings-panel,
 .settings-panel *,
@@ -456,15 +368,13 @@
 .field,
 .field input,
 .field select {
-  pointer-events: auto;
+  pointer-events: auto !important;
 }
 
 @media (max-width: 600px) {
-
   .field input,
   .field select {
     font-size: 16px;
     min-height: 44px;
   }
-
 }
