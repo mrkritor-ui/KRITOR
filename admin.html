@@ -1,56 +1,120 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>Works — Admin</title>
-<link rel="apple-touch-icon" href="icon.png">
-<meta name="theme-color" content="#faf9f6">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="admin.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+
+  <title>Works — Admin</title>
+
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="theme-color" content="#faf9f6">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="admin.css">
 </head>
+
 <body class="admin-body">
 
 <header class="site-header admin-header">
   <h1>Admin</h1>
-  <button id="settings-toggle" class="settings-toggle" type="button" aria-label="Connection settings">&#9881;</button>
+
+  <button
+    id="settings-toggle"
+    class="settings-toggle"
+    type="button"
+    aria-label="Connection settings"
+    aria-expanded="false"
+  >⚙</button>
 </header>
 
 <section id="settings-panel" class="settings-panel" hidden>
+
   <p class="settings-note">
-    Stored only in this browser. Needs a GitHub personal access token with
-    <code>repo</code> (or fine‑grained "Contents: Read and write") access to your catalog's repo.
+    Stored only in this browser. Your token needs GitHub repository
+    Contents read/write access.
   </p>
+
   <label class="field">
     <span>Repo owner</span>
-    <input id="set-owner" type="text" placeholder="yourname" autocapitalize="off" autocorrect="off">
+    <input
+      id="set-owner"
+      type="text"
+      autocomplete="off"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="yourname"
+    >
   </label>
+
   <label class="field">
     <span>Repo name</span>
-    <input id="set-repo" type="text" placeholder="works" autocapitalize="off" autocorrect="off">
+    <input
+      id="set-repo"
+      type="text"
+      autocomplete="off"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="works"
+    >
   </label>
+
   <label class="field">
     <span>Branch</span>
-    <input id="set-branch" type="text" placeholder="main" autocapitalize="off" autocorrect="off">
+    <input
+      id="set-branch"
+      type="text"
+      value="main"
+      autocomplete="off"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="main"
+    >
   </label>
+
   <label class="field">
     <span>Access token</span>
-    <input id="set-token" type="password" placeholder="ghp_..." autocapitalize="off" autocorrect="off">
+    <input
+      id="set-token"
+      type="password"
+      autocomplete="off"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="github_pat_..."
+    >
   </label>
+
   <div class="settings-actions">
-    <button id="settings-save" class="btn btn-primary" type="button">Save & connect</button>
-    <button id="settings-clear" class="btn btn-ghost" type="button">Forget token</button>
+    <button id="settings-save" class="btn btn-primary" type="button">
+      Save & connect
+    </button>
+
+    <button id="settings-clear" class="btn btn-ghost" type="button">
+      Forget token
+    </button>
   </div>
+
 </section>
 
 <div id="status-bar" class="status-bar" hidden></div>
 
 <main class="admin-main">
+
   <div class="admin-toolbar">
-    <button id="add-work" class="btn btn-primary" type="button">+ Add work</button>
-    <button id="refresh" class="btn btn-ghost" type="button">Refresh</button>
+    <button id="add-work" class="btn btn-primary" type="button">
+      + Add work
+    </button>
+
+    <button id="refresh" class="btn btn-ghost" type="button">
+      Refresh
+    </button>
   </div>
+
   <div id="admin-list" class="admin-list"></div>
+
 </main>
 
 <footer class="site-footer">
@@ -59,5 +123,6 @@
 </footer>
 
 <script src="admin.js"></script>
+
 </body>
 </html>
