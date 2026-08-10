@@ -202,6 +202,17 @@ body {
 .tile .price-row .status-label.sold { color: var(--sold); }
 .tile .price-row .status-label.na { color: var(--na); }
 
+.ar-intro {
+  margin: 0;
+  padding: 4px var(--gap-lg) 18px;
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  max-width: 46ch;
+}
+
+.ar-tile { text-decoration: none; color: inherit; }
+
 /* ---- Empty state ---- */
 .empty {
   grid-column: 1 / -1;
@@ -250,7 +261,7 @@ body {
   object-fit: contain;
   display: block;
   will-change: transform;
-  transform-origin: 0 0;
+  transform-origin: 50% 50%;
 }
 
 .viewer-caption {
@@ -285,6 +296,49 @@ body {
 .viewer-caption .price-row .status-label.available { color: #6fbf8c; }
 .viewer-caption .price-row .status-label.sold { color: #e08064; }
 .viewer-caption .price-row .status-label.na { color: #e0b95f; }
+
+.ar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 9px 18px;
+  border-radius: 100px;
+  border: 1px solid rgba(242,241,236,0.35);
+  background: rgba(255,255,255,0.06);
+  color: #f2f1ec;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.ar-button::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--available);
+  display: inline-block;
+}
+
+.ar-button[hidden] { display: none; }
+
+/* ---- Footer ---- */
+.site-footer {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  padding: 10px var(--gap-lg) calc(28px + env(safe-area-inset-bottom));
+}
+
+.footer-link {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+}
 
 .viewer-close {
   position: absolute;
