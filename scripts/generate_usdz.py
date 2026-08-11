@@ -310,12 +310,15 @@ def create_usdz(artwork):
         ])
 
         mesh.CreateFaceVertexCountsAttr([
-            4
+            3,
+            3
         ])
 
         mesh.CreateFaceVertexIndicesAttr([
             0,
             1,
+            2,
+            0,
             2,
             3
         ])
