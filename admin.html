@@ -1,33 +1,39 @@
 <!doctype html>
+
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  >
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1, viewport-fit=cover"
 
-  <meta
-    name="apple-mobile-web-app-capable"
-    content="yes"
-  >
+>
 
-  <meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="default"
-  >
+<meta
+name="apple-mobile-web-app-capable"
+content="yes"
 
-  <meta
-    name="apple-mobile-web-app-title"
-    content="Works Admin"
-  >
+>
 
-  <meta
-    name="theme-color"
-    content="#faf9f6"
-  >
+<meta
+name="apple-mobile-web-app-status-bar-style"
+content="default"
+
+>
+
+<meta
+name="apple-mobile-web-app-title"
+content="Works Admin"
+
+>
+
+<meta
+name="theme-color"
+content="#faf9f6"
+
+>
 
   <title>Works — Admin</title>
 
@@ -49,123 +55,143 @@
 
 <body class="admin-body">
 
+  <!-- BUILD VERSION -->
+
+  <div
+    id="build-version"
+    style="
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      z-index: 99999;
+      background: #000;
+      color: #fff;
+      padding: 6px 10px;
+      font: 11px Arial, sans-serif;
+    "
+  >
+    BUILD —
+  </div>
+
   <header class="site-header admin-header">
 
-    <h1>Admin</h1>
+```
+<h1>Admin</h1>
 
-    <button
-      id="settings-toggle"
-      class="settings-toggle"
-      type="button"
-      aria-label="Connection settings"
-    >
-      ⚙
-    </button>
+<button
+  id="settings-toggle"
+  class="settings-toggle"
+  type="button"
+  aria-label="Connection settings"
+>
+  ⚙
+</button>
+```
 
   </header>
-
 
   <section
     id="settings-panel"
     class="settings-panel"
   >
 
-    <p class="settings-note">
-      Stored only in this browser. Connect this admin
-      to the GitHub repository containing your catalogue.
-    </p>
+```
+<p class="settings-note">
+  Stored only in this browser. Connect this admin
+  to the GitHub repository containing your catalogue.
+</p>
 
 
-    <label class="field">
-      <span>Repo owner</span>
+<label class="field">
+  <span>Repo owner</span>
 
-      <input
-        id="set-owner"
-        type="text"
-        inputmode="text"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="none"
-        spellcheck="false"
-        enterkeyhint="next"
-        placeholder="yourname"
-      >
-    </label>
-
-
-    <label class="field">
-      <span>Repo name</span>
-
-      <input
-        id="set-repo"
-        type="text"
-        inputmode="text"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="none"
-        spellcheck="false"
-        enterkeyhint="next"
-        placeholder="works"
-      >
-    </label>
+  <input
+    id="set-owner"
+    type="text"
+    inputmode="text"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="none"
+    spellcheck="false"
+    enterkeyhint="next"
+    placeholder="yourname"
+  >
+</label>
 
 
-    <label class="field">
-      <span>Branch</span>
+<label class="field">
+  <span>Repo name</span>
 
-      <input
-        id="set-branch"
-        type="text"
-        inputmode="text"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="none"
-        spellcheck="false"
-        enterkeyhint="next"
-        placeholder="main"
-      >
-    </label>
-
-
-    <label class="field">
-      <span>Access token</span>
-
-      <input
-        id="set-token"
-        type="text"
-        inputmode="text"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="none"
-        spellcheck="false"
-        enterkeyhint="done"
-        placeholder="GitHub token"
-      >
-    </label>
+  <input
+    id="set-repo"
+    type="text"
+    inputmode="text"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="none"
+    spellcheck="false"
+    enterkeyhint="next"
+    placeholder="works"
+  >
+</label>
 
 
-    <div class="settings-actions">
+<label class="field">
+  <span>Branch</span>
 
-      <button
-        id="settings-save"
-        class="btn btn-primary"
-        type="button"
-      >
-        Save & connect
-      </button>
+  <input
+    id="set-branch"
+    type="text"
+    inputmode="text"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="none"
+    spellcheck="false"
+    enterkeyhint="next"
+    placeholder="main"
+  >
+</label>
 
-      <button
-        id="settings-clear"
-        class="btn btn-ghost"
-        type="button"
-      >
-        Forget token
-      </button>
 
-    </div>
+<label class="field">
+  <span>Access token</span>
+
+  <input
+    id="set-token"
+    type="text"
+    inputmode="text"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="none"
+    spellcheck="false"
+    enterkeyhint="done"
+    placeholder="GitHub token"
+  >
+</label>
+
+
+<div class="settings-actions">
+
+  <button
+    id="settings-save"
+    class="btn btn-primary"
+    type="button"
+  >
+    Save & connect
+  </button>
+
+  <button
+    id="settings-clear"
+    class="btn btn-ghost"
+    type="button"
+  >
+    Forget token
+  </button>
+
+</div>
+```
 
   </section>
-
 
   <div
     id="status-bar"
@@ -173,58 +199,69 @@
     hidden
   ></div>
 
-
   <main class="admin-main">
 
-    <div class="admin-toolbar">
+```
+<div class="admin-toolbar">
 
-      <button
-        id="add-work"
-        class="btn btn-primary"
-        type="button"
-      >
-        + Add work
-      </button>
+  <button
+    id="add-work"
+    class="btn btn-primary"
+    type="button"
+  >
+    + Add work
+  </button>
 
-      <button
-        id="refresh"
-        class="btn btn-ghost"
-        type="button"
-      >
-        Refresh
-      </button>
+  <button
+    id="refresh"
+    class="btn btn-ghost"
+    type="button"
+  >
+    Refresh
+  </button>
 
-    </div>
+</div>
 
 
-    <div
-      id="admin-list"
-      class="admin-list"
-    ></div>
+<div
+  id="admin-list"
+  class="admin-list"
+></div>
+```
 
   </main>
 
-
   <footer class="site-footer">
 
-    <a
-      href="index.html"
-      class="footer-link"
-    >
-      View catalog
-    </a>
+```
+<a
+  href="index.html"
+  class="footer-link"
+>
+  View catalog
+</a>
 
-    <a
-      href="ar.html"
-      class="footer-link"
-    >
-      View in AR
-    </a>
+<a
+  href="ar.html"
+  class="footer-link"
+>
+  View in AR
+</a>
+```
 
   </footer>
 
-
   <script src="admin.js"></script>
+
+  <script>
+    fetch("./version.txt?x=" + Date.now())
+      .then(response => response.text())
+      .then(version => {
+        document.getElementById("build-version").textContent =
+          "BUILD " + version.trim();
+      })
+      .catch(() => {});
+  </script>
 
 </body>
 </html>
