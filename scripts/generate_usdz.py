@@ -1,7 +1,6 @@
+import json
 import os
-import re
 import shutil
-import subprocess
 import tempfile
 import zipfile
 
@@ -9,14 +8,19 @@ from pxr import Usd, UsdGeom, UsdShade, Sdf
 
 
 ROOT = os.getcwd()
-ARTWORKS_FILE = os.path.join(ROOT, "artworks.js")
-AR_ROOT = os.path.join(ROOT, "ar")
+
+ARTWORKS_FILE = os.path.join(
+    ROOT,
+    "artworks.js"
+)
+
+AR_ROOT = os.path.join(
+    ROOT,
+    "ar"
+)
 
 
 def read_artworks():
-
-    import json
-    import subprocess
 
     with open(
         ARTWORKS_FILE,
@@ -32,7 +36,6 @@ def read_artworks():
     )
 
     if start == -1:
-
         raise RuntimeError(
             "const ARTWORKS was not found."
         )
@@ -44,7 +47,6 @@ def read_artworks():
     )
 
     if array_start == -1:
-
         raise RuntimeError(
             "ARTWORKS array was not found."
         )
@@ -68,25 +70,18 @@ def read_artworks():
         if in_string:
 
             if escaped:
-
                 escaped = False
 
             elif char == "\\":
-
                 escaped = True
 
             elif char == string_char:
-
                 in_string = False
 
             continue
 
 
-        if char in (
-            '"',
-            "'",
-            "`"
-        ):
+        if char in ('"', "'", "`"):
 
             in_string = True
             string_char = char
@@ -95,7 +90,6 @@ def read_artworks():
 
 
         if char == "[":
-
             depth += 1
 
 
@@ -106,7 +100,6 @@ def read_artworks():
             if depth == 0:
 
                 array_end = i
-
                 break
 
 
@@ -123,64 +116,34 @@ def read_artworks():
     ]
 
 
-    # artworks.js uses JavaScript object syntax.
-    # Convert it through Node by evaluating only
-    # the extracted array.
-
-    js_code = f"""
-const ARTWORKS = {array_text};
-console.log(JSON.stringify(ARTWORKS));
-"""
-
-
-    result = subprocess.run(
-        [
-            "node",
-            "-e",
-            js_code
-        ],
-        capture_output=True,
-        text=True
-    )
-
-
-    if result.returncode != 0:
-
-        raise RuntimeError(
-            "Could not evaluate ARTWORKS data:\\n" +
-            result.stderr
-        )
-
-
-    output = (
-        result.stdout
-        .strip()
-    )
-
-
-    if not output:
-
-        raise RuntimeError(
-            "ARTWORKS evaluation returned no data."
-        )
-
-
     try:
 
-        return json.loads(
-            output
+        artworks = json.loads(
+            array_text
         )
 
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as error:
 
         raise RuntimeError(
-            "ARTWORKS did not return valid JSON."
+            "ARTWORKS is not valid JSON: " +
+            str(error)
         )
 
 
-def create_usdz(
-    artwork
-):
+    if not isinstance(
+        artworks,
+        list
+    ):
+
+        raise RuntimeError(
+            "ARTWORKS is not an array."
+        )
+
+
+    return artworks
+
+
+def create_usdz(artwork):
 
     artwork_id = str(
         artwork.get(
@@ -196,7 +159,6 @@ def create_usdz(
 
 
     if not ar:
-
         return
 
 
@@ -204,7 +166,6 @@ def create_usdz(
         "enabled",
         False
     ):
-
         return
 
 
@@ -276,15 +237,8 @@ def create_usdz(
         return
 
 
-    width_m = (
-        width_cm / 100
-    )
-
-
-    height_m = (
-        height_cm / 100
-    )
-
+    width_m = width_cm / 100.0
+    height_m = height_cm / 100.0
 
     depth_m = 0.02
 
@@ -297,8 +251,7 @@ def create_usdz(
 
     final_usdz = os.path.join(
         AR_ROOT,
-        artwork_id +
-        ".usdz"
+        artwork_id + ".usdz"
     )
 
 
