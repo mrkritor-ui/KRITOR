@@ -46,11 +46,6 @@ def read_artworks():
         start
     )
 
-    if array_start == -1:
-        raise RuntimeError(
-            "ARTWORKS array was not found."
-        )
-
 
     depth = 0
     in_string = False
@@ -92,7 +87,6 @@ def read_artworks():
         if char == "[":
             depth += 1
 
-
         elif char == "]":
 
             depth -= 1
@@ -104,7 +98,6 @@ def read_artworks():
 
 
     if array_end == -1:
-
         raise RuntimeError(
             "Could not find end of ARTWORKS array."
         )
@@ -116,18 +109,9 @@ def read_artworks():
     ]
 
 
-    try:
-
-        artworks = json.loads(
-            array_text
-        )
-
-    except json.JSONDecodeError as error:
-
-        raise RuntimeError(
-            "ARTWORKS is not valid JSON: " +
-            str(error)
-        )
+    artworks = json.loads(
+        array_text
+    )
 
 
     if not isinstance(
@@ -239,7 +223,6 @@ def create_usdz(artwork):
 
     width_m = width_cm / 100.0
     height_m = height_cm / 100.0
-
     depth_m = 0.02
 
 
@@ -347,18 +330,20 @@ def create_usdz(artwork):
         )
 
 
-        texture.CreateOutput(
+        texture_rgb = texture.CreateOutput(
             "rgb",
             Sdf.ValueTypeNames.Float3
         )
 
 
-        shader.CreateInput(
+        diffuse = shader.CreateInput(
             "diffuseColor",
             Sdf.ValueTypeNames.Color3f
-        ).ConnectToSource(
-            texture,
-            "rgb"
+        )
+
+
+        diffuse.ConnectToSource(
+            texture_rgb
         )
 
 
@@ -396,7 +381,6 @@ def create_usdz(artwork):
                 usda_path,
                 "model.usda"
             )
-
 
             archive.write(
                 texture_path,
