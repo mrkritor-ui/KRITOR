@@ -11,12 +11,10 @@ const ARTWORKS = [
 "ar": {
 "enabled": true,
 "file": "ar/work-01.usdz",
-"arImage": "images/ar/work-01.png",
 "width": 60,
 "height": 90
 }
 },
-
 {
 "title": "People",
 "year": 2024,
@@ -25,14 +23,14 @@ const ARTWORKS = [
 "collection": "Studio Series",
 "size": "40 × 50 cm",
 "image": "images/work-02.png",
-"id": "work-02"
+"id": "work-02",
 "ar": {
 "enabled": true,
 "file": "ar/work-02.usdz",
 "width": 40,
 "height": 50
+}
 },
-
 {
 "title": "Untitled",
 "year": 2023,
@@ -43,7 +41,6 @@ const ARTWORKS = [
 "image": "images/work-03.png",
 "id": "work-03"
 },
-
 {
 "title": "Untitled",
 "year": 2023,
@@ -54,7 +51,6 @@ const ARTWORKS = [
 "image": "images/work-04.png",
 "id": "work-04"
 },
-
 {
 "title": "Untitled",
 "year": 2025,
@@ -65,7 +61,6 @@ const ARTWORKS = [
 "image": "images/work-05.png",
 "id": "work-05"
 },
-
 {
 "title": "Untitled",
 "year": 2022,
@@ -76,7 +71,6 @@ const ARTWORKS = [
 "image": "images/work-06.png",
 "id": "work-06"
 },
-
 {
 "title": "Untitled",
 "year": 2025,
