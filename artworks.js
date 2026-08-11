@@ -13,16 +13,24 @@
 // pieces — they'll appear in their own "Standalone" group.
 
 const ARTWORKS = [
+const ARTWORKS = [
   {
     "title": "Untitled",
     "year": 2024,
     "price": 1200,
     "status": "available",
     "collection": "Studio Series",
-    "size": "— × — cm",
+    "size": "60 × 90 cm",
     "image": "images/work-01.png",
-    "id": "work-01"
-  },
+    "id": "work-01",
+    "ar": {
+      "enabled": true,
+      "file": "ar/work-01.usdz",
+      "width": 60,
+      "height": 90
+    }
+  }
+];
   {
     "title": "People",
     "year": 2024,
