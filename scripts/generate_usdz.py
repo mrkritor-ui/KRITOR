@@ -85,11 +85,7 @@ def read_artworks():
 
             continue
 
-        if char in (
-            '"',
-            "'",
-            "`"
-        ):
+        if char in ('"', "'", "`"):
 
             in_string = True
             string_char = char
@@ -137,13 +133,11 @@ def read_artworks():
 
 def find_ar_image(artwork_id):
 
-    extensions = [
+    for extension in (
         ".png",
         ".jpg",
         ".jpeg"
-    ]
-
-    for extension in extensions:
+    ):
 
         path = os.path.join(
             AR_IMAGE_ROOT,
@@ -229,10 +223,6 @@ def create_usdz(artwork):
         image_path
     )
 
-    # ------------------------------------------------------
-    # METRES
-    # ------------------------------------------------------
-
     width_m = (
         width_cm / 100.0
     )
@@ -250,10 +240,6 @@ def create_usdz(artwork):
         AR_ROOT,
         artwork_id + ".usdz"
     )
-
-    # ------------------------------------------------------
-    # TEMP DIRECTORY
-    # ------------------------------------------------------
 
     with tempfile.TemporaryDirectory() as temp:
 
@@ -276,9 +262,9 @@ def create_usdz(artwork):
             texture_path
         )
 
-        # --------------------------------------------------
+        # ==================================================
         # USD STAGE
-        # --------------------------------------------------
+        # ==================================================
 
         stage = Usd.Stage.CreateNew(
             usda_path
@@ -294,9 +280,9 @@ def create_usdz(artwork):
             "Y"
         )
 
-        # --------------------------------------------------
+        # ==================================================
         # ROOT
-        # --------------------------------------------------
+        # ==================================================
 
         root = UsdGeom.Xform.Define(
             stage,
@@ -307,9 +293,9 @@ def create_usdz(artwork):
             root.GetPrim()
         )
 
-        # --------------------------------------------------
-        # RECTANGLE
-        # --------------------------------------------------
+        # ==================================================
+        # RECTANGULAR ARTWORK
+        # ==================================================
 
         mesh = UsdGeom.Mesh.Define(
             stage,
@@ -317,26 +303,10 @@ def create_usdz(artwork):
         )
 
         mesh.CreatePointsAttr([
-            (
-                -width_m / 2,
-                -height_m / 2,
-                0
-            ),
-            (
-                 width_m / 2,
-                -height_m / 2,
-                0
-            ),
-            (
-                 width_m / 2,
-                 height_m / 2,
-                0
-            ),
-            (
-                -width_m / 2,
-                 height_m / 2,
-                0
-            )
+            (-width_m / 2, -height_m / 2, 0),
+            ( width_m / 2, -height_m / 2, 0),
+            ( width_m / 2,  height_m / 2, 0),
+            (-width_m / 2,  height_m / 2, 0)
         ])
 
         mesh.CreateFaceVertexCountsAttr([
@@ -350,10 +320,6 @@ def create_usdz(artwork):
             3
         ])
 
-        # --------------------------------------------------
-        # NORMAL
-        # --------------------------------------------------
-
         mesh.CreateNormalsAttr([
             (0, 0, 1)
         ])
@@ -362,17 +328,18 @@ def create_usdz(artwork):
             UsdGeom.Tokens.constant
         )
 
-        # --------------------------------------------------
-        # UV
-        # --------------------------------------------------
+        # ==================================================
+        # UV PRIMVAR
+        # ==================================================
 
-        uv = (
-            UsdGeom.PrimvarsAPI(mesh)
-            .CreatePrimvar(
-                "st",
-                Sdf.ValueTypeNames.TexCoord2fArray,
-                UsdGeom.Tokens.faceVarying
-            )
+        primvars = UsdGeom.PrimvarsAPI(
+            mesh
+        )
+
+        uv = primvars.CreatePrimvar(
+            "st",
+            Sdf.ValueTypeNames.TexCoord2fArray,
+            UsdGeom.Tokens.faceVarying
         )
 
         uv.Set([
@@ -382,9 +349,9 @@ def create_usdz(artwork):
             (0, 1)
         ])
 
-        # --------------------------------------------------
+        # ==================================================
         # MATERIAL
-        # --------------------------------------------------
+        # ==================================================
 
         material = UsdShade.Material.Define(
             stage,
@@ -400,9 +367,42 @@ def create_usdz(artwork):
             "UsdPreviewSurface"
         )
 
-        # --------------------------------------------------
+        shader.CreateInput(
+            "roughness",
+            Sdf.ValueTypeNames.Float
+        ).Set(0.85)
+
+        shader.CreateInput(
+            "metallic",
+            Sdf.ValueTypeNames.Float
+        ).Set(0.0)
+
+        # ==================================================
+        # UV READER
+        # ==================================================
+
+        uv_reader = UsdShade.Shader.Define(
+            stage,
+            "/Painting/Material/UVReader"
+        )
+
+        uv_reader.CreateIdAttr(
+            "UsdPrimvarReader_float2"
+        )
+
+        uv_reader.CreateInput(
+            "varname",
+            Sdf.ValueTypeNames.Token
+        ).Set("st")
+
+        uv_result = uv_reader.CreateOutput(
+            "result",
+            Sdf.ValueTypeNames.Float2
+        )
+
+        # ==================================================
         # TEXTURE
-        # --------------------------------------------------
+        # ==================================================
 
         texture = UsdShade.Shader.Define(
             stage,
@@ -426,19 +426,17 @@ def create_usdz(artwork):
             "st",
             Sdf.ValueTypeNames.Float2
         ).ConnectToSource(
-            uv
+            uv_result
         )
 
-        texture_rgb = (
-            texture.CreateOutput(
-                "rgb",
-                Sdf.ValueTypeNames.Float3
-            )
+        texture_rgb = texture.CreateOutput(
+            "rgb",
+            Sdf.ValueTypeNames.Float3
         )
 
-        # --------------------------------------------------
-        # DIRECT DIFFUSE CONNECTION
-        # --------------------------------------------------
+        # ==================================================
+        # DIFFUSE
+        # ==================================================
 
         diffuse = shader.CreateInput(
             "diffuseColor",
@@ -449,15 +447,13 @@ def create_usdz(artwork):
             texture_rgb
         )
 
-        # --------------------------------------------------
+        # ==================================================
         # SURFACE
-        # --------------------------------------------------
+        # ==================================================
 
-        shader_surface = (
-            shader.CreateOutput(
-                "surface",
-                Sdf.ValueTypeNames.Token
-            )
+        shader_surface = shader.CreateOutput(
+            "surface",
+            Sdf.ValueTypeNames.Token
         )
 
         material_surface = (
@@ -468,9 +464,9 @@ def create_usdz(artwork):
             shader_surface
         )
 
-        # --------------------------------------------------
+        # ==================================================
         # MATERIAL BINDING
-        # --------------------------------------------------
+        # ==================================================
 
         UsdShade.MaterialBindingAPI(
             mesh.GetPrim()
@@ -478,15 +474,15 @@ def create_usdz(artwork):
             material
         )
 
-        # --------------------------------------------------
+        # ==================================================
         # SAVE
-        # --------------------------------------------------
+        # ==================================================
 
         stage.GetRootLayer().Save()
 
-        # --------------------------------------------------
+        # ==================================================
         # CREATE USDZ
-        # --------------------------------------------------
+        # ==================================================
 
         with zipfile.ZipFile(
             output_path,
