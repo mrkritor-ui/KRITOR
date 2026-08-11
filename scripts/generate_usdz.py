@@ -8,9 +8,22 @@ from pxr import Usd, UsdGeom, UsdShade, Sdf
 
 
 ROOT = os.getcwd()
-ARTWORKS_FILE = os.path.join(ROOT, "artworks.js")
-AR_ROOT = os.path.join(ROOT, "ar")
-AR_IMAGE_ROOT = os.path.join(ROOT, "images", "ar")
+
+ARTWORKS_FILE = os.path.join(
+    ROOT,
+    "artworks.js"
+)
+
+AR_ROOT = os.path.join(
+    ROOT,
+    "ar"
+)
+
+AR_IMAGE_ROOT = os.path.join(
+    ROOT,
+    "images",
+    "ar"
+)
 
 
 # ==========================================================
@@ -18,18 +31,33 @@ AR_IMAGE_ROOT = os.path.join(ROOT, "images", "ar")
 # ==========================================================
 
 def read_artworks():
-    with open(ARTWORKS_FILE, "r", encoding="utf-8") as f:
+
+    with open(
+        ARTWORKS_FILE,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
         text = f.read()
 
-    start = text.find("const ARTWORKS =")
+    start = text.find(
+        "const ARTWORKS ="
+    )
 
     if start == -1:
-        raise RuntimeError("const ARTWORKS was not found.")
+        raise RuntimeError(
+            "const ARTWORKS was not found."
+        )
 
-    array_start = text.find("[", start)
+    array_start = text.find(
+        "[",
+        start
+    )
 
     if array_start == -1:
-        raise RuntimeError("ARTWORKS array was not found.")
+        raise RuntimeError(
+            "ARTWORKS array was not found."
+        )
 
     depth = 0
     in_string = False
@@ -37,19 +65,32 @@ def read_artworks():
     escaped = False
     array_end = -1
 
-    for i in range(array_start, len(text)):
+    for i in range(
+        array_start,
+        len(text)
+    ):
+
         char = text[i]
 
         if in_string:
+
             if escaped:
                 escaped = False
+
             elif char == "\\":
                 escaped = True
+
             elif char == string_char:
                 in_string = False
+
             continue
 
-        if char in ('"', "'", "`"):
+        if char in (
+            '"',
+            "'",
+            "`"
+        ):
+
             in_string = True
             string_char = char
             continue
@@ -58,6 +99,7 @@ def read_artworks():
             depth += 1
 
         elif char == "]":
+
             depth -= 1
 
             if depth == 0:
@@ -69,11 +111,20 @@ def read_artworks():
             "Could not find end of ARTWORKS array."
         )
 
-    array_text = text[array_start:array_end + 1]
+    array_text = text[
+        array_start:
+        array_end + 1
+    ]
 
-    artworks = json.loads(array_text)
+    artworks = json.loads(
+        array_text
+    )
 
-    if not isinstance(artworks, list):
+    if not isinstance(
+        artworks,
+        list
+    ):
+
         raise RuntimeError(
             "ARTWORKS is not an array."
         )
@@ -85,13 +136,9 @@ def read_artworks():
 # FIND AR IMAGE
 # ==========================================================
 
-def find_ar_image(artwork_id):
-    """
-    Looks for the cropped AR image.
-
-    PNG is preferred.
-    JPG/JPEG are also supported.
-    """
+def find_ar_image(
+    artwork_id
+):
 
     extensions = [
         ".png",
@@ -116,26 +163,45 @@ def find_ar_image(artwork_id):
 # CREATE USDZ
 # ==========================================================
 
-def create_usdz(artwork):
+def create_usdz(
+    artwork
+):
 
     artwork_id = str(
-        artwork.get("id", "")
+        artwork.get(
+            "id",
+            ""
+        )
     )
 
-    ar = artwork.get("ar")
+    ar = artwork.get(
+        "ar"
+    )
 
-    if not ar or not ar.get("enabled", False):
+    if not ar or not ar.get(
+        "enabled",
+        False
+    ):
         return
 
     width_cm = float(
-        ar.get("width", 0)
+        ar.get(
+            "width",
+            0
+        )
     )
 
     height_cm = float(
-        ar.get("height", 0)
+        ar.get(
+            "height",
+            0
+        )
     )
 
-    if width_cm <= 0 or height_cm <= 0:
+    if (
+        width_cm <= 0
+        or height_cm <= 0
+    ):
 
         print(
             "Skipping",
@@ -146,7 +212,7 @@ def create_usdz(artwork):
         return
 
     # ------------------------------------------------------
-    # FIND CROPPED AR IMAGE
+    # FIND AR IMAGE
     # ------------------------------------------------------
 
     image_path = find_ar_image(
@@ -177,7 +243,7 @@ def create_usdz(artwork):
     )
 
     # ------------------------------------------------------
-    # CONVERT CM → METRES
+    # METRES
     # ------------------------------------------------------
 
     width_m = width_cm / 100.0
@@ -194,7 +260,7 @@ def create_usdz(artwork):
     )
 
     # ------------------------------------------------------
-    # TEMPORARY USD FILES
+    # TEMPORARY DIRECTORY
     # ------------------------------------------------------
 
     with tempfile.TemporaryDirectory() as temp:
@@ -213,12 +279,7 @@ def create_usdz(artwork):
             texture_name
         )
 
-        # Copy the AR image EXACTLY as uploaded.
-        # No cropping.
-        # No background removal.
-        # No resizing.
-        # No pixel processing.
-
+        # Copy the uploaded AR image exactly.
         shutil.copy2(
             image_path,
             texture_path
@@ -256,7 +317,7 @@ def create_usdz(artwork):
         )
 
         # --------------------------------------------------
-        # PAINTING PLANE
+        # RECTANGULAR PAINTING
         # --------------------------------------------------
 
         mesh = UsdGeom.Mesh.Define(
@@ -265,10 +326,26 @@ def create_usdz(artwork):
         )
 
         mesh.CreatePointsAttr([
-            (-width_m / 2, -height_m / 2, 0),
-            ( width_m / 2, -height_m / 2, 0),
-            ( width_m / 2,  height_m / 2, 0),
-            (-width_m / 2,  height_m / 2, 0)
+            (
+                -width_m / 2,
+                -height_m / 2,
+                0
+            ),
+            (
+                width_m / 2,
+                -height_m / 2,
+                0
+            ),
+            (
+                width_m / 2,
+                height_m / 2,
+                0
+            ),
+            (
+                -width_m / 2,
+                height_m / 2,
+                0
+            )
         ])
 
         mesh.CreateFaceVertexCountsAttr([
@@ -291,7 +368,7 @@ def create_usdz(artwork):
         )
 
         # --------------------------------------------------
-        # UV COORDINATES
+        # UV
         # --------------------------------------------------
 
         primvars = UsdGeom.PrimvarsAPI(
@@ -332,7 +409,7 @@ def create_usdz(artwork):
         shader.CreateInput(
             "roughness",
             Sdf.ValueTypeNames.Float
-        ).Set(0.85)
+        ).Set(0.8)
 
         shader.CreateInput(
             "metallic",
@@ -357,7 +434,7 @@ def create_usdz(artwork):
             Sdf.ValueTypeNames.Token
         ).Set("st")
 
-        uv_output = uv_reader.CreateOutput(
+        uv_result = uv_reader.CreateOutput(
             "result",
             Sdf.ValueTypeNames.Float2
         )
@@ -388,7 +465,7 @@ def create_usdz(artwork):
             "st",
             Sdf.ValueTypeNames.Float2
         ).ConnectToSource(
-            uv_output
+            uv_result
         )
 
         texture_rgb = texture.CreateOutput(
@@ -396,10 +473,12 @@ def create_usdz(artwork):
             Sdf.ValueTypeNames.Float3
         )
 
-        shader.CreateInput(
+        diffuse = shader.CreateInput(
             "diffuseColor",
             Sdf.ValueTypeNames.Color3f
-        ).ConnectToSource(
+        )
+
+        diffuse.ConnectToSource(
             texture_rgb
         )
 
@@ -421,7 +500,7 @@ def create_usdz(artwork):
         )
 
         # --------------------------------------------------
-        # MATERIAL BINDING
+        # BIND MATERIAL
         # --------------------------------------------------
 
         UsdShade.MaterialBindingAPI(
@@ -437,7 +516,7 @@ def create_usdz(artwork):
         stage.GetRootLayer().Save()
 
         # --------------------------------------------------
-        # PACKAGE USDZ
+        # CREATE USDZ
         # --------------------------------------------------
 
         with zipfile.ZipFile(
