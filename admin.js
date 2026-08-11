@@ -598,8 +598,38 @@ function normaliseArtworks(
     }
   );
 
+   
 }
+function parseArtworkDimensions(size) {
+  if (!size) {
+    return null;
+  }
 
+  const match = String(size).match(
+    /([\d.]+)\s*[×xX*]\s*([\d.]+)/
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+
+  if (
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    width,
+    height
+  };
+}
 
 /* =========================================================
    BUILD ARTWORKS.JS
@@ -1445,45 +1475,99 @@ function buildEditForm(
           work.id;
 
 
-        const values = {
+        const size =
+  $(".f-size")
+    .value
+    .trim();
 
-          title:
-            $(".f-title")
-              .value
-              .trim(),
+const image =
+  $(".f-image")
+    .value
+    .trim();
 
-          year:
-            Number(
-              $(".f-year")
-                .value
-            ) || 0,
+const dimensions =
+  parseArtworkDimensions(size);
 
-          status:
-            $(".f-status")
-              .value,
+const values = {
 
-          price:
-            Number(
-              $(".f-price")
-                .value
-            ) || 0,
+  title:
+    $(".f-title")
+      .value
+      .trim(),
 
-          collection:
-            $(".f-collection")
-              .value
-              .trim(),
+  year:
+    Number(
+      $(".f-year")
+        .value
+    ) || 0,
 
-          size:
-            $(".f-size")
-              .value
-              .trim(),
+  status:
+    $(".f-status")
+      .value,
 
-          image:
-            $(".f-image")
-              .value
-              .trim()
+  price:
+    Number(
+      $(".f-price")
+        .value
+    ) || 0,
 
-        };
+  collection:
+    $(".f-collection")
+      .value
+      .trim(),
+
+  size,
+
+  image
+
+};
+
+if (
+  dimensions &&
+  image
+) {
+
+  values.ar = {
+
+    enabled: true,
+
+    file:
+      "ar/" +
+      work.id +
+      ".usdz",
+
+    width:
+      dimensions.width,
+
+    height:
+      dimensions.height
+
+  };
+
+} else {
+
+  values.ar = {
+
+    enabled: false,
+
+    file:
+      "ar/" +
+      work.id +
+      ".usdz",
+
+    width:
+      dimensions
+        ? dimensions.width
+        : 0,
+
+    height:
+      dimensions
+        ? dimensions.height
+        : 0
+
+  };
+
+}
 
 
         await withBusy(
@@ -1869,34 +1953,53 @@ addBtn.addEventListener(
 
         const newWork = {
 
-          id:
-            "work-" +
-            Date.now()
-              .toString(36),
+  id:
+    "work-" +
+    Date.now()
+      .toString(36),
 
-          title:
-            "Untitled",
+  title:
+    "Untitled",
 
-          year:
-            new Date()
-              .getFullYear(),
+  year:
+    new Date()
+      .getFullYear(),
 
-          price:
-            0,
+  price:
+    0,
 
-          status:
-            "available",
+  status:
+    "available",
 
-          collection:
-            "",
+  collection:
+    "",
 
-          size:
-            "— × — cm",
+  size:
+    "— × — cm",
 
-          image:
-            ""
+  image:
+    "",
 
-        };
+  ar: {
+
+    enabled:
+      false,
+
+    file:
+      "ar/work-" +
+      Date.now()
+        .toString(36) +
+      ".usdz",
+
+    width:
+      0,
+
+    height:
+      0
+
+  }
+
+};
 
 
         await saveLatestArtworks(
