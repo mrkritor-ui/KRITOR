@@ -75,7 +75,6 @@ def read_artworks():
 def create_usdz(artwork):
 
     artwork_id = str(artwork.get("id", ""))
-
     ar = artwork.get("ar")
 
     if not ar or not ar.get("enabled", False):
@@ -134,12 +133,10 @@ def create_usdz(artwork):
             texture_path
         )
 
-        stage = Usd.Stage.CreateNew(
-            usda_path
-        )
+        stage = Usd.Stage.CreateNew(usda_path)
 
         # --------------------------------------------------
-        # Root
+        # ROOT
         # --------------------------------------------------
 
         root = stage.DefinePrim(
@@ -150,7 +147,8 @@ def create_usdz(artwork):
         stage.SetDefaultPrim(root)
 
         # --------------------------------------------------
-        # Painting mesh
+        # PAINTING
+        # 60 x 90 cm
         # --------------------------------------------------
 
         mesh = UsdGeom.Mesh.Define(
@@ -165,34 +163,27 @@ def create_usdz(artwork):
             (-width_m / 2,  height_m / 2, 0)
         ])
 
-        mesh.CreateFaceVertexCountsAttr([
-            4
-        ])
+        mesh.CreateFaceVertexCountsAttr([4])
 
         mesh.CreateFaceVertexIndicesAttr([
             0, 1, 2, 3
         ])
 
         mesh.CreateNormalsAttr([
-            (0, 0, 1),
-            (0, 0, 1),
-            (0, 0, 1),
             (0, 0, 1)
         ])
 
         mesh.SetNormalsInterpolation(
-            UsdGeom.Tokens.vertex
+            UsdGeom.Tokens.constant
         )
 
         # --------------------------------------------------
-        # UV coordinates
+        # UV COORDINATES
         # --------------------------------------------------
 
-        primvars = UsdGeom.PrimvarsAPI(
-            mesh
-        )
+        primvars_api = UsdGeom.PrimvarsAPI(mesh)
 
-        uv = primvars.CreatePrimvar(
+        uv = primvars_api.CreatePrimvar(
             "st",
             Sdf.ValueTypeNames.TexCoord2fArray,
             UsdGeom.Tokens.faceVarying
@@ -206,7 +197,7 @@ def create_usdz(artwork):
         ])
 
         # --------------------------------------------------
-        # Material
+        # MATERIAL
         # --------------------------------------------------
 
         material = UsdShade.Material.Define(
@@ -226,7 +217,7 @@ def create_usdz(artwork):
         shader.CreateInput(
             "roughness",
             Sdf.ValueTypeNames.Float
-        ).Set(0.75)
+        ).Set(0.8)
 
         shader.CreateInput(
             "metallic",
@@ -234,7 +225,30 @@ def create_usdz(artwork):
         ).Set(0.0)
 
         # --------------------------------------------------
-        # Texture
+        # PRIMVAR READER
+        # --------------------------------------------------
+
+        uv_reader = UsdShade.Shader.Define(
+            stage,
+            "/Painting/Material/UVReader"
+        )
+
+        uv_reader.CreateIdAttr(
+            "UsdPrimvarReader_float2"
+        )
+
+        uv_reader.CreateInput(
+            "varname",
+            Sdf.ValueTypeNames.Token
+        ).Set("st")
+
+        uv_reader_result = uv_reader.CreateOutput(
+            "result",
+            Sdf.ValueTypeNames.Float2
+        )
+
+        # --------------------------------------------------
+        # IMAGE TEXTURE
         # --------------------------------------------------
 
         texture = UsdShade.Shader.Define(
@@ -253,11 +267,13 @@ def create_usdz(artwork):
             Sdf.AssetPath(texture_name)
         )
 
-        texture.CreateInput(
+        texture_st = texture.CreateInput(
             "st",
             Sdf.ValueTypeNames.Float2
-        ).ConnectToSource(
-            primvars.GetPrimvar("st")
+        )
+
+        texture_st.ConnectToSource(
+            uv_reader_result
         )
 
         texture_rgb = texture.CreateOutput(
@@ -274,6 +290,10 @@ def create_usdz(artwork):
             texture_rgb
         )
 
+        # --------------------------------------------------
+        # MATERIAL OUTPUT
+        # --------------------------------------------------
+
         shader_surface = shader.CreateOutput(
             "surface",
             Sdf.ValueTypeNames.Token
@@ -286,7 +306,7 @@ def create_usdz(artwork):
         )
 
         # --------------------------------------------------
-        # Bind material
+        # BIND MATERIAL
         # --------------------------------------------------
 
         UsdShade.MaterialBindingAPI(
@@ -294,13 +314,13 @@ def create_usdz(artwork):
         ).Bind(material)
 
         # --------------------------------------------------
-        # Save USD
+        # SAVE USD
         # --------------------------------------------------
 
         stage.GetRootLayer().Save()
 
         # --------------------------------------------------
-        # Package USDZ
+        # CREATE USDZ
         # --------------------------------------------------
 
         with zipfile.ZipFile(
