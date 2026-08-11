@@ -23,9 +23,14 @@ const ARTWORKS = [
 "price": 850,
 "status": "sold",
 "collection": "Studio Series",
-"size": "— × — cm",
+"size": "40 × 50 cm",
 "image": "images/work-02.png",
 "id": "work-02"
+"ar": {
+"enabled": true,
+"file": "ar/work-02.usdz",
+"width": 40,
+"height": 50
 },
 
 {
