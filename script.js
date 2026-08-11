@@ -364,12 +364,12 @@
     viewerCaption.innerHTML =
       captionHTML(work);
 
-    if (work.usdz) {
-      viewerAr.href = "models/" + work.usdz;
-      viewerAr.hidden = false;
-    } else {
-      viewerAr.hidden = true;
-    }
+  if (work.ar && work.ar.enabled && work.ar.file) {
+    viewerAr.href = work.ar.file;
+    viewerAr.hidden = false;
+} else {
+    viewerAr.hidden = true;
+}
 
     viewer.hidden = false;
 
