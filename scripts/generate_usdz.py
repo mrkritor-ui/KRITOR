@@ -4,7 +4,7 @@ import shutil
 import tempfile
 import zipfile
 
-from pxr import Usd, UsdGeom, UsdShade, Sdf
+from pxr import Usd, UsdGeom, Sdf
 
 
 ROOT = os.getcwd()
@@ -80,7 +80,6 @@ def read_artworks():
 
             in_string = True
             string_char = char
-
             continue
 
 
@@ -92,7 +91,6 @@ def read_artworks():
             depth -= 1
 
             if depth == 0:
-
                 array_end = i
                 break
 
@@ -171,8 +169,7 @@ def create_usdz(artwork):
 
     if (
         width_cm <= 0
-        or
-        height_cm <= 0
+        or height_cm <= 0
     ):
 
         print(
@@ -294,83 +291,25 @@ def create_usdz(artwork):
         )
 
 
-        material = UsdShade.Material.Define(
-            stage,
+        # Basic USD material.
+        # The geometry is intentionally kept simple
+        # for the first Quick Look compatibility test.
+
+        material_path = Sdf.Path(
             "/Painting/Material"
         )
 
 
-        shader = UsdShade.Shader.Define(
-            stage,
-            "/Painting/Material/Shader"
+        material = stage.DefinePrim(
+            material_path,
+            "Material"
         )
 
 
-        shader.CreateIdAttr(
-            "UsdPreviewSurface"
-        )
-
-
-        texture = UsdShade.Shader.Define(
-            stage,
-            "/Painting/Material/Texture"
-        )
-
-
-        texture.CreateIdAttr(
-            "UsdUVTexture"
-        )
-
-
-        texture.CreateInput(
-            "file",
-            Sdf.ValueTypeNames.Asset
-        ).Set(
-            texture_name
-        )
-
-
-        texture_rgb = texture.CreateOutput(
-            "rgb",
-            Sdf.ValueTypeNames.Float3
-        )
-
-
-        diffuse = shader.CreateInput(
-            "diffuseColor",
-            Sdf.ValueTypeNames.Color3f
-        )
-
-
-        diffuse.ConnectToSource(
-            texture_rgb
-        )
-
-
-        shader.CreateInput(
-            "roughness",
-            Sdf.ValueTypeNames.Float
-        ).Set(
-            0.8
-        )
-
-
-        shader_surface = shader.CreateOutput(
-    "surface",
-    Sdf.ValueTypeNames.Token
-)
-
-material_surface = material.CreateSurfaceOutput()
-
-material_surface.ConnectToSource(
-    shader_surface
-)
-
-
-        UsdShade.MaterialBindingAPI(
-            cube.GetPrim()
-        ).Bind(
-            material
+        cube.GetPrim().CreateRelationship(
+            "material:binding"
+        ).SetTargets(
+            [material_path]
         )
 
 
@@ -387,6 +326,7 @@ material_surface.ConnectToSource(
                 usda_path,
                 "model.usda"
             )
+
 
             archive.write(
                 texture_path,
