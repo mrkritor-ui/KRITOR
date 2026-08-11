@@ -124,7 +124,6 @@ def read_artworks():
         artworks,
         list
     ):
-
         raise RuntimeError(
             "ARTWORKS is not an array."
         )
@@ -136,9 +135,7 @@ def read_artworks():
 # FIND AR IMAGE
 # ==========================================================
 
-def find_ar_image(
-    artwork_id
-):
+def find_ar_image(artwork_id):
 
     extensions = [
         ".png",
@@ -163,9 +160,7 @@ def find_ar_image(
 # CREATE USDZ
 # ==========================================================
 
-def create_usdz(
-    artwork
-):
+def create_usdz(artwork):
 
     artwork_id = str(
         artwork.get(
@@ -178,7 +173,10 @@ def create_usdz(
         "ar"
     )
 
-    if not ar or not ar.get(
+    if not ar:
+        return
+
+    if not ar.get(
         "enabled",
         False
     ):
@@ -200,7 +198,8 @@ def create_usdz(
 
     if (
         width_cm <= 0
-        or height_cm <= 0
+        or
+        height_cm <= 0
     ):
 
         print(
@@ -210,10 +209,6 @@ def create_usdz(
         )
 
         return
-
-    # ------------------------------------------------------
-    # FIND AR IMAGE
-    # ------------------------------------------------------
 
     image_path = find_ar_image(
         artwork_id
@@ -227,14 +222,6 @@ def create_usdz(
             "- AR image missing."
         )
 
-        print(
-            "Expected:",
-            os.path.join(
-                AR_IMAGE_ROOT,
-                artwork_id + ".png"
-            )
-        )
-
         return
 
     print(
@@ -246,8 +233,13 @@ def create_usdz(
     # METRES
     # ------------------------------------------------------
 
-    width_m = width_cm / 100.0
-    height_m = height_cm / 100.0
+    width_m = (
+        width_cm / 100.0
+    )
+
+    height_m = (
+        height_cm / 100.0
+    )
 
     os.makedirs(
         AR_ROOT,
@@ -260,7 +252,7 @@ def create_usdz(
     )
 
     # ------------------------------------------------------
-    # TEMPORARY DIRECTORY
+    # TEMP DIRECTORY
     # ------------------------------------------------------
 
     with tempfile.TemporaryDirectory() as temp:
@@ -279,7 +271,6 @@ def create_usdz(
             texture_name
         )
 
-        # Copy the uploaded AR image exactly.
         shutil.copy2(
             image_path,
             texture_path
@@ -317,7 +308,7 @@ def create_usdz(
         )
 
         # --------------------------------------------------
-        # RECTANGULAR PAINTING
+        # RECTANGLE
         # --------------------------------------------------
 
         mesh = UsdGeom.Mesh.Define(
@@ -332,18 +323,18 @@ def create_usdz(
                 0
             ),
             (
-                width_m / 2,
+                 width_m / 2,
                 -height_m / 2,
                 0
             ),
             (
-                width_m / 2,
-                height_m / 2,
+                 width_m / 2,
+                 height_m / 2,
                 0
             ),
             (
                 -width_m / 2,
-                height_m / 2,
+                 height_m / 2,
                 0
             )
         ])
@@ -359,6 +350,10 @@ def create_usdz(
             3
         ])
 
+        # --------------------------------------------------
+        # NORMAL
+        # --------------------------------------------------
+
         mesh.CreateNormalsAttr([
             (0, 0, 1)
         ])
@@ -371,14 +366,13 @@ def create_usdz(
         # UV
         # --------------------------------------------------
 
-        primvars = UsdGeom.PrimvarsAPI(
-            mesh
-        )
-
-        uv = primvars.CreatePrimvar(
-            "st",
-            Sdf.ValueTypeNames.TexCoord2fArray,
-            UsdGeom.Tokens.faceVarying
+        uv = (
+            UsdGeom.PrimvarsAPI(mesh)
+            .CreatePrimvar(
+                "st",
+                Sdf.ValueTypeNames.TexCoord2fArray,
+                UsdGeom.Tokens.faceVarying
+            )
         )
 
         uv.Set([
@@ -404,39 +398,6 @@ def create_usdz(
 
         shader.CreateIdAttr(
             "UsdPreviewSurface"
-        )
-
-        shader.CreateInput(
-            "roughness",
-            Sdf.ValueTypeNames.Float
-        ).Set(0.8)
-
-        shader.CreateInput(
-            "metallic",
-            Sdf.ValueTypeNames.Float
-        ).Set(0.0)
-
-        # --------------------------------------------------
-        # UV READER
-        # --------------------------------------------------
-
-        uv_reader = UsdShade.Shader.Define(
-            stage,
-            "/Painting/Material/UVReader"
-        )
-
-        uv_reader.CreateIdAttr(
-            "UsdPrimvarReader_float2"
-        )
-
-        uv_reader.CreateInput(
-            "varname",
-            Sdf.ValueTypeNames.Token
-        ).Set("st")
-
-        uv_result = uv_reader.CreateOutput(
-            "result",
-            Sdf.ValueTypeNames.Float2
         )
 
         # --------------------------------------------------
@@ -465,13 +426,19 @@ def create_usdz(
             "st",
             Sdf.ValueTypeNames.Float2
         ).ConnectToSource(
-            uv_result
+            uv
         )
 
-        texture_rgb = texture.CreateOutput(
-            "rgb",
-            Sdf.ValueTypeNames.Float3
+        texture_rgb = (
+            texture.CreateOutput(
+                "rgb",
+                Sdf.ValueTypeNames.Float3
+            )
         )
+
+        # --------------------------------------------------
+        # DIRECT DIFFUSE CONNECTION
+        # --------------------------------------------------
 
         diffuse = shader.CreateInput(
             "diffuseColor",
@@ -486,9 +453,11 @@ def create_usdz(
         # SURFACE
         # --------------------------------------------------
 
-        shader_surface = shader.CreateOutput(
-            "surface",
-            Sdf.ValueTypeNames.Token
+        shader_surface = (
+            shader.CreateOutput(
+                "surface",
+                Sdf.ValueTypeNames.Token
+            )
         )
 
         material_surface = (
@@ -500,7 +469,7 @@ def create_usdz(
         )
 
         # --------------------------------------------------
-        # BIND MATERIAL
+        # MATERIAL BINDING
         # --------------------------------------------------
 
         UsdShade.MaterialBindingAPI(
@@ -510,7 +479,7 @@ def create_usdz(
         )
 
         # --------------------------------------------------
-        # SAVE USD
+        # SAVE
         # --------------------------------------------------
 
         stage.GetRootLayer().Save()
