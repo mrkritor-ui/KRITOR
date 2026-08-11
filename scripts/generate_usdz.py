@@ -134,9 +134,9 @@ def read_artworks():
 def find_ar_image(artwork_id):
 
     for extension in (
-        ".png",
-        ".jpg",
-        ".jpeg"
+         ".jpg",
+         ".jpeg",
+         ".png"
     ):
 
         path = os.path.join(
