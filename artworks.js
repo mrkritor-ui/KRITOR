@@ -1,6 +1,5 @@
 
 const ARTWORKS = [
-
   {
     "title": "Untitled",
     "year": 2024,
@@ -17,7 +16,6 @@ const ARTWORKS = [
       "height": 90
     }
   },
-
   {
     "title": "People",
     "year": 2024,
@@ -28,7 +26,6 @@ const ARTWORKS = [
     "image": "images/work-02.png",
     "id": "work-02"
   },
-
   {
     "title": "Untitled",
     "year": 2023,
@@ -39,7 +36,6 @@ const ARTWORKS = [
     "image": "images/work-03.png",
     "id": "work-03"
   },
-
   {
     "title": "Untitled",
     "year": 2023,
@@ -50,7 +46,6 @@ const ARTWORKS = [
     "image": "images/work-04.png",
     "id": "work-04"
   },
-
   {
     "title": "Untitled",
     "year": 2025,
@@ -61,7 +56,6 @@ const ARTWORKS = [
     "image": "images/work-05.png",
     "id": "work-05"
   },
-
   {
     "title": "Untitled",
     "year": 2022,
@@ -72,7 +66,6 @@ const ARTWORKS = [
     "image": "images/work-06.png",
     "id": "work-06"
   },
-
   {
     "title": "Untitled",
     "year": 2025,
@@ -83,5 +76,4 @@ const ARTWORKS = [
     "image": "images/work-07.png",
     "id": "work-07"
   }
-
 ];
