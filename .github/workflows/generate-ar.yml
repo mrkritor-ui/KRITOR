@@ -1,0 +1,53 @@
+name: Generate AR assets
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "images/**"
+      - "artworks.js"
+      - "scripts/**"
+      - ".github/workflows/generate-ar.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  generate-ar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install USD
+        run: |
+          python -m pip install --upgrade pip
+          pip install usd-core pillow
+
+      - name: Generate USDZ files
+        run: |
+          python scripts/generate_usdz.py
+
+      - name: Commit generated AR assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add ar/
+
+          if git diff --cached --quiet; then
+            echo "No AR changes."
+            exit 0
+          fi
+
+          git commit -m "Generate AR assets"
+          git push
