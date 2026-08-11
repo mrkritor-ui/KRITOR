@@ -44,81 +44,29 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  /*
-   * ALWAYS check the network first for:
-   * - catalogue data
-   * - HTML
-   * - JavaScript
-   * - CSS
-   * - USDZ AR files
-   */
-
-  const isDynamic =
-    url.pathname.endsWith(".html") ||
-    url.pathname.endsWith(".js") ||
-    url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".usdz");
-
-  if (isDynamic) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-
-          if (
-            response &&
-            response.status === 200 &&
-            response.type !== "opaque"
-          ) {
-            const copy = response.clone();
-
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, copy);
-            });
-          }
-
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
-    );
-
-    return;
-  }
-
-  /*
-   * Images and other static assets:
-   * cache first for speed.
-   */
-
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    fetch(event.request)
+      .then(response => {
 
-      if (cached) {
-        return cached;
-      }
+        if (
+          response &&
+          response.status === 200 &&
+          response.type !== "opaque"
+        ) {
+          const copy = response.clone();
 
-      return fetch(event.request)
-        .then(response => {
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, copy);
+          });
+        }
 
-          if (
-            response &&
-            response.status === 200 &&
-            response.type !== "opaque"
-          ) {
-            const copy = response.clone();
-
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, copy);
-            });
-          }
-
-          return response;
-        })
-        .catch(() => {
-          return caches.match("./index.html");
-        });
-
-    })
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request)
+          .then(cached => {
+            return cached || caches.match("./index.html");
+          });
+      })
   );
 });
