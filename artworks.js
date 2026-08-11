@@ -11,7 +11,7 @@ const ARTWORKS = [
 "ar": {
 "enabled": true,
 "file": "ar/work-01.usdz",
-"arImage": "images/ar/work-01-v2.png",
+"arImage": "images/ar/work-01.png",
 "width": 60,
 "height": 90
 }
