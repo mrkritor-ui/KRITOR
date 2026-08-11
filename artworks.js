@@ -10,7 +10,7 @@ const ARTWORKS = [
 "id": "work-01",
 "ar": {
 "enabled": true,
-"file": "ar/work-01.usdz",
+"file": "ar/work-01FUCK.usdz",
 "arImage": "images/ar/work-01.png",
 "width": 60,
 "height": 90
