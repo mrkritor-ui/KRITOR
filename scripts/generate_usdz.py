@@ -355,10 +355,16 @@ def create_usdz(artwork):
         )
 
 
-        material.CreateSurfaceOutput().ConnectToSource(
-            shader,
-            "surface"
-        )
+        shader_surface = shader.CreateOutput(
+    "surface",
+    Sdf.ValueTypeNames.Token
+)
+
+material_surface = material.CreateSurfaceOutput()
+
+material_surface.ConnectToSource(
+    shader_surface
+)
 
 
         UsdShade.MaterialBindingAPI(
