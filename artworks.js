@@ -1,19 +1,6 @@
-// One entry per artwork. Fields:
-//
-//   title      text
-//   year       number
-//   price      number (AUD, no symbol/commas) — omit or leave 0 if not applicable
-//   status     "available" | "sold" | "na"      (na = not for sale)
-//   collection text, e.g. "Studio Series" — leave "" for standalone works
-//   size       text, e.g. "60 × 90 cm"
-//   image      path inside /images
-//
-// Collections group works together in the "All" view and can be filtered
-// individually from the bar at the top. Leave collection: "" for one-off
-// pieces — they'll appear in their own "Standalone" group.
 
 const ARTWORKS = [
-const ARTWORKS = [
+
   {
     "title": "Untitled",
     "year": 2024,
@@ -29,8 +16,8 @@ const ARTWORKS = [
       "width": 60,
       "height": 90
     }
-  }
-];
+  },
+
   {
     "title": "People",
     "year": 2024,
@@ -41,6 +28,7 @@ const ARTWORKS = [
     "image": "images/work-02.png",
     "id": "work-02"
   },
+
   {
     "title": "Untitled",
     "year": 2023,
@@ -51,6 +39,7 @@ const ARTWORKS = [
     "image": "images/work-03.png",
     "id": "work-03"
   },
+
   {
     "title": "Untitled",
     "year": 2023,
@@ -61,6 +50,7 @@ const ARTWORKS = [
     "image": "images/work-04.png",
     "id": "work-04"
   },
+
   {
     "title": "Untitled",
     "year": 2025,
@@ -71,6 +61,7 @@ const ARTWORKS = [
     "image": "images/work-05.png",
     "id": "work-05"
   },
+
   {
     "title": "Untitled",
     "year": 2022,
@@ -81,6 +72,7 @@ const ARTWORKS = [
     "image": "images/work-06.png",
     "id": "work-06"
   },
+
   {
     "title": "Untitled",
     "year": 2025,
@@ -91,4 +83,5 @@ const ARTWORKS = [
     "image": "images/work-07.png",
     "id": "work-07"
   }
+
 ];
