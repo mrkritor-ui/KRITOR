@@ -1,4 +1,4 @@
-const CACHE_NAME = "works-gallery-v4";
+const CACHE_NAME = "works-gallery-__BUILD_VERSION__";
 
 const APP_FILES = [
   "./",
