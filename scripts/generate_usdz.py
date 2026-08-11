@@ -256,7 +256,7 @@ def create_usdz(
 
     output_path = os.path.join(
         AR_ROOT,
-        artwork_id + ".usdz"
+        artwork_id + "-v2.usdz"
     )
 
     # ------------------------------------------------------
