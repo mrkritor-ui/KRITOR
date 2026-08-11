@@ -15,6 +15,9 @@ AR_ROOT = os.path.join(ROOT, "ar")
 
 def read_artworks():
 
+    import json
+    import subprocess
+
     with open(
         ARTWORKS_FILE,
         "r",
@@ -29,6 +32,7 @@ def read_artworks():
     )
 
     if start == -1:
+
         raise RuntimeError(
             "const ARTWORKS was not found."
         )
@@ -40,6 +44,7 @@ def read_artworks():
     )
 
     if array_start == -1:
+
         raise RuntimeError(
             "ARTWORKS array was not found."
         )
@@ -101,6 +106,7 @@ def read_artworks():
             if depth == 0:
 
                 array_end = i
+
                 break
 
 
@@ -117,70 +123,59 @@ def read_artworks():
     ]
 
 
-    # Use Node.js to evaluate the JavaScript safely.
-    # GitHub Actions already includes Node.
+    # artworks.js uses JavaScript object syntax.
+    # Convert it through Node by evaluating only
+    # the extracted array.
 
-    js_file = os.path.join(
-        ROOT,
-        ".tmp-read-artworks.js"
-    )
-
-
-    with open(
-        js_file,
-        "w",
-        encoding="utf-8"
-    ) as f:
-
-        f.write(
-            text +
-            "\nconsole.log(JSON.stringify(ARTWORKS));\n"
-        )
+    js_code = f"""
+const ARTWORKS = {array_text};
+console.log(JSON.stringify(ARTWORKS));
+"""
 
 
     result = subprocess.run(
         [
             "node",
-            js_file
+            "-e",
+            js_code
         ],
         capture_output=True,
         text=True
     )
 
 
-    try:
-
-        os.remove(
-            js_file
-        )
-
-    except OSError:
-
-        pass
-
-
     if result.returncode != 0:
 
         raise RuntimeError(
-            "Could not evaluate artworks.js:\n" +
+            "Could not evaluate ARTWORKS data:\\n" +
             result.stderr
         )
 
 
-    output = result.stdout.strip()
+    output = (
+        result.stdout
+        .strip()
+    )
+
 
     if not output:
 
         raise RuntimeError(
-            "artworks.js returned no artwork data."
+            "ARTWORKS evaluation returned no data."
         )
 
 
-    import json
+    try:
 
-    return json.loads(
-        output
-    )
+        return json.loads(
+            output
+        )
+
+    except json.JSONDecodeError:
+
+        raise RuntimeError(
+            "ARTWORKS did not return valid JSON."
+        )
 
 
 def create_usdz(
