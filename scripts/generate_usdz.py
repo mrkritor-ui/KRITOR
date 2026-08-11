@@ -4,48 +4,27 @@ import shutil
 import tempfile
 import zipfile
 
-from pxr import Usd, UsdGeom, Sdf
+from pxr import Usd, UsdGeom, UsdShade, Sdf
 
 
 ROOT = os.getcwd()
-
-ARTWORKS_FILE = os.path.join(
-    ROOT,
-    "artworks.js"
-)
-
-AR_ROOT = os.path.join(
-    ROOT,
-    "ar"
-)
+ARTWORKS_FILE = os.path.join(ROOT, "artworks.js")
+AR_ROOT = os.path.join(ROOT, "ar")
 
 
 def read_artworks():
-
-    with open(
-        ARTWORKS_FILE,
-        "r",
-        encoding="utf-8"
-    ) as f:
-
+    with open(ARTWORKS_FILE, "r", encoding="utf-8") as f:
         text = f.read()
 
-
-    start = text.find(
-        "const ARTWORKS ="
-    )
+    start = text.find("const ARTWORKS =")
 
     if start == -1:
-        raise RuntimeError(
-            "const ARTWORKS was not found."
-        )
+        raise RuntimeError("const ARTWORKS was not found.")
 
+    array_start = text.find("[", start)
 
-    array_start = text.find(
-        "[",
-        start
-    )
-
+    if array_start == -1:
+        raise RuntimeError("ARTWORKS array was not found.")
 
     depth = 0
     in_string = False
@@ -53,187 +32,88 @@ def read_artworks():
     escaped = False
     array_end = -1
 
-
-    for i in range(
-        array_start,
-        len(text)
-    ):
-
+    for i in range(array_start, len(text)):
         char = text[i]
 
-
         if in_string:
-
             if escaped:
                 escaped = False
-
             elif char == "\\":
                 escaped = True
-
             elif char == string_char:
                 in_string = False
-
             continue
 
-
         if char in ('"', "'", "`"):
-
             in_string = True
             string_char = char
             continue
-
 
         if char == "[":
             depth += 1
 
         elif char == "]":
-
             depth -= 1
 
             if depth == 0:
                 array_end = i
                 break
 
-
     if array_end == -1:
-        raise RuntimeError(
-            "Could not find end of ARTWORKS array."
-        )
+        raise RuntimeError("Could not find end of ARTWORKS array.")
 
+    array_text = text[array_start:array_end + 1]
 
-    array_text = text[
-        array_start:
-        array_end + 1
-    ]
+    artworks = json.loads(array_text)
 
-
-    artworks = json.loads(
-        array_text
-    )
-
-
-    if not isinstance(
-        artworks,
-        list
-    ):
-
-        raise RuntimeError(
-            "ARTWORKS is not an array."
-        )
-
+    if not isinstance(artworks, list):
+        raise RuntimeError("ARTWORKS is not an array.")
 
     return artworks
 
 
 def create_usdz(artwork):
 
-    artwork_id = str(
-        artwork.get(
-            "id",
-            ""
-        )
-    )
+    artwork_id = str(artwork.get("id", ""))
 
+    ar = artwork.get("ar")
 
-    ar = artwork.get(
-        "ar"
-    )
-
-
-    if not ar:
+    if not ar or not ar.get("enabled", False):
         return
 
+    width_cm = float(ar.get("width", 0))
+    height_cm = float(ar.get("height", 0))
 
-    if not ar.get(
-        "enabled",
-        False
-    ):
+    if width_cm <= 0 or height_cm <= 0:
+        print("Skipping", artwork_id, "- invalid dimensions.")
         return
 
-
-    width_cm = float(
-        ar.get(
-            "width",
-            0
-        )
-    )
-
-
-    height_cm = float(
-        ar.get(
-            "height",
-            0
-        )
-    )
-
-
-    if (
-        width_cm <= 0
-        or height_cm <= 0
-    ):
-
-        print(
-            "Skipping",
-            artwork_id,
-            "- invalid dimensions."
-        )
-
-        return
-
-
-    image_path = artwork.get(
-        "image",
-        ""
-    )
-
+    image_path = artwork.get("image", "")
 
     if not image_path:
-
-        print(
-            "Skipping",
-            artwork_id,
-            "- no image."
-        )
-
+        print("Skipping", artwork_id, "- no image.")
         return
 
+    image_path = os.path.join(ROOT, image_path)
 
-    image_path = os.path.join(
-        ROOT,
-        image_path
-    )
-
-
-    if not os.path.isfile(
-        image_path
-    ):
-
+    if not os.path.isfile(image_path):
         print(
             "Skipping",
             artwork_id,
             "- image missing:",
             image_path
         )
-
         return
-
 
     width_m = width_cm / 100.0
     height_m = height_cm / 100.0
-    depth_m = 0.02
 
-
-    os.makedirs(
-        AR_ROOT,
-        exist_ok=True
-    )
-
+    os.makedirs(AR_ROOT, exist_ok=True)
 
     final_usdz = os.path.join(
         AR_ROOT,
         artwork_id + ".usdz"
     )
-
 
     with tempfile.TemporaryDirectory() as temp:
 
@@ -242,79 +122,186 @@ def create_usdz(artwork):
             "model.usda"
         )
 
-
-        texture_name = os.path.basename(
-            image_path
-        )
-
+        texture_name = os.path.basename(image_path)
 
         texture_path = os.path.join(
             temp,
             texture_name
         )
 
-
         shutil.copy2(
             image_path,
             texture_path
         )
 
-
         stage = Usd.Stage.CreateNew(
             usda_path
         )
 
+        # --------------------------------------------------
+        # Root
+        # --------------------------------------------------
 
         root = stage.DefinePrim(
             "/Painting",
             "Xform"
         )
 
+        stage.SetDefaultPrim(root)
 
-        stage.SetDefaultPrim(
-            root
-        )
+        # --------------------------------------------------
+        # Painting mesh
+        # --------------------------------------------------
 
-
-        cube = UsdGeom.Cube.Define(
+        mesh = UsdGeom.Mesh.Define(
             stage,
-            "/Painting/Canvas"
+            "/Painting/Artwork"
         )
 
+        mesh.CreatePointsAttr([
+            (-width_m / 2, -height_m / 2, 0),
+            ( width_m / 2, -height_m / 2, 0),
+            ( width_m / 2,  height_m / 2, 0),
+            (-width_m / 2,  height_m / 2, 0)
+        ])
 
-        cube.AddScaleOp().Set(
-            (
-                width_m / 2,
-                height_m / 2,
-                depth_m / 2
-            )
+        mesh.CreateFaceVertexCountsAttr([
+            4
+        ])
+
+        mesh.CreateFaceVertexIndicesAttr([
+            0, 1, 2, 3
+        ])
+
+        mesh.CreateNormalsAttr([
+            (0, 0, 1),
+            (0, 0, 1),
+            (0, 0, 1),
+            (0, 0, 1)
+        ])
+
+        mesh.SetNormalsInterpolation(
+            UsdGeom.Tokens.vertex
         )
 
+        # --------------------------------------------------
+        # UV coordinates
+        # --------------------------------------------------
 
-        # Basic USD material.
-        # The geometry is intentionally kept simple
-        # for the first Quick Look compatibility test.
+        primvars = UsdGeom.PrimvarsAPI(
+            mesh
+        )
 
-        material_path = Sdf.Path(
+        uv = primvars.CreatePrimvar(
+            "st",
+            Sdf.ValueTypeNames.TexCoord2fArray,
+            UsdGeom.Tokens.faceVarying
+        )
+
+        uv.Set([
+            (0, 0),
+            (1, 0),
+            (1, 1),
+            (0, 1)
+        ])
+
+        # --------------------------------------------------
+        # Material
+        # --------------------------------------------------
+
+        material = UsdShade.Material.Define(
+            stage,
             "/Painting/Material"
         )
 
-
-        material = stage.DefinePrim(
-            material_path,
-            "Material"
+        shader = UsdShade.Shader.Define(
+            stage,
+            "/Painting/Material/PreviewSurface"
         )
 
-
-        cube.GetPrim().CreateRelationship(
-            "material:binding"
-        ).SetTargets(
-            [material_path]
+        shader.CreateIdAttr(
+            "UsdPreviewSurface"
         )
 
+        shader.CreateInput(
+            "roughness",
+            Sdf.ValueTypeNames.Float
+        ).Set(0.75)
+
+        shader.CreateInput(
+            "metallic",
+            Sdf.ValueTypeNames.Float
+        ).Set(0.0)
+
+        # --------------------------------------------------
+        # Texture
+        # --------------------------------------------------
+
+        texture = UsdShade.Shader.Define(
+            stage,
+            "/Painting/Material/Texture"
+        )
+
+        texture.CreateIdAttr(
+            "UsdUVTexture"
+        )
+
+        texture.CreateInput(
+            "file",
+            Sdf.ValueTypeNames.Asset
+        ).Set(
+            Sdf.AssetPath(texture_name)
+        )
+
+        texture.CreateInput(
+            "st",
+            Sdf.ValueTypeNames.Float2
+        ).ConnectToSource(
+            primvars.GetPrimvar("st")
+        )
+
+        texture_rgb = texture.CreateOutput(
+            "rgb",
+            Sdf.ValueTypeNames.Float3
+        )
+
+        diffuse = shader.CreateInput(
+            "diffuseColor",
+            Sdf.ValueTypeNames.Color3f
+        )
+
+        diffuse.ConnectToSource(
+            texture_rgb
+        )
+
+        shader_surface = shader.CreateOutput(
+            "surface",
+            Sdf.ValueTypeNames.Token
+        )
+
+        material_surface = material.CreateSurfaceOutput()
+
+        material_surface.ConnectToSource(
+            shader_surface
+        )
+
+        # --------------------------------------------------
+        # Bind material
+        # --------------------------------------------------
+
+        UsdShade.MaterialBindingAPI(
+            mesh.GetPrim()
+        ).Bind(material)
+
+        # --------------------------------------------------
+        # Save USD
+        # --------------------------------------------------
 
         stage.GetRootLayer().Save()
 
+        # --------------------------------------------------
+        # Package USDZ
+        # --------------------------------------------------
 
         with zipfile.ZipFile(
             final_usdz,
@@ -327,12 +314,10 @@ def create_usdz(artwork):
                 "model.usda"
             )
 
-
             archive.write(
                 texture_path,
                 texture_name
             )
-
 
     print(
         "Generated:",
@@ -347,9 +332,7 @@ def main():
         exist_ok=True
     )
 
-
     artworks = read_artworks()
-
 
     print(
         "Found",
@@ -357,28 +340,20 @@ def main():
         "artworks."
     )
 
-
     for artwork in artworks:
 
         try:
-
-            create_usdz(
-                artwork
-            )
+            create_usdz(artwork)
 
         except Exception as error:
 
             print(
                 "ERROR generating",
-                artwork.get(
-                    "id",
-                    "unknown"
-                ),
+                artwork.get("id", "unknown"),
                 ":",
                 error
             )
 
 
 if __name__ == "__main__":
-
     main()
