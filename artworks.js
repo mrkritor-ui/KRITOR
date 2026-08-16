@@ -1,5 +1,53 @@
 const ARTWORKS = [
   {
+    "id": "work-12",
+    "title": "Untitled",
+    "year": 2026,
+    "price": 0,
+    "status": "available",
+    "collection": "",
+    "size": "— × — cm",
+    "image": "images/work-12.JPG",
+    "ar": {
+      "enabled": false,
+      "file": "ar/work-12.usdz",
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "id": "work-13",
+    "title": "Untitled",
+    "year": 2026,
+    "price": 0,
+    "status": "available",
+    "collection": "",
+    "size": "— × — cm",
+    "image": "images/work-13.png",
+    "ar": {
+      "enabled": false,
+      "file": "ar/work-13.usdz",
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "id": "work-14",
+    "title": "Untitled",
+    "year": 2026,
+    "price": 0,
+    "status": "available",
+    "collection": "",
+    "size": "— × — cm",
+    "image": "images/work-14.png",
+    "ar": {
+      "enabled": false,
+      "file": "ar/work-14.usdz",
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
     "id": "work-08",
     "title": "Yung Brother",
     "year": 2026,
