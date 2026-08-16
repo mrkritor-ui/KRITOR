@@ -66,7 +66,7 @@ const ARTWORKS = [
   {
     "title": "Untitled",
     "year": 2024,
-    "price": 1200,
+    "price": 660,
     "status": "available",
     "collection": "Studio Series",
     "size": "60 × 90 cm",
