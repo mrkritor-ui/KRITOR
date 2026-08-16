@@ -33,7 +33,7 @@ const ARTWORKS = [
   },
   {
     "id": "work-14",
-    "title": "17",
+    "title": "",
     "year": 2026,
     "price": 1240,
     "status": "available",
