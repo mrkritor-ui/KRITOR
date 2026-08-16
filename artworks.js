@@ -1,84 +1,148 @@
 const ARTWORKS = [
-{
-"title": "Untitled",
-"year": 2024,
-"price": 1200,
-"status": "available",
-"collection": "Studio Series",
-"size": "60 × 90 cm",
-"image": "images/work-01.png",
-"id": "work-01",
-"ar": {
-"enabled": true,
-"file": "ar/work-01.usdz",
-"width": 60,
-"height": 90
-}
-},
-{
-"title": "People",
-"year": 2024,
-"price": 850,
-"status": "sold",
-"collection": "Studio Series",
-"size": "40 × 50 cm",
-"image": "images/work-02.png",
-"id": "work-02",
-"ar": {
-"enabled": true,
-"file": "ar/work-02.usdz",
-"width": 40,
-"height": 50
-}
-},
-{
-"title": "Untitled",
-"year": 2023,
-"price": 0,
-"status": "na",
-"collection": "Field Studies",
-"size": "— × — cm",
-"image": "images/work-03.png",
-"id": "work-03"
-},
-{
-"title": "Untitled",
-"year": 2023,
-"price": 600,
-"status": "available",
-"collection": "Field Studies",
-"size": "— × — cm",
-"image": "images/work-04.png",
-"id": "work-04"
-},
-{
-"title": "Untitled",
-"year": 2025,
-"price": 2400,
-"status": "available",
-"collection": "Studio Series",
-"size": "— × — cm",
-"image": "images/work-05.png",
-"id": "work-05"
-},
-{
-"title": "Untitled",
-"year": 2022,
-"price": 950,
-"status": "sold",
-"collection": "Studio Series",
-"size": "— × — cm",
-"image": "images/work-06.png",
-"id": "work-06"
-},
-{
-"title": "Untitled",
-"year": 2025,
-"price": 400,
-"status": "available",
-"collection": "Field Studies",
-"size": "— × — cm",
-"image": "images/work-07.png",
-"id": "work-07"
-}
+  {
+    "id": "work-08",
+    "title": "Untitled",
+    "year": 2026,
+    "price": 0,
+    "status": "available",
+    "collection": "",
+    "size": "— × — cm",
+    "image": "images/work-08.png",
+    "ar": {
+      "enabled": false,
+      "file": "ar/work-08.usdz",
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "id": "work-09",
+    "title": "Untitled",
+    "year": 2026,
+    "price": 0,
+    "status": "available",
+    "collection": "",
+    "size": "— × — cm",
+    "image": "images/work-09.png",
+    "ar": {
+      "enabled": false,
+      "file": "ar/work-09.usdz",
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "id": "work-10",
+    "title": "Untitled",
+    "year": 2026,
+    "price": 0,
+    "status": "available",
+    "collection": "",
+    "size": "— × — cm",
+    "image": "images/work-10.png",
+    "ar": {
+      "enabled": false,
+      "file": "ar/work-10.usdz",
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "id": "work-11",
+    "title": "Untitled",
+    "year": 2026,
+    "price": 0,
+    "status": "available",
+    "collection": "",
+    "size": "— × — cm",
+    "image": "images/work-11.png",
+    "ar": {
+      "enabled": false,
+      "file": "ar/work-11.usdz",
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "title": "Untitled",
+    "year": 2024,
+    "price": 1200,
+    "status": "available",
+    "collection": "Studio Series",
+    "size": "60 × 90 cm",
+    "image": "images/work-01.png",
+    "id": "work-01",
+    "ar": {
+      "enabled": true,
+      "file": "ar/work-01.usdz",
+      "width": 60,
+      "height": 90
+    }
+  },
+  {
+    "title": "People",
+    "year": 2024,
+    "price": 850,
+    "status": "sold",
+    "collection": "Studio Series",
+    "size": "40 × 50 cm",
+    "image": "images/work-02.png",
+    "id": "work-02",
+    "ar": {
+      "enabled": true,
+      "file": "ar/work-02.usdz",
+      "width": 40,
+      "height": 50
+    }
+  },
+  {
+    "title": "Untitled",
+    "year": 2023,
+    "price": 0,
+    "status": "na",
+    "collection": "Field Studies",
+    "size": "— × — cm",
+    "image": "images/work-03.png",
+    "id": "work-03"
+  },
+  {
+    "title": "Untitled",
+    "year": 2023,
+    "price": 600,
+    "status": "available",
+    "collection": "Field Studies",
+    "size": "— × — cm",
+    "image": "images/work-04.png",
+    "id": "work-04"
+  },
+  {
+    "title": "Untitled",
+    "year": 2025,
+    "price": 2400,
+    "status": "available",
+    "collection": "Studio Series",
+    "size": "— × — cm",
+    "image": "images/work-05.png",
+    "id": "work-05"
+  },
+  {
+    "title": "Untitled",
+    "year": 2022,
+    "price": 950,
+    "status": "sold",
+    "collection": "Studio Series",
+    "size": "— × — cm",
+    "image": "images/work-06.png",
+    "id": "work-06"
+  },
+  {
+    "title": "Untitled",
+    "year": 2025,
+    "price": 400,
+    "status": "available",
+    "collection": "Field Studies",
+    "size": "— × — cm",
+    "image": "images/work-07.png",
+    "id": "work-07"
+  }
 ];
