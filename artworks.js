@@ -17,7 +17,7 @@ const ARTWORKS = [
   },
   {
     "id": "work-13",
-    "title": "Untitled",
+    "title": "A Night at the Espy",
     "year": 2026,
     "price": 0,
     "status": "na",
