@@ -20,8 +20,8 @@ const ARTWORKS = [
     "title": "Untitled",
     "year": 2026,
     "price": 0,
-    "status": "available",
-    "collection": "",
+    "status": "na",
+    "collection": "Studio Series",
     "size": "— × — cm",
     "image": "images/work-13.png",
     "ar": {
