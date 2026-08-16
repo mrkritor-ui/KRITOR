@@ -116,14 +116,20 @@ const ARTWORKS = [
     "id": "work-04"
   },
   {
-    "title": "Untitled",
+    "title": "ArtShed",
     "year": 2025,
     "price": 2400,
     "status": "available",
     "collection": "Studio Series",
-    "size": "— × — cm",
+    "size": "70 × 90cm",
     "image": "images/work-05.png",
-    "id": "work-05"
+    "id": "work-05",
+    "ar": {
+      "enabled": true,
+      "file": "ar/work-05.usdz",
+      "width": 70,
+      "height": 90
+    }
   },
   {
     "title": "Older Sister",
