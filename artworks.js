@@ -43,8 +43,8 @@ const ARTWORKS = [
     "ar": {
       "enabled": false,
       "file": "ar/work-14.usdz",
-      "width": 0,
-      "height": 0
+      "width": 120,
+      "height": 90
     }
   },
   {
