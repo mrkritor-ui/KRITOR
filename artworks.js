@@ -5,7 +5,7 @@ const ARTWORKS = [
     "year": 2026,
     "price": 0,
     "status": "available",
-    "collection": "",
+    "collection": "Studio Series",
     "size": "— × — cm",
     "image": "images/work-12.JPG",
     "ar": {
