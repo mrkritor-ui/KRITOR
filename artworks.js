@@ -150,11 +150,17 @@ const ARTWORKS = [
   {
     "title": "Untitled",
     "year": 2025,
-    "price": 400,
+    "price": 125,
     "status": "available",
-    "collection": "Field Studies",
-    "size": "— × — cm",
+    "collection": "Painters Retreat",
+    "size": "15 × 10 cm",
     "image": "images/work-07.png",
-    "id": "work-07"
+    "id": "work-07",
+    "ar": {
+      "enabled": true,
+      "file": "ar/work-07.usdz",
+      "width": 15,
+      "height": 10
+    }
   }
 ];
