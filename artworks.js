@@ -33,7 +33,7 @@ const ARTWORKS = [
   },
   {
     "id": "work-14",
-    "title": "Untitled",
+    "title": "17",
     "year": 2026,
     "price": 1240,
     "status": "available",
@@ -41,10 +41,10 @@ const ARTWORKS = [
     "size": "— × — cm",
     "image": "images/work-14.png",
     "ar": {
-      "enabled": true,
+      "enabled": false,
       "file": "ar/work-14.usdz",
-      "width": 120,
-      "height": 90
+      "width": 0,
+      "height": 0
     }
   },
   {
