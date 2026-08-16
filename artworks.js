@@ -1,18 +1,18 @@
 const ARTWORKS = [
   {
     "id": "work-08",
-    "title": "Untitled",
+    "title": "Yung Brother",
     "year": 2026,
-    "price": 0,
+    "price": 175,
     "status": "available",
-    "collection": "",
-    "size": "— × — cm",
+    "collection": "BS",
+    "size": "30 × 40 cm",
     "image": "images/work-08.png",
     "ar": {
-      "enabled": false,
+      "enabled": true,
       "file": "ar/work-08.usdz",
-      "width": 0,
-      "height": 0
+      "width": 30,
+      "height": 40
     }
   },
   {
