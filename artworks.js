@@ -1,7 +1,7 @@
 const ARTWORKS = [
   {
     "id": "work-12",
-    "title": "Untitled",
+    "title": "I Like to Make Men Cry",
     "year": 2026,
     "price": 960,
     "status": "available",
