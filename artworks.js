@@ -3,7 +3,7 @@ const ARTWORKS = [
     "id": "work-12",
     "title": "Untitled",
     "year": 2026,
-    "price": 0,
+    "price": 960,
     "status": "available",
     "collection": "Studio Series",
     "size": "— × — cm",
