@@ -106,14 +106,20 @@ const ARTWORKS = [
     "id": "work-03"
   },
   {
-    "title": "Untitled",
+    "title": "Her Face",
     "year": 2023,
-    "price": 600,
+    "price": 470,
     "status": "available",
-    "collection": "Field Studies",
-    "size": "— × — cm",
+    "collection": "",
+    "size": "30 × 40 cm",
     "image": "images/work-04.png",
-    "id": "work-04"
+    "id": "work-04",
+    "ar": {
+      "enabled": true,
+      "file": "ar/work-04.usdz",
+      "width": 30,
+      "height": 40
+    }
   },
   {
     "title": "ArtShed",
