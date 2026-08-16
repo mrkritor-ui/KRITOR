@@ -7,6 +7,7 @@
 ========================================================= */
 
 const DATA_PATH = "artworks.js";
+const IMAGES_PATH = "images";
 
 
 /* =========================================================
@@ -252,6 +253,20 @@ function apiBase() {
 }
 
 
+function githubPath(path) {
+
+  return path
+    .split("/")
+    .map(
+      function (part) {
+        return encodeURIComponent(part);
+      }
+    )
+    .join("/");
+
+}
+
+
 function authHeaders() {
 
   const s =
@@ -278,7 +293,7 @@ async function ghGet(path) {
   const response =
     await fetch(
       apiBase() +
-      path +
+      githubPath(path) +
       "?ref=" +
       encodeURIComponent(
         s.branch
@@ -418,7 +433,8 @@ async function ghPut(
 
   const response =
     await fetch(
-      apiBase() + path,
+      apiBase() +
+      githubPath(path),
       {
 
         method:
@@ -491,7 +507,9 @@ function parseArtworksJS(text) {
 
     return result;
 
-  } catch (error) {
+  }
+
+  catch (error) {
 
     console.error(
       "artworks.js parsing error:",
@@ -515,15 +533,6 @@ function makeArtworkId(
   artwork,
   index
 ) {
-
-  /*
-    Existing artworks did not originally have IDs.
-
-    We use the existing image filename where possible,
-    meaning work-01.png becomes work-01.
-
-    New artworks receive a timestamp ID.
-  */
 
   if (
     artwork.id
@@ -598,23 +607,37 @@ function normaliseArtworks(
     }
   );
 
-   
 }
+
+
+/* =========================================================
+   ARTWORK DIMENSIONS
+========================================================= */
+
 function parseArtworkDimensions(size) {
+
   if (!size) {
     return null;
   }
 
-  const match = String(size).match(
-    /([\d.]+)\s*[×xX*]\s*([\d.]+)/
-  );
+
+  const match =
+    String(size).match(
+      /([\d.]+)\s*[×xX*]\s*([\d.]+)/
+    );
+
 
   if (!match) {
     return null;
   }
 
-  const width = Number(match[1]);
-  const height = Number(match[2]);
+
+  const width =
+    Number(match[1]);
+
+  const height =
+    Number(match[2]);
+
 
   if (
     !Number.isFinite(width) ||
@@ -622,14 +645,21 @@ function parseArtworkDimensions(size) {
     width <= 0 ||
     height <= 0
   ) {
+
     return null;
+
   }
 
+
   return {
+
     width,
     height
+
   };
+
 }
+
 
 /* =========================================================
    BUILD ARTWORKS.JS
@@ -676,13 +706,9 @@ function buildArtworksJS(
 
 
   let depth = 0;
-
   let inString = false;
-
   let stringChar = "";
-
   let escaped = false;
-
   let arrayEnd = -1;
 
 
@@ -696,13 +722,9 @@ function buildArtworksJS(
       original[i];
 
 
-    if (
-      inString
-    ) {
+    if (inString) {
 
-      if (
-        escaped
-      ) {
+      if (escaped) {
 
         escaped = false;
 
@@ -754,7 +776,7 @@ function buildArtworksJS(
     }
 
 
-    if (
+    else if (
       char === "]"
     ) {
 
@@ -863,6 +885,320 @@ async function getLatestArtworks() {
 }
 
 
+/* =========================================================
+   AUTO-CREATE ARTWORKS FROM IMAGES
+========================================================= */
+
+function isImageFile(file) {
+
+  if (
+    !file ||
+    file.type !== "file"
+  ) {
+
+    return false;
+
+  }
+
+
+  return /\.(jpg|jpeg|png|webp|gif)$/i
+    .test(file.name);
+
+}
+
+
+function imagePathMatches(
+  artwork,
+  imagePath
+) {
+
+  return (
+    String(
+      artwork.image || ""
+    ).toLowerCase()
+    ===
+    imagePath.toLowerCase()
+  );
+
+}
+
+
+function createArtworkFromImage(
+  file,
+  existingArtworks
+) {
+
+  const imagePath =
+    IMAGES_PATH +
+    "/" +
+    file.name;
+
+
+  const filename =
+    file.name.replace(
+      /\.[^.]+$/,
+      ""
+    );
+
+
+  let baseId =
+    filename
+      .trim()
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9_-]+/g,
+        "-"
+      )
+      .replace(
+        /^-+|-+$/g,
+        ""
+      );
+
+
+  if (!baseId) {
+
+    baseId =
+      "work";
+
+  }
+
+
+  let id =
+    baseId;
+
+  let counter = 2;
+
+
+  const existingIds =
+    new Set(
+      existingArtworks.map(
+        function (artwork) {
+          return String(
+            artwork.id || ""
+          );
+        }
+      )
+    );
+
+
+  while (
+    existingIds.has(id)
+  ) {
+
+    id =
+      baseId +
+      "-" +
+      counter;
+
+    counter++;
+
+  }
+
+
+  return {
+
+    id,
+
+    title:
+      "Untitled",
+
+    year:
+      new Date()
+        .getFullYear(),
+
+    price:
+      0,
+
+    status:
+      "available",
+
+    collection:
+      "",
+
+    size:
+      "— × — cm",
+
+    image:
+      imagePath,
+
+    ar: {
+
+      enabled:
+        false,
+
+      file:
+        "ar/" +
+        id +
+        ".usdz",
+
+      width:
+        0,
+
+      height:
+        0
+
+    }
+
+  };
+
+}
+
+
+async function syncImagesToArtworks(
+  latest
+) {
+
+  const files =
+    await ghGet(
+      IMAGES_PATH
+    );
+
+
+  if (!Array.isArray(files)) {
+
+    return latest;
+
+  }
+
+
+  const imageFiles =
+    files.filter(
+      isImageFile
+    );
+
+
+  if (!imageFiles.length) {
+
+    return latest;
+
+  }
+
+
+  const existingArtworks =
+    latest.artworks.slice();
+
+
+  const missingArtworks = [];
+
+
+  for (
+    const file of imageFiles
+  ) {
+
+    const imagePath =
+      IMAGES_PATH +
+      "/" +
+      file.name;
+
+
+    const alreadyExists =
+      existingArtworks.some(
+        function (artwork) {
+
+          return imagePathMatches(
+            artwork,
+            imagePath
+          );
+
+        }
+      );
+
+
+    if (
+      alreadyExists
+    ) {
+
+      continue;
+
+    }
+
+
+    const newArtwork =
+      createArtworkFromImage(
+        file,
+        [
+          ...existingArtworks,
+          ...missingArtworks
+        ]
+      );
+
+
+    missingArtworks.push(
+      newArtwork
+    );
+
+  }
+
+
+  if (
+    !missingArtworks.length
+  ) {
+
+    return latest;
+
+  }
+
+
+  setStatus(
+    missingArtworks.length === 1
+      ? "New image found. Creating artwork…"
+      : "New images found. Creating artworks…",
+    "info"
+  );
+
+
+  const updatedArtworks =
+    [
+      ...missingArtworks,
+      ...existingArtworks
+    ];
+
+
+  const updatedText =
+    buildArtworksJS(
+      latest.text,
+      updatedArtworks
+    );
+
+
+  const result =
+    await ghPut(
+      DATA_PATH,
+
+      encodeBase64(
+        updatedText
+      ),
+
+      missingArtworks.length === 1
+        ? "Automatically create artwork"
+        : "Automatically create artworks",
+
+      latest.file.sha
+    );
+
+
+  return {
+
+    file:
+      result.content,
+
+    text:
+      updatedText,
+
+    artworks:
+      normaliseArtworks(
+        updatedArtworks
+      )
+
+  };
+
+}
+
+
+/* =========================================================
+   LOAD CATALOGUE
+========================================================= */
+
 async function loadArtworks() {
 
   if (
@@ -892,8 +1228,19 @@ async function loadArtworks() {
 
   try {
 
-    const latest =
+    let latest =
       await getLatestArtworks();
+
+
+    /*
+      Scan /images and automatically create
+      any missing artwork records.
+    */
+
+    latest =
+      await syncImagesToArtworks(
+        latest
+      );
 
 
     ARTWORKS =
@@ -904,12 +1251,9 @@ async function loadArtworks() {
 
     renderList();
 
-
   }
 
-  catch (
-    error
-  ) {
+  catch (error) {
 
     console.error(
       error
@@ -936,14 +1280,11 @@ async function saveLatestArtworks(
 ) {
 
   /*
-    IMPORTANT:
+    Fetch GitHub immediately before saving.
 
-    We fetch GitHub immediately before saving.
-
-    This means the iPad does not blindly overwrite
-    a newer version created by the PC.
+    This prevents an iPad from blindly overwriting
+    a newer version saved from the PC.
   */
-
 
   const latest =
     await getLatestArtworks();
@@ -980,11 +1321,6 @@ async function saveLatestArtworks(
     );
 
 
-  /*
-    Replace the local copy with the version
-    that was actually committed.
-  */
-
   ARTWORKS =
     normaliseArtworks(
       updatedArtworks
@@ -1006,9 +1342,7 @@ function findArtwork(
 ) {
 
   return artworks.find(
-    function (
-      artwork
-    ) {
+    function (artwork) {
 
       return String(
         artwork.id
@@ -1070,7 +1404,7 @@ function renderList() {
 
     list.innerHTML =
       '<div class="empty-admin">' +
-      'No works yet.' +
+      "No works yet." +
       "</div>";
 
     return;
@@ -1237,7 +1571,6 @@ function buildEditForm(
       alt=""
     >
 
-
     <label class="field full">
 
       <span>
@@ -1277,7 +1610,7 @@ function buildEditForm(
         type="text"
         inputmode="text"
         autocomplete="off"
-        autocorrect="off"
+        autocorrect="sentences"
         autocapitalize="sentences"
         spellcheck="true"
         class="f-title"
@@ -1476,98 +1809,78 @@ function buildEditForm(
 
 
         const size =
-  $(".f-size")
-    .value
-    .trim();
+          $(".f-size")
+            .value
+            .trim();
 
-const image =
-  $(".f-image")
-    .value
-    .trim();
 
-const dimensions =
-  parseArtworkDimensions(size);
+        const image =
+          $(".f-image")
+            .value
+            .trim();
 
-const values = {
 
-  title:
-    $(".f-title")
-      .value
-      .trim(),
+        const dimensions =
+          parseArtworkDimensions(
+            size
+          );
 
-  year:
-    Number(
-      $(".f-year")
-        .value
-    ) || 0,
 
-  status:
-    $(".f-status")
-      .value,
+        const values = {
 
-  price:
-    Number(
-      $(".f-price")
-        .value
-    ) || 0,
+          title:
+            $(".f-title")
+              .value
+              .trim(),
 
-  collection:
-    $(".f-collection")
-      .value
-      .trim(),
+          year:
+            Number(
+              $(".f-year")
+                .value
+            ) || 0,
 
-  size,
+          status:
+            $(".f-status")
+              .value,
 
-  image
+          price:
+            Number(
+              $(".f-price")
+                .value
+            ) || 0,
 
-};
+          collection:
+            $(".f-collection")
+              .value
+              .trim(),
 
-if (
-  dimensions &&
-  image
-) {
+          size,
 
-  values.ar = {
+          image,
 
-    enabled: true,
+          ar: {
 
-    file:
-      "ar/" +
-      work.id +
-      ".usdz",
+            enabled:
+              !!dimensions && !!image,
 
-    width:
-      dimensions.width,
+            file:
+              "ar/" +
+              id +
+              ".usdz",
 
-    height:
-      dimensions.height
+            width:
+              dimensions
+                ? dimensions.width
+                : 0,
 
-  };
+            height:
+              dimensions
+                ? dimensions.height
+                : 0
 
-} else {
+          }
 
-  values.ar = {
-
-    enabled: false,
-
-    file:
-      "ar/" +
-      work.id +
-      ".usdz",
-
-    width:
-      dimensions
-        ? dimensions.width
-        : 0,
-
-    height:
-      dimensions
-        ? dimensions.height
-        : 0
-
-  };
-
-}
+        };
 
 
         await withBusy(
@@ -1652,12 +1965,12 @@ if (
 
         if (
           !confirm(
-            "Delete \"" +
+            'Delete "' +
             (
               work.title ||
               "Untitled"
             ) +
-            "\"?"
+            '"?'
           )
         ) {
 
@@ -1854,7 +2167,8 @@ async function uploadImage(
 
 
   const path =
-    "images/" +
+    IMAGES_PATH +
+    "/" +
     filename;
 
 
@@ -1918,7 +2232,7 @@ async function uploadImage(
 
 
 /* =========================================================
-   ADD WORK
+   ADD WORK — MANUAL FALLBACK
 ========================================================= */
 
 addBtn.addEventListener(
@@ -1951,55 +2265,57 @@ addBtn.addEventListener(
         );
 
 
+        const id =
+          "work-" +
+          Date.now()
+            .toString(36);
+
+
         const newWork = {
 
-  id:
-    "work-" +
-    Date.now()
-      .toString(36),
+          id,
 
-  title:
-    "Untitled",
+          title:
+            "Untitled",
 
-  year:
-    new Date()
-      .getFullYear(),
+          year:
+            new Date()
+              .getFullYear(),
 
-  price:
-    0,
+          price:
+            0,
 
-  status:
-    "available",
+          status:
+            "available",
 
-  collection:
-    "",
+          collection:
+            "",
 
-  size:
-    "— × — cm",
+          size:
+            "— × — cm",
 
-  image:
-    "",
+          image:
+            "",
 
-  ar: {
+          ar: {
 
-    enabled:
-      false,
+            enabled:
+              false,
 
-    file:
-      "ar/work-" +
-      Date.now()
-        .toString(36) +
-      ".usdz",
+            file:
+              "ar/" +
+              id +
+              ".usdz",
 
-    width:
-      0,
+            width:
+              0,
 
-    height:
-      0
+            height:
+              0
 
-  }
+          }
 
-};
+        };
 
 
         await saveLatestArtworks(
@@ -2040,11 +2356,13 @@ addBtn.addEventListener(
 
 
           first.scrollIntoView({
+
             behavior:
               "smooth",
 
             block:
               "start"
+
           });
 
         }
@@ -2118,9 +2436,7 @@ async function withBusy(
 
   }
 
-  catch (
-    error
-  ) {
+  catch (error) {
 
     console.error(
       error
