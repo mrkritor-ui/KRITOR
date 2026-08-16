@@ -1,22 +1,22 @@
 import json
 import os
 import shutil
-import subprocess
 import tempfile
 
 from pxr import (
     Usd,
     UsdGeom,
     UsdShade,
+    UsdUtils,
     Sdf,
     Gf,
-    UsdUtils,
 )
 
 
-ROOT = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
+ROOT = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        ".."
     )
 )
 
@@ -38,10 +38,15 @@ AR_IMAGE_ROOT = os.path.join(
 
 
 # ==========================================================
-# ARTWORKS
+# READ ARTWORKS
 # ==========================================================
 
 def read_artworks():
+
+    if not os.path.isfile(ARTWORKS_FILE):
+        raise RuntimeError(
+            f"artworks.js not found: {ARTWORKS_FILE}"
+        )
 
     with open(
         ARTWORKS_FILE,
@@ -51,12 +56,12 @@ def read_artworks():
         text = f.read()
 
     start = text.find(
-        "const ARTWORKS"
+        "const ARTWORKS ="
     )
 
     if start == -1:
         raise RuntimeError(
-            "const ARTWORKS not found."
+            "const ARTWORKS was not found in artworks.js."
         )
 
     array_start = text.find(
@@ -66,7 +71,7 @@ def read_artworks():
 
     if array_start == -1:
         raise RuntimeError(
-            "ARTWORKS array not found."
+            "ARTWORKS array was not found."
         )
 
     depth = 0
@@ -118,7 +123,7 @@ def read_artworks():
 
     if array_end == -1:
         raise RuntimeError(
-            "Could not find end of ARTWORKS array."
+            "Could not find the end of the ARTWORKS array."
         )
 
     array_text = text[
@@ -127,200 +132,119 @@ def read_artworks():
     ]
 
     try:
-
-        return json.loads(
+        artworks = json.loads(
             array_text
         )
-
-    except json.JSONDecodeError:
-
-        node_script = r"""
-const fs = require("fs");
-
-const file = process.argv[1];
-const text = fs.readFileSync(file, "utf8");
-
-const start = text.indexOf("const ARTWORKS");
-const arrayStart = text.indexOf("[", start);
-
-let depth = 0;
-let inString = false;
-let stringChar = "";
-let escaped = false;
-let arrayEnd = -1;
-
-for (
-    let i = arrayStart;
-    i < text.length;
-    i++
-) {
-
-    const char = text[i];
-
-    if (inString) {
-
-        if (escaped) {
-            escaped = false;
-        }
-
-        else if (char === "\\") {
-            escaped = true;
-        }
-
-        else if (char === stringChar) {
-            inString = false;
-        }
-
-        continue;
-    }
-
-    if (
-        char === '"' ||
-        char === "'" ||
-        char === "`"
-    ) {
-
-        inString = true;
-        stringChar = char;
-        continue;
-    }
-
-    if (char === "[") {
-        depth++;
-    }
-
-    else if (char === "]") {
-
-        depth--;
-
-        if (depth === 0) {
-            arrayEnd = i;
-            break;
-        }
-    }
-}
-
-const arrayText = text.slice(
-    arrayStart,
-    arrayEnd + 1
-);
-
-const ARTWORKS = Function(
-    '"use strict"; return (' +
-    arrayText +
-    ');'
-)();
-
-process.stdout.write(
-    JSON.stringify(ARTWORKS)
-);
-"""
-
-        result = subprocess.run(
-            [
-                "node",
-                "-e",
-                node_script,
-                ARTWORKS_FILE
-            ],
-            capture_output=True,
-            text=True
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"ARTWORKS is not valid JSON: {error}"
         )
 
-        if result.returncode != 0:
-
-            raise RuntimeError(
-                "Could not parse artworks.js:\n" +
-                result.stderr
-            )
-
-        return json.loads(
-            result.stdout
+    if not isinstance(
+        artworks,
+        list
+    ):
+        raise RuntimeError(
+            "ARTWORKS is not an array."
         )
+
+    return artworks
 
 
 # ==========================================================
-# FIND IMAGE
+# FIND AR IMAGE
 # ==========================================================
 
 def find_ar_image(
     artwork_id
 ):
 
-    if not os.path.isdir(
-        AR_IMAGE_ROOT
-    ):
-        return None
+    extensions = [
+        ".png",
+        ".PNG",
+        ".jpg",
+        ".JPG",
+        ".jpeg",
+        ".JPEG"
+    ]
 
-    target = artwork_id.lower()
+    for extension in extensions:
 
-    for filename in os.listdir(
-        AR_IMAGE_ROOT
-    ):
-
-        name, extension = os.path.splitext(
-            filename
+        path = os.path.join(
+            AR_IMAGE_ROOT,
+            artwork_id + extension
         )
 
-        if (
-            name.lower() == target
-            and extension.lower() in (
-                ".png",
-                ".jpg",
-                ".jpeg"
-            )
-        ):
-
-            return os.path.join(
-                AR_IMAGE_ROOT,
-                filename
-            )
+        if os.path.isfile(path):
+            return path
 
     return None
 
 
 # ==========================================================
-# CREATE SOURCE USDC
+# CREATE USD
 # ==========================================================
 
-def create_source_usdc(
+def create_usd(
     artwork,
     image_path,
-    output_path
+    usd_path
 ):
 
     artwork_id = str(
-        artwork["id"]
+        artwork.get(
+            "id",
+            ""
+        )
     )
 
-    ar = artwork["ar"]
+    ar = artwork.get(
+        "ar"
+    )
+
+    if not ar:
+        raise RuntimeError(
+            f"{artwork_id}: missing ar configuration."
+        )
 
     width_cm = float(
-        ar["width"]
+        ar.get(
+            "width",
+            0
+        )
     )
 
     height_cm = float(
-        ar["height"]
+        ar.get(
+            "height",
+            0
+        )
     )
 
-    width_m = (
-        width_cm / 100.0
-    )
+    if width_cm <= 0 or height_cm <= 0:
+        raise RuntimeError(
+            f"{artwork_id}: invalid dimensions "
+            f"{width_cm} x {height_cm} cm."
+        )
 
-    height_m = (
-        height_cm / 100.0
-    )
+    width_m = width_cm / 100.0
+    height_m = height_cm / 100.0
+
+    # Real physical depth.
+    # 30 mm gives the artwork an actual solid body
+    # instead of a zero-thickness plane.
+    depth_m = 0.03
+
+    # Tiny offset so the textured front surface
+    # sits cleanly in front of the solid body.
+    front_offset = 0.0001
 
     texture_name = os.path.basename(
         image_path
     )
 
-    # ------------------------------------------------------
-    # CREATE STAGE
-    # ------------------------------------------------------
-
     stage = Usd.Stage.CreateNew(
-        output_path
+        usd_path
     )
 
     stage.SetMetadata(
@@ -333,9 +257,9 @@ def create_source_usdc(
         "Y"
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # ROOT
-    # ------------------------------------------------------
+    # ======================================================
 
     root = UsdGeom.Xform.Define(
         stage,
@@ -346,73 +270,190 @@ def create_source_usdc(
         root.GetPrim()
     )
 
-    # ------------------------------------------------------
-    # MESH
-    # ------------------------------------------------------
+    # ======================================================
+    # BODY
+    #
+    # Actual rectangular solid.
+    # ======================================================
 
-    mesh = UsdGeom.Mesh.Define(
+    body = UsdGeom.Mesh.Define(
+        stage,
+        "/Painting/Body"
+    )
+
+    x = width_m / 2.0
+    y = height_m / 2.0
+    z = depth_m / 2.0
+
+    body_points = [
+
+        # Front
+        Gf.Vec3f(-x, -y,  z),
+        Gf.Vec3f( x, -y,  z),
+        Gf.Vec3f( x,  y,  z),
+        Gf.Vec3f(-x,  y,  z),
+
+        # Back
+        Gf.Vec3f(-x, -y, -z),
+        Gf.Vec3f( x, -y, -z),
+        Gf.Vec3f( x,  y, -z),
+        Gf.Vec3f(-x,  y, -z),
+    ]
+
+    body.CreatePointsAttr(
+        body_points
+    )
+
+    body.CreateFaceVertexCountsAttr([
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+    ])
+
+    body.CreateFaceVertexIndicesAttr([
+
+        # Front
+        0, 1, 2, 3,
+
+        # Back
+        5, 4, 7, 6,
+
+        # Right
+        1, 5, 6, 2,
+
+        # Left
+        4, 0, 3, 7,
+
+        # Top
+        3, 2, 6, 7,
+
+        # Bottom
+        4, 5, 1, 0
+    ])
+
+    # ======================================================
+    # BODY MATERIAL
+    # ======================================================
+
+    body_material = UsdShade.Material.Define(
+        stage,
+        "/Painting/BodyMaterial"
+    )
+
+    body_shader = UsdShade.Shader.Define(
+        stage,
+        "/Painting/BodyMaterial/Shader"
+    )
+
+    body_shader.CreateIdAttr(
+        "UsdPreviewSurface"
+    )
+
+    body_shader.CreateInput(
+        "diffuseColor",
+        Sdf.ValueTypeNames.Color3f
+    ).Set(
+        Gf.Vec3f(
+            0.82,
+            0.82,
+            0.82
+        )
+    )
+
+    body_shader.CreateInput(
+        "roughness",
+        Sdf.ValueTypeNames.Float
+    ).Set(
+        0.85
+    )
+
+    body_shader.CreateInput(
+        "metallic",
+        Sdf.ValueTypeNames.Float
+    ).Set(
+        0.0
+    )
+
+    body_surface = body_shader.CreateOutput(
+        "surface",
+        Sdf.ValueTypeNames.Token
+    )
+
+    body_material_surface = (
+        body_material.CreateSurfaceOutput()
+    )
+
+    body_material_surface.ConnectToSource(
+        body_surface
+    )
+
+    UsdShade.MaterialBindingAPI(
+        body.GetPrim()
+    ).Bind(
+        body_material
+    )
+
+    # ======================================================
+    # FRONT ARTWORK SURFACE
+    #
+    # Separate rectangular surface.
+    # Exact artwork dimensions.
+    # ======================================================
+
+    artwork_mesh = UsdGeom.Mesh.Define(
         stage,
         "/Painting/Artwork"
     )
 
-    mesh.CreatePointsAttr([
+    front_z = z + front_offset
+
+    artwork_mesh.CreatePointsAttr([
+
         Gf.Vec3f(
-            -width_m / 2,
-            -height_m / 2,
-            0
+            -x,
+            -y,
+            front_z
         ),
 
         Gf.Vec3f(
-            width_m / 2,
-            -height_m / 2,
-            0
+            x,
+            -y,
+            front_z
         ),
 
         Gf.Vec3f(
-            width_m / 2,
-            height_m / 2,
-            0
+            x,
+            y,
+            front_z
         ),
 
         Gf.Vec3f(
-            -width_m / 2,
-            height_m / 2,
-            0
+            -x,
+            y,
+            front_z
         )
     ])
 
-    mesh.CreateFaceVertexCountsAttr([
-        3,
+    artwork_mesh.CreateFaceVertexCountsAttr([
+        4
+    ])
+
+    artwork_mesh.CreateFaceVertexIndicesAttr([
+        0,
+        1,
+        2,
         3
     ])
 
-    mesh.CreateFaceVertexIndicesAttr([
-        0, 1, 2,
-        0, 2, 3
-    ])
-
-    # ------------------------------------------------------
-    # NORMALS
-    # ------------------------------------------------------
-
-    mesh.CreateNormalsAttr([
-        Gf.Vec3f(
-            0,
-            0,
-            1
-        )
-    ])
-
-    mesh.SetNormalsInterpolation(
-        UsdGeom.Tokens.constant
-    )
-
-    # ------------------------------------------------------
-    # UV
-    # ------------------------------------------------------
+    # ======================================================
+    # FRONT UV
+    # ======================================================
 
     primvars = UsdGeom.PrimvarsAPI(
-        mesh
+        artwork_mesh
     )
 
     uv = primvars.CreatePrimvar(
@@ -425,51 +466,48 @@ def create_source_usdc(
         Gf.Vec2f(0, 0),
         Gf.Vec2f(1, 0),
         Gf.Vec2f(1, 1),
-
-        Gf.Vec2f(0, 0),
-        Gf.Vec2f(1, 1),
         Gf.Vec2f(0, 1)
     ])
 
-    # ------------------------------------------------------
-    # MATERIAL
-    # ------------------------------------------------------
+    # ======================================================
+    # ARTWORK MATERIAL
+    # ======================================================
 
-    material = UsdShade.Material.Define(
+    artwork_material = UsdShade.Material.Define(
         stage,
-        "/Painting/Material"
+        "/Painting/ArtworkMaterial"
     )
 
-    shader = UsdShade.Shader.Define(
+    artwork_shader = UsdShade.Shader.Define(
         stage,
-        "/Painting/Material/Shader"
+        "/Painting/ArtworkMaterial/Shader"
     )
 
-    shader.CreateIdAttr(
+    artwork_shader.CreateIdAttr(
         "UsdPreviewSurface"
     )
 
-    shader.CreateInput(
+    artwork_shader.CreateInput(
         "roughness",
         Sdf.ValueTypeNames.Float
     ).Set(
-        0.8
+        0.85
     )
 
-    shader.CreateInput(
+    artwork_shader.CreateInput(
         "metallic",
         Sdf.ValueTypeNames.Float
     ).Set(
         0.0
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # UV READER
-    # ------------------------------------------------------
+    # ======================================================
 
     uv_reader = UsdShade.Shader.Define(
         stage,
-        "/Painting/Material/UVReader"
+        "/Painting/ArtworkMaterial/UVReader"
     )
 
     uv_reader.CreateIdAttr(
@@ -488,13 +526,13 @@ def create_source_usdc(
         Sdf.ValueTypeNames.Float2
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # TEXTURE
-    # ------------------------------------------------------
+    # ======================================================
 
     texture = UsdShade.Shader.Define(
         stage,
-        "/Painting/Material/Texture"
+        "/Painting/ArtworkMaterial/Texture"
     )
 
     texture.CreateIdAttr(
@@ -522,155 +560,52 @@ def create_source_usdc(
         Sdf.ValueTypeNames.Float3
     )
 
-    shader.CreateInput(
+    artwork_shader.CreateInput(
         "diffuseColor",
         Sdf.ValueTypeNames.Color3f
     ).ConnectToSource(
         texture_rgb
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # SURFACE
-    # ------------------------------------------------------
+    # ======================================================
 
-    shader_surface = shader.CreateOutput(
+    artwork_surface = artwork_shader.CreateOutput(
         "surface",
         Sdf.ValueTypeNames.Token
     )
 
-    material_surface = (
-        material.CreateSurfaceOutput()
+    artwork_material_surface = (
+        artwork_material.CreateSurfaceOutput()
     )
 
-    material_surface.ConnectToSource(
-        shader_surface
+    artwork_material_surface.ConnectToSource(
+        artwork_surface
     )
 
-    # ------------------------------------------------------
-    # BIND
-    # ------------------------------------------------------
+    # ======================================================
+    # BIND ARTWORK MATERIAL
+    # ======================================================
 
     UsdShade.MaterialBindingAPI(
-        mesh.GetPrim()
+        artwork_mesh.GetPrim()
     ).Bind(
-        material
+        artwork_material
     )
 
-    # ------------------------------------------------------
+    # ======================================================
     # SAVE
-    # ------------------------------------------------------
+    # ======================================================
 
     stage.GetRootLayer().Save()
 
-
-# ==========================================================
-# PACKAGE ARKIT USDZ
-# ==========================================================
-
-def package_usdz(
-    source_usdc,
-    image_path,
-    output_usdz
-):
-
-    # Create a temporary directory containing
-    # the source USD and its texture.
-
-    with tempfile.TemporaryDirectory() as temp:
-
-        temp_usdc = os.path.join(
-            temp,
-            "model.usdc"
-        )
-
-        temp_texture = os.path.join(
-            temp,
-            os.path.basename(
-                image_path
-            )
-        )
-
-        shutil.copy2(
-            source_usdc,
-            temp_usdc
-        )
-
-        shutil.copy2(
-            image_path,
-            temp_texture
-        )
-
-        # Reopen the copied USD so its texture dependency
-        # is resolved relative to the USD file.
-
-        stage = Usd.Stage.Open(
-            temp_usdc
-        )
-
-        if not stage:
-
-            raise RuntimeError(
-                "Could not reopen generated USDC."
-            )
-
-        success = UsdUtils.CreateNewARKitUsdzPackage(
-            Sdf.AssetPath(
-                temp_usdc
-            ),
-            output_usdz
-        )
-
-        if not success:
-
-            raise RuntimeError(
-                "UsdUtils failed to create ARKit USDZ."
-            )
+    # Close stage before USDZ packaging.
+    stage = None
 
 
 # ==========================================================
-# VALIDATE
-# ==========================================================
-
-def validate_usdz(
-    path
-):
-
-    if not os.path.isfile(
-        path
-    ):
-
-        raise RuntimeError(
-            f"USDZ was not created: {path}"
-        )
-
-    stage = Usd.Stage.Open(
-        path
-    )
-
-    if not stage:
-
-        raise RuntimeError(
-            f"USDZ could not be opened by USD: {path}"
-        )
-
-    default_prim = (
-        stage.GetDefaultPrim()
-    )
-
-    if not default_prim:
-
-        raise RuntimeError(
-            f"USDZ has no defaultPrim: {path}"
-        )
-
-    print(
-        "Validated:",
-        path
-    )
-
-
-# ==========================================================
-# CREATE ONE
+# CREATE USDZ
 # ==========================================================
 
 def create_usdz(
@@ -688,17 +623,35 @@ def create_usdz(
         "ar"
     )
 
-    if not isinstance(
-        ar,
-        dict
-    ):
-        return
-
-    if not ar.get(
+    if not ar or not ar.get(
         "enabled",
         False
     ):
-        return
+        return False
+
+    width_cm = float(
+        ar.get(
+            "width",
+            0
+        )
+    )
+
+    height_cm = float(
+        ar.get(
+            "height",
+            0
+        )
+    )
+
+    if width_cm <= 0 or height_cm <= 0:
+
+        print(
+            "Skipping",
+            artwork_id,
+            "- invalid dimensions."
+        )
+
+        return False
 
     image_path = find_ar_image(
         artwork_id
@@ -712,76 +665,110 @@ def create_usdz(
             "- AR image missing."
         )
 
-        return
-
-    width = float(
-        ar.get(
-            "width",
-            0
-        )
-    )
-
-    height = float(
-        ar.get(
-            "height",
-            0
-        )
-    )
-
-    if width <= 0 or height <= 0:
-
         print(
-            "Skipping",
-            artwork_id,
-            "- invalid dimensions."
+            "Expected one of:"
         )
 
-        return
+        for extension in [
+            ".png",
+            ".PNG",
+            ".jpg",
+            ".JPG",
+            ".jpeg",
+            ".JPEG"
+        ]:
+            print(
+                " ",
+                os.path.join(
+                    AR_IMAGE_ROOT,
+                    artwork_id + extension
+                )
+            )
+
+        return False
 
     print(
         "Processing:",
         artwork_id
     )
 
+    print(
+        "Using AR image:",
+        image_path
+    )
+
+    os.makedirs(
+        AR_ROOT,
+        exist_ok=True
+    )
+
+    output_path = os.path.join(
+        AR_ROOT,
+        artwork_id + ".usdz"
+    )
+
     with tempfile.TemporaryDirectory() as temp:
 
-        source_usdc = os.path.join(
+        usd_path = os.path.join(
             temp,
-            "model.usdc"
+            "Painting.usda"
         )
 
-        create_source_usdc(
+        texture_path = os.path.join(
+            temp,
+            os.path.basename(
+                image_path
+            )
+        )
+
+        shutil.copy2(
+            image_path,
+            texture_path
+        )
+
+        create_usd(
             artwork,
             image_path,
-            source_usdc
+            usd_path
         )
 
-        output_usdz = os.path.join(
-            AR_ROOT,
-            artwork_id + ".usdz"
+        # ==================================================
+        # ARKIT USDZ PACKAGE
+        # ==================================================
+
+        success = UsdUtils.CreateNewARKitUsdzPackage(
+            Sdf.AssetPath(
+                usd_path
+            ),
+            output_path,
+            "Painting.usda"
         )
 
-        if os.path.isfile(
-            output_usdz
-        ):
-            os.remove(
-                output_usdz
+        if not success:
+            raise RuntimeError(
+                f"USDZ packaging failed for {artwork_id}"
             )
 
-        package_usdz(
-            source_usdc,
-            image_path,
-            output_usdz
+    if not os.path.isfile(
+        output_path
+    ):
+        raise RuntimeError(
+            f"USDZ was not created: {output_path}"
         )
 
-    validate_usdz(
-        output_usdz
-    )
+    if os.path.getsize(
+        output_path
+    ) <= 0:
+        raise RuntimeError(
+            f"USDZ is empty: {output_path}"
+        )
 
     print(
         "Generated:",
-        output_usdz
+        output_path
     )
+
+    return True
 
 
 # ==========================================================
@@ -803,29 +790,66 @@ def main():
         "artworks."
     )
 
+    generated = 0
+    skipped = 0
+    failed = 0
+
     for artwork in artworks:
+
+        artwork_id = artwork.get(
+            "id",
+            "unknown"
+        )
 
         try:
 
-            create_usdz(
+            result = create_usdz(
                 artwork
             )
 
+            if result:
+                generated += 1
+            else:
+                skipped += 1
+
         except Exception as error:
 
+            failed += 1
+
             print(
-                "ERROR:",
-                artwork.get(
-                    "id",
-                    "unknown"
-                ),
+                "ERROR generating",
+                artwork_id,
+                ":",
                 error
             )
 
+    print()
     print(
         "USDZ generation complete."
     )
 
+    print(
+        "Generated files:",
+        generated
+    )
+
+    print(
+        "Skipped:",
+        skipped
+    )
+
+    print(
+        "Failed:",
+        failed
+    )
+
+    if failed > 0:
+        raise SystemExit(1)
+
+
+# ==========================================================
+# ENTRY POINT
+# ==========================================================
 
 if __name__ == "__main__":
     main()
