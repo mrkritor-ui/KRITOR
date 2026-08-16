@@ -126,14 +126,20 @@ const ARTWORKS = [
     "id": "work-05"
   },
   {
-    "title": "Untitled",
+    "title": "Older Sister",
     "year": 2022,
-    "price": 950,
+    "price": 225,
     "status": "sold",
-    "collection": "Studio Series",
-    "size": "— × — cm",
+    "collection": "BS",
+    "size": "60 × 60 cm",
     "image": "images/work-06.png",
-    "id": "work-06"
+    "id": "work-06",
+    "ar": {
+      "enabled": true,
+      "file": "ar/work-06.usdz",
+      "width": 60,
+      "height": 60
+    }
   },
   {
     "title": "Untitled",
