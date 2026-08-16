@@ -212,21 +212,25 @@ process.stdout.write(JSON.stringify(ARTWORKS));
 
 def find_ar_image(artwork_id):
 
-    extensions = [
-        ".png",
-        ".jpg",
-        ".jpeg"
-    ]
+    if not os.path.isdir(AR_IMAGE_ROOT):
+        return None
 
-    for extension in extensions:
+    for filename in os.listdir(AR_IMAGE_ROOT):
 
-        path = os.path.join(
-            AR_IMAGE_ROOT,
-            artwork_id + extension
-        )
+        name, extension = os.path.splitext(filename)
 
-        if os.path.isfile(path):
-            return path
+        if (
+            name.lower() == artwork_id.lower()
+            and extension.lower() in (
+                ".png",
+                ".jpg",
+                ".jpeg"
+            )
+        ):
+            return os.path.join(
+                AR_IMAGE_ROOT,
+                filename
+            )
 
     return None
 
