@@ -32,7 +32,7 @@ ROOT,
 
 def read_artworks():
 
-```
+
 with open(
     ARTWORKS_FILE,
     "r",
@@ -133,7 +133,7 @@ if not isinstance(
     )
 
 return artworks
-```
+
 
 # ==========================================================
 
@@ -145,7 +145,7 @@ def find_ar_image(
 artwork_id
 ):
 
-```
+
 extensions = [
     ".png",
     ".jpg",
@@ -164,7 +164,7 @@ for extension in extensions:
         return path
 
 return None
-```
+
 
 # ==========================================================
 
@@ -176,7 +176,7 @@ def create_usdz(
 artwork
 ):
 
-```
+
 artwork_id = str(
     artwork.get(
         "id",
@@ -572,7 +572,7 @@ print(
     "Generated:",
     output_path
 )
-```
+
 
 # ==========================================================
 
@@ -582,7 +582,7 @@ print(
 
 def main():
 
-```
+
 os.makedirs(
     AR_ROOT,
     exist_ok=True
@@ -615,7 +615,7 @@ for artwork in artworks:
             ":",
             error
         )
-```
+
 
 if **name** == "**main**":
 main()
