@@ -41,7 +41,7 @@ const ARTWORKS = [
     "size": "— × — cm",
     "image": "images/work-14.png",
     "ar": {
-      "enabled": false,
+      "enabled": true,
       "file": "ar/work-14.usdz",
       "width": 120,
       "height": 90
