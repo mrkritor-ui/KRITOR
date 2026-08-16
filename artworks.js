@@ -35,9 +35,9 @@ const ARTWORKS = [
     "id": "work-14",
     "title": "Untitled",
     "year": 2026,
-    "price": 0,
+    "price": 1240,
     "status": "available",
-    "collection": "",
+    "collection": "Studio Series",
     "size": "— × — cm",
     "image": "images/work-14.png",
     "ar": {
