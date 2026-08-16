@@ -333,15 +333,7 @@ with tempfile.TemporaryDirectory() as temp:
 
     # --------------------------------------------------
     # RECTANGULAR PAINTING
-    #
     # Two explicit triangles.
-    #
-    # 0 -------- 1
-    # |        / |
-    # |      /   |
-    # |    /     |
-    # |  /       |
-    # 3 -------- 2
     # --------------------------------------------------
 
     mesh = UsdGeom.Mesh.Define(
@@ -403,18 +395,6 @@ with tempfile.TemporaryDirectory() as temp:
 
     # --------------------------------------------------
     # UV COORDINATES
-    #
-    # One UV per face vertex.
-    #
-    # Triangle 1:
-    # 0 → bottom-left
-    # 1 → bottom-right
-    # 2 → top-right
-    #
-    # Triangle 2:
-    # 0 → bottom-left
-    # 2 → top-right
-    # 3 → top-left
     # --------------------------------------------------
 
     primvars = UsdGeom.PrimvarsAPI(
