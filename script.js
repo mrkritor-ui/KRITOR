@@ -14,6 +14,11 @@
     if (zoomControl) zoomControl.setAttribute("aria-label", `Catalogue view: ${levels[level]}. Tap to change view`);
   }
 
+  function workNumber(work) {
+    const match = String(work.id || "").match(/work-(\d+)/i);
+    return match ? Number(match[1]) : -1;
+  }
+
   function makeTile(work) {
     const tile = document.createElement("a");
     tile.className = "tile";
@@ -35,7 +40,13 @@
   function render() {
     grid.innerHTML = "";
     if (!Array.isArray(ARTWORKS) || !ARTWORKS.length) return;
-    ARTWORKS.forEach(function (work) { grid.appendChild(makeTile(work)); });
+
+    // Newest/highest work number first; work-01 ends at the bottom.
+    const ordered = ARTWORKS.slice().sort(function (a, b) {
+      return workNumber(b) - workNumber(a);
+    });
+
+    ordered.forEach(function (work) { grid.appendChild(makeTile(work)); });
     applyLevel(level);
   }
 
