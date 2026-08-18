@@ -12,8 +12,8 @@
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="stylesheet" href="style.css">
-  <script>if(new URLSearchParams(location.search).get('return')==='catalogue')document.documentElement.classList.add('return-catalog');</script>
-  <style>.return-catalog #glass-intro{display:none!important;pointer-events:none!important}</style>
+  <script>(function(){var p=new URLSearchParams(location.search);if(p.get('return')==='catalogue'||localStorage.getItem('kritor_intro_seen')==='1')document.documentElement.classList.add('skip-intro')})()</script>
+  <style>.skip-intro #glass-intro{display:none!important;pointer-events:none!important}</style>
 </head>
 <body>
   <header class="site-header" aria-label="KRITOR navigation">
