@@ -10,7 +10,7 @@
     tile.setAttribute("aria-label", work.title ? `${work.title}, ${work.year}` : `Artwork ${work.id}`);
 
     const img = document.createElement("img");
-    img.src = work.image;
+    img.src = work.thumbnail || work.image;
     img.alt = work.title || "";
     img.loading = "lazy";
     img.decoding = "async";
@@ -28,8 +28,7 @@
   }
 
   // The glass stays active while the catalogue is scrolled.
-  // Only the KRITOR mark dismisses it, which avoids accidental
-  // dismissal from a touchscreen scroll gesture.
+  // Only the KRITOR mark dismisses it, avoiding accidental dismissal from touch scrolling.
   function dismissGlass(event) {
     if (!glassIntro || !glassLogo) return;
     if (event) event.stopPropagation();
