@@ -38,7 +38,9 @@
     img.alt = work.title || "";
     img.loading = "lazy";
     img.decoding = "async";
-    img.onerror = function () { if (work.thumbnail && img.src.indexOf(work.thumbnail) !== -1) img.src = work.image; };
+    img.onerror = function () {
+      if (work.thumbnail && img.src.indexOf(work.thumbnail) !== -1) img.src = work.image;
+    };
     tile.appendChild(img);
     return tile;
   }
@@ -46,25 +48,73 @@
   function render() {
     grid.innerHTML = "";
     if (!Array.isArray(ARTWORKS) || !ARTWORKS.length) return;
-    ARTWORKS.slice().sort((a,b)=>workNumber(b)-workNumber(a)).forEach(work=>grid.appendChild(makeTile(work)));
+    ARTWORKS.slice().sort((a, b) => workNumber(b) - workNumber(a)).forEach(work => grid.appendChild(makeTile(work)));
     applyLevel(level);
   }
 
   function dismissGlass(event) {
     if (!glassIntro || !glassLogo) return;
-    if (event) event.stopPropagation();
+    // The opening layer owns this interaction. Never allow the same touch/click
+    // to fall through to an artwork underneath it.
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     glassIntro.classList.add("clear");
     glassIntro.setAttribute("aria-hidden", "true");
   }
 
-  function pinchDistance(touches) { const a=touches[0],b=touches[1]; return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY); }
+  function pinchDistance(touches) {
+    const a = touches[0], b = touches[1];
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  }
+
   render();
-  if (zoomControl) zoomControl.addEventListener("click",()=>applyLevel(level+1));
-  grid.addEventListener("gesturestart",e=>{gestureStartScale=e.scale||1;gestureHandled=false;e.preventDefault()},{passive:false});
-  grid.addEventListener("gesturechange",e=>{e.preventDefault();if(gestureHandled||gestureStartScale===null)return;const s=e.scale||1;if(Math.abs(s-gestureStartScale)>.12){applyLevel(level+(s>gestureStartScale?-1:1));gestureHandled=true;}},{passive:false});
-  grid.addEventListener("gestureend",e=>{e.preventDefault();gestureStartScale=null;gestureHandled=false},{passive:false});
-  grid.addEventListener("touchstart",e=>{if(e.touches.length===2)pinchStart=pinchDistance(e.touches)},{passive:true});
-  grid.addEventListener("touchmove",e=>{if(e.touches.length!==2||pinchStart===null)return;const d=pinchDistance(e.touches)-pinchStart;if(Math.abs(d)>80){applyLevel(level+(d>0?-1:1));pinchStart=pinchDistance(e.touches)}},{passive:true});
-  grid.addEventListener("touchend",()=>pinchStart=null,{passive:true});
-  if(glassLogo){glassLogo.addEventListener("click",dismissGlass);glassLogo.addEventListener("touchend",dismissGlass,{passive:true});}
+
+  if (zoomControl) zoomControl.addEventListener("click", () => applyLevel(level + 1));
+
+  grid.addEventListener("gesturestart", e => {
+    gestureStartScale = e.scale || 1;
+    gestureHandled = false;
+    e.preventDefault();
+  }, { passive: false });
+  grid.addEventListener("gesturechange", e => {
+    e.preventDefault();
+    if (gestureHandled || gestureStartScale === null) return;
+    const s = e.scale || 1;
+    if (Math.abs(s - gestureStartScale) > .12) {
+      applyLevel(level + (s > gestureStartScale ? -1 : 1));
+      gestureHandled = true;
+    }
+  }, { passive: false });
+  grid.addEventListener("gestureend", e => {
+    e.preventDefault();
+    gestureStartScale = null;
+    gestureHandled = false;
+  }, { passive: false });
+  grid.addEventListener("touchstart", e => {
+    if (e.touches.length === 2) pinchStart = pinchDistance(e.touches);
+  }, { passive: true });
+  grid.addEventListener("touchmove", e => {
+    if (e.touches.length !== 2 || pinchStart === null) return;
+    const d = pinchDistance(e.touches) - pinchStart;
+    if (Math.abs(d) > 80) {
+      applyLevel(level + (d > 0 ? -1 : 1));
+      pinchStart = pinchDistance(e.touches);
+    }
+  }, { passive: true });
+  grid.addEventListener("touchend", () => pinchStart = null, { passive: true });
+
+  // Returning from an artwork page must bypass the opening glass entirely.
+  if (new URLSearchParams(location.search).get("from") === "work" && glassIntro) {
+    glassIntro.classList.add("clear");
+    glassIntro.setAttribute("aria-hidden", "true");
+  }
+
+  // Attach the dismissal to the glass itself as well as the logo. This guarantees
+  // the first tap belongs to the glass and the artwork cannot receive it.
+  if (glassIntro) {
+    glassIntro.addEventListener("click", dismissGlass, { capture: true });
+    glassIntro.addEventListener("touchend", dismissGlass, { capture: true, passive: false });
+  }
 })();
