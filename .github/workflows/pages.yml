@@ -3,8 +3,12 @@ name: Deploy Website
 on:
   push:
     branches:
-      - main
+      - redesign/catalogue-v2
   workflow_dispatch:
+
+concurrency:
+  group: pages-v2
+  cancel-in-progress: true
 
 permissions:
   contents: write
