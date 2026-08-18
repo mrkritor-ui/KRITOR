@@ -4,8 +4,8 @@
   const glassLogo = document.querySelector(".glass-logo");
   const zoomControl = document.getElementById("zoom-control");
 
-  // Start at the densest/smallest view, then move toward larger artwork.
-  const levels = ["overview", "normal", "zoom"];
+  // Start at the largest artwork view, then move toward smaller artwork.
+  const levels = ["zoom", "normal", "overview"];
   let level = 0;
   let pinchStart = null;
   let gestureStartScale = null;
@@ -22,7 +22,7 @@
       zoomControl.textContent = isLast ? "−" : "+";
       zoomControl.setAttribute(
         "aria-label",
-        isLast ? "Return to smaller catalogue view" : "Enlarge catalogue view"
+        isLast ? "Return to larger catalogue view" : "Reduce artwork size"
       );
     }
   }
@@ -90,7 +90,7 @@
     if (gestureHandled || gestureStartScale === null) return;
     const scale = event.scale || 1;
     if (Math.abs(scale - gestureStartScale) > 0.12) {
-      applyLevel(level + (scale > gestureStartScale ? 1 : -1));
+      applyLevel(level + (scale > gestureStartScale ? -1 : 1));
       gestureHandled = true;
     }
   }, { passive: false });
@@ -110,7 +110,7 @@
     if (event.touches.length !== 2 || pinchStart === null) return;
     const delta = pinchDistance(event.touches) - pinchStart;
     if (Math.abs(delta) > 80) {
-      applyLevel(level + (delta > 0 ? 1 : -1));
+      applyLevel(level + (delta > 0 ? -1 : 1));
       pinchStart = pinchDistance(event.touches);
     }
   }, { passive: true });
