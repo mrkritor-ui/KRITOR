@@ -8,27 +8,16 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-html, body {
-  margin: 0;
-  padding: 0;
-  background: var(--bg);
-  color: var(--ink);
-}
-
-body {
-  font-family: var(--sans);
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+body { font-family: var(--sans); padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
 
 .site-header {
   position: relative;
   z-index: 1;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  padding: 13px var(--page-pad) 10px;
+  padding: 10px var(--page-pad);
 }
 
 .about-link {
@@ -39,33 +28,41 @@ body {
   text-transform: uppercase;
 }
 
+.zoom-control {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font: 300 22px/28px var(--sans);
+  cursor: pointer;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--gap);
   padding: 0 var(--page-pad) 24px;
+  transition: grid-template-columns .35s ease, gap .35s ease;
 }
 
-.tile {
-  display: block;
-  min-width: 0;
-  text-decoration: none;
-  color: inherit;
-}
+.grid.view-zoom { grid-template-columns: 1fr; gap: 14px; }
+.grid.view-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 
-.tile img {
-  display: block;
-  width: 100%;
-  height: auto;
-  background: #fff;
-}
+.tile { display: block; min-width: 0; text-decoration: none; color: inherit; }
+.tile img { display: block; width: 100%; height: auto; background: #fff; }
 
 @media (min-width: 700px) {
   .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid.view-zoom { grid-template-columns: 1fr; }
+  .grid.view-overview { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1100px) {
   .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid.view-overview { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
 
 /* KRITOR opening glass */
@@ -98,9 +95,7 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(120deg, rgba(255,255,255,.12), transparent 32%, rgba(0,0,0,.05)),
-    radial-gradient(circle at 50% 50%, transparent 35%, rgba(0,0,0,.08));
+  background: linear-gradient(120deg, rgba(255,255,255,.12), transparent 32%, rgba(0,0,0,.05)), radial-gradient(circle at 50% 50%, transparent 35%, rgba(0,0,0,.08));
 }
 
 .glass-logo {
@@ -111,22 +106,12 @@ body {
   font-weight: 500;
   letter-spacing: .22em;
   text-indent: .22em;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.65),
-    0 -1px 1px rgba(0,0,0,.22),
-    0 3px 10px rgba(0,0,0,.10);
+  text-shadow: 0 1px 0 rgba(255,255,255,.65), 0 -1px 1px rgba(0,0,0,.22), 0 3px 10px rgba(0,0,0,.10);
   filter: blur(.15px);
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
 }
 
-.glass-intro.clear {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .glass-intro { transition: none; }
-}
+.glass-intro.clear { opacity: 0; visibility: hidden; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .glass-intro { transition: none; } }
