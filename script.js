@@ -3,7 +3,9 @@
   const glassIntro = document.getElementById("glass-intro");
   const glassLogo = document.querySelector(".glass-logo");
   const zoomControl = document.getElementById("zoom-control");
-  const levels = ["normal", "zoom", "overview"];
+
+  // Start at the densest/smallest view, then move toward larger artwork.
+  const levels = ["overview", "normal", "zoom"];
   let level = 0;
   let pinchStart = null;
   let gestureStartScale = null;
@@ -11,9 +13,18 @@
 
   function applyLevel(next) {
     level = (next + levels.length) % levels.length;
+    const current = levels[level];
     grid.classList.remove("view-normal", "view-zoom", "view-overview");
-    grid.classList.add(`view-${levels[level]}`);
-    if (zoomControl) zoomControl.setAttribute("aria-label", `Catalogue view: ${levels[level]}. Tap to change view`);
+    grid.classList.add(`view-${current}`);
+
+    if (zoomControl) {
+      const isLast = level === levels.length - 1;
+      zoomControl.textContent = isLast ? "−" : "+";
+      zoomControl.setAttribute(
+        "aria-label",
+        isLast ? "Return to smaller catalogue view" : "Enlarge catalogue view"
+      );
+    }
   }
 
   function workNumber(work) {
@@ -63,7 +74,9 @@
 
   render();
 
-  if (zoomControl) zoomControl.addEventListener("click", function () { applyLevel(level + 1); });
+  if (zoomControl) zoomControl.addEventListener("click", function () {
+    applyLevel(level + 1);
+  });
 
   // iOS Safari: prevent browser page zoom and turn pinch into catalogue view changes.
   grid.addEventListener("gesturestart", function (event) {
