@@ -12,8 +12,6 @@
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="stylesheet" href="style.css">
-  <script>(function(){var p=new URLSearchParams(location.search);if(p.get('return')==='catalogue')document.documentElement.classList.add('skip-intro')})()</script>
-  <style>.skip-intro #glass-intro{display:none!important;pointer-events:none!important}</style>
 </head>
 <body>
   <header class="site-header" aria-label="KRITOR navigation">
@@ -24,11 +22,6 @@
     <a class="about-link" href="about.html">About</a>
   </header>
   <main id="grid" class="grid" aria-label="Artwork catalogue"></main>
-  <div id="glass-intro" class="glass-intro" aria-label="Enter KRITOR catalogue">
-    <div class="glass-noise" aria-hidden="true"></div>
-    <div class="glass-refraction" aria-hidden="true"></div>
-    <div class="glass-overlay" aria-hidden="true"></div>
-  </div>
   <script src="artworks.js"></script>
   <script src="script.js"></script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
