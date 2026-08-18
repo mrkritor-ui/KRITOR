@@ -1,174 +1,39 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
-  >
-
-  <title>Works</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>KRITOR</title>
   <link rel="manifest" href="manifest.json">
-
-  <meta
-    name="apple-mobile-web-app-capable"
-    content="yes"
-  >
-
-  <meta
-    name="mobile-web-app-capable"
-    content="yes"
-  >
-
-  <meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="black-translucent"
-  >
-
-  <meta
-    name="apple-mobile-web-app-title"
-    content="Works"
-  >
-
-  <meta
-    name="theme-color"
-    content="#faf9f6"
-  >
-
-  <link
-    rel="apple-touch-icon"
-    href="icon.png"
-  >
-
-  <link
-    rel="stylesheet"
-    href="style.css"
-  >
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KRITOR">
+  <meta name="theme-color" content="#faf9f6">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-  <header class="site-header">
-    <h1>Works</h1>
+  <header class="site-header" aria-label="KRITOR navigation">
+    <a class="brand" href="index.html" aria-label="KRITOR home">KRITOR</a>
+    <a class="about-link" href="about.html">About</a>
   </header>
 
-  <div class="controls">
+  <main id="grid" class="grid" aria-label="Artwork catalogue"></main>
 
-    <div
-      id="collections"
-      class="chips"
-      role="tablist"
-      aria-label="Filter by collection"
-    ></div>
-
-    <div class="sort-wrap">
-
-      <select
-        id="sort"
-        class="sort-select"
-        aria-label="Sort works"
-      >
-        <option value="year-desc">
-          Year, newest
-        </option>
-
-        <option value="year-asc">
-          Year, oldest
-        </option>
-
-        <option value="price-desc">
-          Price, high to low
-        </option>
-
-        <option value="price-asc">
-          Price, low to high
-        </option>
-      </select>
-
-    </div>
-
+  <div id="glass-intro" class="glass-intro" aria-label="Enter KRITOR catalogue">
+    <div class="glass-logo">KRITOR</div>
   </div>
 
-  <main
-    id="grid"
-    class="grid"
-    aria-label="Artwork grid"
-  ></main>
+  <script src="artworks.js"></script>
+  <script src="script.js"></script>
 
-  <div
-    id="viewer"
-    class="viewer"
-    hidden
-  >
-
-    <button
-      id="viewer-close"
-      class="viewer-close"
-      aria-label="Close"
-    >
-      &times;
-    </button>
-
-    <div
-      id="viewer-stage"
-      class="viewer-stage"
-    >
-
-      <img
-        id="viewer-img"
-        class="viewer-img"
-        src=""
-        alt=""
-      >
-
-    </div>
-
-    <div
-      id="viewer-caption"
-      class="viewer-caption"
-    ></div>
-
-    <<a
-  id="viewer-ar"
-  class="viewer-ar"
-  rel="ar"
-  href="#"
-  hidden
->
-  AR
-</a>
-
-  </div>
-
-  <footer class="site-footer">
-
-  <a href="admin.html" class="admin-link">Admin</a>
-
-  </footer>
-
-  <!-- IMPORTANT: artworks.js must load BEFORE script.js -->
- <script src="artworks.js"></script>
-<script src="script.js"></script>
-
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("./sw.js")
-      .then(function () {
-        console.log("Works offline system ready.");
-      })
-      .catch(function (error) {
-        console.error(
-          "Offline system failed:",
-          error
-        );
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("./sw.js").catch(function () {});
       });
-  });
-}
-</script>
-
+    }
+  </script>
 </body>
 </html>
