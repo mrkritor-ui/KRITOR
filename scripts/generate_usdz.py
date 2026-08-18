@@ -33,8 +33,8 @@ def find_ar_image(artwork_id):
 
 
 def set_no_subdivision(mesh):
-    # Prevent USD's default Catmull-Clark subdivision from turning
-    # rectangular painting meshes into rounded/oval surfaces in AR Quick Look.
+    # Apple Quick Look / USD defaults an unspecified mesh to Catmull-Clark.
+    # Explicitly disable subdivision so the painting remains rectangular.
     mesh.GetSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
 
 
@@ -103,10 +103,19 @@ def create_usd(artwork, image_path, usd_path):
 
     texture = UsdShade.Shader.Define(stage, "/Painting/ArtworkMaterial/Texture")
     texture.CreateIdAttr("UsdUVTexture")
-    texture.CreateInput("file", Sdf.ValueTypeNames.Asset).Set(Sdf.AssetPath(os.path.basename(image_path)))
-    texture.CreateInput("st", Sdf.ValueTypeNames.Float2).ConnectToSource(reader.GetOutput("result"))
+    texture.CreateInput("file", Sdf.ValueTypeNames.Asset).Set(
+        Sdf.AssetPath(os.path.basename(image_path))
+    )
+    texture.CreateInput("st", Sdf.ValueTypeNames.Float2).ConnectToSource(
+        reader.GetOutput("result")
+    )
+    # Explicitly author the output used by the Preview Surface connection.
+    # Without this, GetOutput("rgb") returns an invalid/null attribute.
+    texture.CreateOutput("rgb", Sdf.ValueTypeNames.Float3)
 
-    shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).ConnectToSource(texture.GetOutput("rgb"))
+    shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).ConnectToSource(
+        texture.GetOutput("rgb")
+    )
     shader.CreateOutput("surface", Sdf.ValueTypeNames.Token)
     mat.CreateSurfaceOutput().ConnectToSource(shader.GetOutput("surface"))
     UsdShade.MaterialBindingAPI(art.GetPrim()).Bind(mat)
@@ -138,7 +147,7 @@ def create_usdz(artwork):
         usd_path = os.path.join(temp, "Painting.usda")
         texture_path = os.path.join(temp, os.path.basename(image_path))
         shutil.copy2(image_path, texture_path)
-        create_usd(artwork, image_path, usd_path)
+        create_usd(artwork, texture_path, usd_path)
 
         if not UsdUtils.CreateNewARKitUsdzPackage(
             Sdf.AssetPath(usd_path), output_path, "Painting.usda"
