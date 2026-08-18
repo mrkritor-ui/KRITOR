@@ -14,16 +14,13 @@ AR_IMAGE_ROOT = os.path.join(ROOT, "images", "ar")
 def read_artworks():
     with open(ARTWORKS_FILE, "r", encoding="utf-8") as f:
         text = f.read()
-
     start = text.find("const ARTWORKS =")
     if start < 0:
         raise RuntimeError("const ARTWORKS was not found in artworks.js")
-
     start = text.find("[", start)
     end = text.rfind("];", start)
     if start < 0 or end < 0:
         raise RuntimeError("ARTWORKS array was not found")
-
     return json.loads(text[start:end + 1])
 
 
@@ -36,9 +33,8 @@ def find_ar_image(artwork_id):
 
 
 def set_no_subdivision(mesh):
-    # Critical for Apple AR Quick Look / RealityKit.
-    # USD defaults an unspecified mesh to Catmull-Clark subdivision,
-    # which can turn a rectangular painting into an oval.
+    # Prevent USD's default Catmull-Clark subdivision from turning
+    # rectangular painting meshes into rounded/oval surfaces in AR Quick Look.
     mesh.GetSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
 
 
@@ -57,7 +53,6 @@ def create_usd(artwork, image_path, usd_path):
     root = UsdGeom.Xform.Define(stage, "/Painting")
     stage.SetDefaultPrim(root.GetPrim())
 
-    # Solid rectangular body.
     body = UsdGeom.Mesh.Define(stage, "/Painting/Body")
     set_no_subdivision(body)
     body.CreatePointsAttr([
@@ -82,7 +77,6 @@ def create_usd(artwork, image_path, usd_path):
     body_mat.CreateSurfaceOutput().ConnectToSource(body_shader.GetOutput("surface"))
     UsdShade.MaterialBindingAPI(body.GetPrim()).Bind(body_mat)
 
-    # Separate front artwork rectangle.
     art = UsdGeom.Mesh.Define(stage, "/Painting/Artwork")
     set_no_subdivision(art)
     art.CreatePointsAttr([
@@ -105,6 +99,7 @@ def create_usd(artwork, image_path, usd_path):
     reader = UsdShade.Shader.Define(stage, "/Painting/ArtworkMaterial/UVReader")
     reader.CreateIdAttr("UsdPrimvarReader_float2")
     reader.CreateInput("varname", Sdf.ValueTypeNames.Token).Set("st")
+    reader.CreateOutput("result", Sdf.ValueTypeNames.Float2)
 
     texture = UsdShade.Shader.Define(stage, "/Painting/ArtworkMaterial/Texture")
     texture.CreateIdAttr("UsdUVTexture")
