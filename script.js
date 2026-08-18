@@ -4,9 +4,9 @@
   const glassLogo = document.querySelector(".glass-logo");
   const zoomControl = document.getElementById("zoom-control");
 
-  // Start at the largest artwork view, then move toward smaller artwork.
   const levels = ["zoom", "normal", "overview"];
-  let level = 0;
+  const isTouchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+  let level = isTouchDevice ? 0 : 2;
   let pinchStart = null;
   let gestureStartScale = null;
   let gestureHandled = false;
@@ -16,14 +16,10 @@
     const current = levels[level];
     grid.classList.remove("view-normal", "view-zoom", "view-overview");
     grid.classList.add(`view-${current}`);
-
     if (zoomControl) {
       const isLast = level === levels.length - 1;
       zoomControl.textContent = isLast ? "−" : "+";
-      zoomControl.setAttribute(
-        "aria-label",
-        isLast ? "Return to larger catalogue view" : "Reduce artwork size"
-      );
+      zoomControl.setAttribute("aria-label", isLast ? "Return to larger catalogue view" : "Reduce artwork size");
     }
   }
 
@@ -37,15 +33,12 @@
     tile.className = "tile";
     tile.href = `work.html?id=${encodeURIComponent(work.id)}`;
     tile.setAttribute("aria-label", work.title ? `${work.title}, ${work.year}` : `Artwork ${work.id}`);
-
     const img = document.createElement("img");
     img.src = work.thumbnail || work.image;
     img.alt = work.title || "";
     img.loading = "lazy";
     img.decoding = "async";
-    img.onerror = function () {
-      if (work.thumbnail && img.src.indexOf(work.thumbnail) !== -1) img.src = work.image;
-    };
+    img.onerror = function () { if (work.thumbnail && img.src.indexOf(work.thumbnail) !== -1) img.src = work.image; };
     tile.appendChild(img);
     return tile;
   }
@@ -53,10 +46,7 @@
   function render() {
     grid.innerHTML = "";
     if (!Array.isArray(ARTWORKS) || !ARTWORKS.length) return;
-    const ordered = ARTWORKS.slice().sort(function (a, b) {
-      return workNumber(b) - workNumber(a);
-    });
-    ordered.forEach(function (work) { grid.appendChild(makeTile(work)); });
+    ARTWORKS.slice().sort((a,b)=>workNumber(b)-workNumber(a)).forEach(work=>grid.appendChild(makeTile(work)));
     applyLevel(level);
   }
 
@@ -67,58 +57,14 @@
     glassIntro.setAttribute("aria-hidden", "true");
   }
 
-  function pinchDistance(touches) {
-    const a = touches[0], b = touches[1];
-    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-  }
-
+  function pinchDistance(touches) { const a=touches[0],b=touches[1]; return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY); }
   render();
-
-  if (zoomControl) zoomControl.addEventListener("click", function () {
-    applyLevel(level + 1);
-  });
-
-  // iOS Safari: prevent browser page zoom and turn pinch into catalogue view changes.
-  grid.addEventListener("gesturestart", function (event) {
-    gestureStartScale = event.scale || 1;
-    gestureHandled = false;
-    event.preventDefault();
-  }, { passive: false });
-
-  grid.addEventListener("gesturechange", function (event) {
-    event.preventDefault();
-    if (gestureHandled || gestureStartScale === null) return;
-    const scale = event.scale || 1;
-    if (Math.abs(scale - gestureStartScale) > 0.12) {
-      applyLevel(level + (scale > gestureStartScale ? -1 : 1));
-      gestureHandled = true;
-    }
-  }, { passive: false });
-
-  grid.addEventListener("gestureend", function (event) {
-    event.preventDefault();
-    gestureStartScale = null;
-    gestureHandled = false;
-  }, { passive: false });
-
-  // Fallback for browsers exposing touch points rather than gesture events.
-  grid.addEventListener("touchstart", function (event) {
-    if (event.touches.length === 2) pinchStart = pinchDistance(event.touches);
-  }, { passive: true });
-
-  grid.addEventListener("touchmove", function (event) {
-    if (event.touches.length !== 2 || pinchStart === null) return;
-    const delta = pinchDistance(event.touches) - pinchStart;
-    if (Math.abs(delta) > 80) {
-      applyLevel(level + (delta > 0 ? -1 : 1));
-      pinchStart = pinchDistance(event.touches);
-    }
-  }, { passive: true });
-
-  grid.addEventListener("touchend", function () { pinchStart = null; }, { passive: true });
-
-  if (glassLogo) {
-    glassLogo.addEventListener("click", dismissGlass);
-    glassLogo.addEventListener("touchend", dismissGlass, { passive: true });
-  }
+  if (zoomControl) zoomControl.addEventListener("click",()=>applyLevel(level+1));
+  grid.addEventListener("gesturestart",e=>{gestureStartScale=e.scale||1;gestureHandled=false;e.preventDefault()},{passive:false});
+  grid.addEventListener("gesturechange",e=>{e.preventDefault();if(gestureHandled||gestureStartScale===null)return;const s=e.scale||1;if(Math.abs(s-gestureStartScale)>.12){applyLevel(level+(s>gestureStartScale?-1:1));gestureHandled=true;}},{passive:false});
+  grid.addEventListener("gestureend",e=>{e.preventDefault();gestureStartScale=null;gestureHandled=false},{passive:false});
+  grid.addEventListener("touchstart",e=>{if(e.touches.length===2)pinchStart=pinchDistance(e.touches)},{passive:true});
+  grid.addEventListener("touchmove",e=>{if(e.touches.length!==2||pinchStart===null)return;const d=pinchDistance(e.touches)-pinchStart;if(Math.abs(d)>80){applyLevel(level+(d>0?-1:1));pinchStart=pinchDistance(e.touches)}},{passive:true});
+  grid.addEventListener("touchend",()=>pinchStart=null,{passive:true});
+  if(glassLogo){glassLogo.addEventListener("click",dismissGlass);glassLogo.addEventListener("touchend",dismissGlass,{passive:true});}
 })();
