@@ -6,6 +6,8 @@
   const levels = ["normal", "zoom", "overview"];
   let level = 0;
   let pinchStart = null;
+  let gestureStartScale = null;
+  let gestureHandled = false;
 
   function applyLevel(next) {
     level = (next + levels.length) % levels.length;
@@ -40,12 +42,9 @@
   function render() {
     grid.innerHTML = "";
     if (!Array.isArray(ARTWORKS) || !ARTWORKS.length) return;
-
-    // Newest/highest work number first; work-01 ends at the bottom.
     const ordered = ARTWORKS.slice().sort(function (a, b) {
       return workNumber(b) - workNumber(a);
     });
-
     ordered.forEach(function (work) { grid.appendChild(makeTile(work)); });
     applyLevel(level);
   }
@@ -66,6 +65,30 @@
 
   if (zoomControl) zoomControl.addEventListener("click", function () { applyLevel(level + 1); });
 
+  // iOS Safari: prevent browser page zoom and turn pinch into catalogue view changes.
+  grid.addEventListener("gesturestart", function (event) {
+    gestureStartScale = event.scale || 1;
+    gestureHandled = false;
+    event.preventDefault();
+  }, { passive: false });
+
+  grid.addEventListener("gesturechange", function (event) {
+    event.preventDefault();
+    if (gestureHandled || gestureStartScale === null) return;
+    const scale = event.scale || 1;
+    if (Math.abs(scale - gestureStartScale) > 0.12) {
+      applyLevel(level + (scale > gestureStartScale ? 1 : -1));
+      gestureHandled = true;
+    }
+  }, { passive: false });
+
+  grid.addEventListener("gestureend", function (event) {
+    event.preventDefault();
+    gestureStartScale = null;
+    gestureHandled = false;
+  }, { passive: false });
+
+  // Fallback for browsers exposing touch points rather than gesture events.
   grid.addEventListener("touchstart", function (event) {
     if (event.touches.length === 2) pinchStart = pinchDistance(event.touches);
   }, { passive: true });
