@@ -14,5 +14,20 @@
     <p>[KRITOR MAKES THINGS, A CHOICE MADE AT 17 TO NOT TAKE TIME FOR GRANTED.]</p>
   </div>
 </main>
+<script>
+(function(){
+  const page=document.querySelector('.about-page');
+  const back=document.querySelector('.catalogue');
+  if(!page||!back)return;
+
+  back.addEventListener('click',function(e){
+    e.preventDefault();
+    if(document.documentElement.classList.contains('is-leaving'))return;
+    document.documentElement.classList.add('is-leaving');
+    page.classList.add('is-leaving');
+    setTimeout(function(){window.location.href=back.href},520);
+  });
+})();
+</script>
 </body>
 </html>
