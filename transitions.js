@@ -1,49 +1,55 @@
-/* KRITOR page navigation — single transition controller. */
+/* KRITOR navigation transitions.
+   Modern browsers: native cross-document View Transition API.
+   Older browsers: intercept only the two KRITOR page links and run a
+   simple white wipe before normal navigation. */
 (function () {
-  const root = document.documentElement;
-  const isAbout = /\/about\.html$/.test(location.pathname);
+  "use strict";
 
-  function internal(link) {
-    if (!link || !link.href) return false;
-    const url = new URL(link.href, location.href);
-    return url.origin === location.origin;
+  function isKritorPage(url) {
+    const u = new URL(url, location.href);
+    if (u.origin !== location.origin) return false;
+    return /(?:^|\/)about\.html$/.test(u.pathname) || /(?:^|\/)index\.html$/.test(u.pathname) || /\/$/.test(u.pathname);
   }
 
-  function navigate(link, direction) {
-    if (root.classList.contains("kritor-transitioning")) return;
-    root.classList.add("kritor-transitioning");
-
-    const sheet = document.createElement("div");
-    sheet.className = "kritor-page-sheet kritor-page-sheet--" + direction;
-    document.body.appendChild(sheet);
-
-    // Force the initial off-screen position to be committed before starting.
-    void sheet.offsetWidth;
-
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        sheet.classList.add("is-visible");
-      });
-    });
-
-    // Let the white sheet completely cover the current page before changing documents.
-    window.setTimeout(function () {
-      window.location.assign(link.href);
-    }, 760);
+  /* Modern MPA View Transitions: choose direction from the navigation URLs. */
+  function setType(event, fromUrl, toUrl) {
+    if (!event.viewTransition || !fromUrl || !toUrl) return;
+    const fromAbout = /(?:^|\/)about\.html$/.test(new URL(fromUrl).pathname);
+    const toAbout = /(?:^|\/)about\.html$/.test(new URL(toUrl).pathname);
+    event.viewTransition.types.add(toAbout && !fromAbout ? "forwards" : "backwards");
   }
+
+  window.addEventListener("pageswap", function (event) {
+    if (!event.activation) return;
+    setType(event, event.activation.from && event.activation.from.url, event.activation.entry && event.activation.entry.url);
+  });
+
+  window.addEventListener("pagereveal", function (event) {
+    if (!window.navigation || !navigation.activation) return;
+    setType(event, navigation.activation.from && navigation.activation.from.url, navigation.activation.entry && navigation.activation.entry.url);
+  });
+
+  /* Legacy fallback: native navigation remains untouched on modern browsers. */
+  const nativeViewTransitions = "CSSViewTransitionRule" in window;
+  if (nativeViewTransitions) return;
 
   document.addEventListener("click", function (event) {
-    const link = event.target.closest("a");
-    if (!link || !internal(link)) return;
+    const link = event.target.closest("a[href]");
+    if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!isKritorPage(link.href)) return;
 
+    const current = new URL(location.href);
     const target = new URL(link.href, location.href);
-    const targetIsAbout = /\/about\.html$/.test(target.pathname);
-    const targetIsCatalogue = /\/index\.html$/.test(target.pathname) || /\/$/.test(target.pathname);
-    const relevant = (!isAbout && targetIsAbout) || (isAbout && targetIsCatalogue);
-    if (!relevant) return;
+    const currentIsAbout = /(?:^|\/)about\.html$/.test(current.pathname);
+    const targetIsAbout = /(?:^|\/)about\.html$/.test(target.pathname);
+    if (currentIsAbout === targetIsAbout) return;
 
     event.preventDefault();
-    event.stopImmediatePropagation();
-    navigate(link, targetIsAbout ? "about" : "catalogue");
+    if (document.documentElement.classList.contains("kritor-fallback-transition")) return;
+
+    document.documentElement.classList.add("kritor-fallback-transition");
+    window.setTimeout(function () {
+      window.location.href = target.href;
+    }, 520);
   }, true);
 })();
