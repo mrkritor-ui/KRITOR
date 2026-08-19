@@ -1,12 +1,7 @@
 (function () {
   "use strict";
 
-  const PAGE_STYLES = {
-    catalogue: "style.css",
-    about: "about.css"
-  };
-
-  const PAGE_SCRIPTS = ["artworks.js", "script.js"];
+  const PAGE_STYLES = { catalogue: "style.css", about: "about.css" };
   let navigating = false;
 
   function pageFor(url) {
@@ -14,8 +9,29 @@
     return path.endsWith("/about.html") ? "about" : "catalogue";
   }
 
-  function sameOrigin(url) {
-    return new URL(url, location.href).origin === location.origin;
+  function isKritorPage(url) {
+    const u = new URL(url, location.href);
+    if (u.origin !== location.origin) return false;
+    return /(?:^|\/)about\.html$/.test(u.pathname) || /(?:^|\/)index\.html$/.test(u.pathname) || /\/$/.test(u.pathname);
+  }
+
+  function loadStylesheet(href) {
+    return new Promise((resolve, reject) => {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = `${href}?vt=${Date.now()}`;
+      link.dataset.kritorPageStyle = "true";
+      link.onload = resolve;
+      link.onerror = reject;
+      document.head.appendChild(link);
+    });
+  }
+
+  function removeOldPageStyles(page) {
+    const wanted = PAGE_STYLES[page];
+    document.querySelectorAll("link[data-kritor-page-style]").forEach(link => {
+      if (!new URL(link.href, location.href).pathname.endsWith(`/${wanted}`)) link.remove();
+    });
   }
 
   function loadScript(src) {
@@ -28,32 +44,20 @@
     });
   }
 
-  function setPageStyle(page) {
-    const wanted = PAGE_STYLES[page];
-    document.querySelectorAll("link[data-kritor-page-style]").forEach(link => {
-      if (link.getAttribute("href") !== wanted) link.remove();
-    });
-
-    if (!document.querySelector(`link[data-kritor-page-style][href="${wanted}"]`)) {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = `${wanted}?vt=${Date.now()}`;
-      link.dataset.kritorPageStyle = "";
-      document.head.appendChild(link);
-    }
-  }
-
   async function renderDocument(html, page) {
     const parsed = new DOMParser().parseFromString(html, "text/html");
-
     document.title = parsed.title;
-    setPageStyle(page);
+
+    // Load destination CSS before the new snapshot is taken.
+    await loadStylesheet(PAGE_STYLES[page]);
 
     const newBody = parsed.body.cloneNode(true);
     document.body.replaceWith(newBody);
+    removeOldPageStyles(page);
 
+    // ARTWORKS is a global const, so only evaluate it once per document.
     if (page === "catalogue") {
-      await loadScript("artworks.js");
+      if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
       await loadScript("script.js");
     }
 
@@ -67,9 +71,9 @@
     try {
       const response = await fetch(url, { cache: "no-store" });
       if (!response.ok) throw new Error(`Navigation failed: ${response.status}`);
+
       const html = await response.text();
       const targetPage = pageFor(url);
-      const currentPage = pageFor(location.href);
       const direction = targetPage === "about" ? "forward" : "backward";
 
       const update = async () => {
@@ -100,21 +104,17 @@
     if (!link || event.defaultPrevented) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (link.target && link.target !== "_self") return;
-    if (!sameOrigin(link.href)) return;
+    if (!isKritorPage(link.href)) return;
 
     const target = pageFor(link.href);
     const current = pageFor(location.href);
     if (target === current) return;
-    if (!/about\.html$|index\.html$|\/$/.test(new URL(link.href).pathname)) return;
 
     event.preventDefault();
     navigate(link.href, false);
   }, true);
 
-  window.addEventListener("popstate", () => {
-    navigate(location.href, true);
-  });
+  window.addEventListener("popstate", () => navigate(location.href, true));
 
-  const initialPage = pageFor(location.href);
-  history.replaceState({ page: initialPage }, "", location.href);
+  history.replaceState({ page: pageFor(location.href) }, "", location.href);
 })();
