@@ -7,8 +7,7 @@
   animation-timing-function: cubic-bezier(.16,1,.3,1);
 }
 
-/* Catalogue -> About: the complete About document arrives as one sheet.
-   Nothing inside the page gets its own entrance animation. */
+/* Catalogue -> About: complete document moves as one sheet. */
 html:active-view-transition-type(about-forward)::view-transition-old(root) {
   animation: kritor-still 680ms both;
 }
@@ -16,7 +15,7 @@ html:active-view-transition-type(about-forward)::view-transition-new(root) {
   animation: kritor-page-enter 680ms cubic-bezier(.16,1,.3,1) both;
 }
 
-/* About -> Catalogue: the complete About document leaves as one sheet. */
+/* About -> Catalogue: complete About document leaves right. */
 html:active-view-transition-type(catalogue-back)::view-transition-old(root) {
   animation: kritor-page-exit-right 680ms cubic-bezier(.16,1,.3,1) both;
 }
@@ -39,9 +38,33 @@ html:active-view-transition-type(catalogue-back)::view-transition-new(root) {
   to { transform: translate3d(100%,0,0); }
 }
 
-/* Older Safari/iOS fallback. The native cross-document transition above is
-   the preferred path; this keeps old devices functional without competing
-   with About's own content rendering. */
+/* Older iOS/Safari fallback: this is the actual rendered About page,
+   not a blank overlay. The iframe is fully loaded before it moves. */
+.kritor-about-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  overflow: hidden;
+  background: #fff;
+  pointer-events: none;
+  transform: translate3d(100%,0,0);
+  transition: transform 680ms cubic-bezier(.16,1,.3,1);
+  will-change: transform;
+}
+
+.kritor-about-sheet iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.kritor-about-sheet.is-visible {
+  transform: translate3d(0,0,0);
+}
+
+/* Kept for compatibility with any older cached script. */
 .kritor-transition-overlay {
   position: fixed;
   inset: 0;
@@ -68,6 +91,7 @@ html.kritor-transitioning { overflow: hidden; }
   ::view-transition-new(root) {
     animation-duration: 1ms !important;
   }
+  .kritor-about-sheet,
   .kritor-transition-overlay,
   html.kritor-leaving-about .about-page {
     transition-duration: 1ms !important;
