@@ -1,12 +1,12 @@
 /* KRITOR page navigation.
-   Native cross-document View Transitions are the primary path.
-   The CSS fallback is deliberately simple and reliable for older Safari/iOS. */
+   Native cross-document View Transitions handle modern browsers.
+   The fallback is intentionally separate for older iOS/Safari. */
 (function () {
-  const supportsNative = !!(document.startViewTransition ||
-    (CSS && CSS.supports && CSS.supports("view-transition-name: root")));
+  const root = document.documentElement;
+  const supportsNative = !!(window.CSS && CSS.supports && CSS.supports("view-transition-name: root"));
+  const isAbout = /\/about\.html$/.test(location.pathname);
 
-  const aboutPage = !!document.querySelector(".about-page");
-  if (aboutPage) document.documentElement.classList.add("about-page-document");
+  if (isAbout) root.classList.add("about-page-document");
 
   function internal(link) {
     if (!link || !link.href) return false;
@@ -14,36 +14,50 @@
     return url.origin === location.origin;
   }
 
+  if (supportsNative) {
+    window.addEventListener("pagereveal", function (event) {
+      if (!event.viewTransition || !window.navigation || !navigation.activation) return;
+      const to = navigation.activation.entry && navigation.activation.entry.url;
+      if (!to) return;
+      const toUrl = new URL(to);
+      if (/\/about\.html$/.test(toUrl.pathname)) {
+        event.viewTransition.types.add("about-forward");
+      } else if (/\/index\.html$/.test(toUrl.pathname) || /\/$/.test(toUrl.pathname)) {
+        event.viewTransition.types.add("catalogue-back");
+      }
+    });
+    return;
+  }
+
+  /* Older iOS/Safari fallback. The About page itself never animates on load. */
   document.addEventListener("click", function (event) {
     const link = event.target.closest("a");
     if (!link || !internal(link)) return;
 
     const target = new URL(link.href, location.href);
-    const targetIsAbout = target.pathname.endsWith("/about.html");
-    const targetIsCatalogue = target.pathname.endsWith("/index.html") || target.pathname.endsWith("/");
-    const relevant = (!aboutPage && targetIsAbout) || (aboutPage && targetIsCatalogue);
+    const targetIsAbout = /\/about\.html$/.test(target.pathname);
+    const targetIsCatalogue = /\/index\.html$/.test(target.pathname) || /\/$/.test(target.pathname);
+    const relevant = (!isAbout && targetIsAbout) || (isAbout && targetIsCatalogue);
     if (!relevant) return;
 
-    /* Native MPA View Transitions: leave navigation completely alone. */
-    if (supportsNative) return;
-
-    /* Old browsers: animate a real overlay, then navigate. */
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (document.documentElement.classList.contains("kritor-transitioning")) return;
-    document.documentElement.classList.add("kritor-transitioning");
+    if (root.classList.contains("kritor-transitioning")) return;
+    root.classList.add("kritor-transitioning");
 
-    if (aboutPage) {
-      document.documentElement.classList.add("kritor-leaving-about");
-      setTimeout(function () { location.href = target.href; }, 520);
+    if (targetIsCatalogue) {
+      /* About -> Catalogue: About leaves left-to-right. */
+      root.classList.add("kritor-leaving-about");
+      window.setTimeout(function () { location.href = target.href; }, 520);
     } else {
+      /* Catalogue -> About: one white sheet, right-to-left. */
       const overlay = document.createElement("div");
       overlay.className = "kritor-transition-overlay";
       document.body.appendChild(overlay);
       requestAnimationFrame(function () {
         requestAnimationFrame(function () { overlay.classList.add("is-visible"); });
       });
-      setTimeout(function () { location.href = target.href; }, 620);
+      window.setTimeout(function () { location.href = target.href; }, 620);
     }
   }, true);
 })();
