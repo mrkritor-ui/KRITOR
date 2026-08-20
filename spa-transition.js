@@ -44,11 +44,16 @@
     });
   }
 
-  async function renderDocument(html, page) {
+  async function renderDocument(html, page, suppressOverlay) {
     const parsed = new DOMParser().parseFromString(html, "text/html");
     document.title = parsed.title;
     await loadStylesheet(PAGE_STYLES[page]);
-    document.body.replaceWith(parsed.body.cloneNode(true));
+    const newBody = parsed.body.cloneNode(true);
+    if (page === "catalogue" && suppressOverlay) {
+      const overlay = newBody.querySelector("#kritor-gif-overlay");
+      if (overlay) overlay.remove();
+    }
+    document.body.replaceWith(newBody);
     removeOldPageStyles(page);
     if (page === "catalogue") {
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
@@ -65,13 +70,11 @@
       const html = await response.text();
       const targetPage = pageFor(url);
       const currentPage = pageFor(location.href);
-      if (targetPage === "catalogue" && currentPage !== "catalogue") {
-        try { sessionStorage.setItem("kritor-return-to-catalog", "1"); } catch (e) {}
-      }
+      const returningToCatalogue = targetPage === "catalogue" && currentPage !== "catalogue";
       const direction = targetPage === "about" ? "forward" : "backward";
       const update = async () => {
         document.documentElement.dataset.kritorTransition = direction;
-        await renderDocument(html, targetPage);
+        await renderDocument(html, targetPage, returningToCatalogue);
         if (replace) history.replaceState({ page: targetPage }, "", url);
         else history.pushState({ page: targetPage }, "", url);
       };
