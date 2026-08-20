@@ -13,13 +13,12 @@
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="stylesheet" href="style.css?v=12" data-kritor-page-style>
   <link rel="stylesheet" href="transitions.css?v=11">
-  <script src="spa-transition.js?v=2"></script>
+  <script src="spa-transition.js?v=3"></script>
   <style>
     #kritor-gif-overlay{position:fixed;inset:0;z-index:99998;display:grid;place-items:center;pointer-events:none;opacity:1;transition:opacity 1.5s cubic-bezier(.22,.61,.36,1);will-change:opacity}
     #kritor-gif-overlay img{display:block;width:min(72vw,760px);height:auto;max-width:90vw;max-height:55vh;object-fit:contain}
     #kritor-gif-overlay.is-fading{opacity:0}
     #kritor-gif-overlay.is-hidden{display:none}
-    #kritor-gif-overlay.returning{display:none!important}
   </style>
 </head>
 <body>
@@ -38,33 +37,7 @@
   </div>
 
   <script src="artworks.js"></script>
-  <script src="script.js?v=6"></script>
-  <script>
-    (() => {
-      const overlay = document.getElementById('kritor-gif-overlay');
-      const returning = sessionStorage.getItem('kritor-return-to-catalog') === '1';
-      if (returning) {
-        sessionStorage.removeItem('kritor-return-to-catalog');
-        overlay.classList.add('returning');
-        return;
-      }
-      let dismissed = false;
-      const dismiss = () => {
-        if (dismissed) return;
-        dismissed = true;
-        overlay.classList.add('is-fading');
-        window.setTimeout(() => overlay.classList.add('is-hidden'), 1550);
-        window.removeEventListener('pointerdown', dismiss);
-        window.removeEventListener('wheel', dismiss);
-        window.removeEventListener('touchmove', dismiss);
-        window.removeEventListener('keydown', dismiss);
-      };
-      window.addEventListener('pointerdown', dismiss, { passive: true });
-      window.addEventListener('wheel', dismiss, { passive: true });
-      window.addEventListener('touchmove', dismiss, { passive: true });
-      window.addEventListener('keydown', dismiss, { passive: true });
-    })();
-  </script>
+  <script src="script.js?v=7"></script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
 </body>
 </html>
