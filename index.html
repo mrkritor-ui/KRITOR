@@ -15,46 +15,13 @@
   <link rel="stylesheet" href="transitions.css?v=11">
   <script src="spa-transition.js?v=2"></script>
   <style>
-    #kritor-gif-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      display: grid;
-      place-items: center;
-      pointer-events: none;
-      opacity: 1;
-      transition: opacity 1.5s cubic-bezier(.22,.61,.36,1);
-      will-change: opacity;
-    }
-
-    #kritor-gif-overlay img {
-      display: block;
-      width: min(72vw, 760px);
-      height: auto;
-      max-width: 90vw;
-      max-height: 55vh;
-      object-fit: contain;
-    }
-
-    #kritor-gif-overlay.is-fading {
-      opacity: 0;
-    }
-
-    #kritor-gif-overlay.is-hidden {
-      display: none;
-    }
-
-    @media (max-width: 699px) {
-      #kritor-gif-overlay img {
-        width: min(84vw, 600px);
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      #kritor-gif-overlay {
-        transition-duration: .4s;
-      }
-    }
+    #kritor-gif-overlay{position:fixed;inset:0;z-index:99998;display:grid;place-items:center;pointer-events:none;opacity:1;transition:opacity 1.5s cubic-bezier(.22,.61,.36,1);will-change:opacity}
+    #kritor-gif-overlay img{display:block;width:min(72vw,760px);height:auto;max-width:90vw;max-height:55vh;object-fit:contain}
+    #kritor-gif-overlay.is-fading{opacity:0}
+    #kritor-gif-overlay.is-hidden{display:none}
+    #kritor-gif-overlay.returned{position:fixed;inset:auto auto auto auto;display:block;top:10px;left:86px;width:30px;height:28px;opacity:1;transition:none;z-index:100002}
+    #kritor-gif-overlay.returned img{width:30px;height:28px;max-width:none;max-height:none;object-fit:contain}
+    @media(max-width:699px){#kritor-gif-overlay img{width:min(84vw,600px)}#kritor-gif-overlay.returned{left:70px;top:8px;width:28px;height:28px}#kritor-gif-overlay.returned img{width:28px;height:28px}}
   </style>
 </head>
 <body>
@@ -77,23 +44,37 @@
   <script>
     (() => {
       const overlay = document.getElementById('kritor-gif-overlay');
+      const about = document.querySelector('.about-link');
       let dismissed = false;
 
-      const dismiss = () => {
-        if (dismissed) return;
-        dismissed = true;
-        overlay.classList.add('is-fading');
-        window.setTimeout(() => overlay.classList.add('is-hidden'), 1550);
-        window.removeEventListener('pointerdown', dismiss);
-        window.removeEventListener('wheel', dismiss);
-        window.removeEventListener('touchmove', dismiss);
-        window.removeEventListener('keydown', dismiss);
-      };
+      const returnedFromAbout = sessionStorage.getItem('kritor-return-from-about') === '1';
+      sessionStorage.removeItem('kritor-return-from-about');
 
-      window.addEventListener('pointerdown', dismiss, { passive: true });
-      window.addEventListener('wheel', dismiss, { passive: true });
-      window.addEventListener('touchmove', dismiss, { passive: true });
-      window.addEventListener('keydown', dismiss, { passive: true });
+      if (returnedFromAbout) {
+        overlay.classList.add('returned');
+      } else {
+        const dismiss = () => {
+          if (dismissed) return;
+          dismissed = true;
+          overlay.classList.add('is-fading');
+          window.setTimeout(() => overlay.classList.add('is-hidden'), 1550);
+          window.removeEventListener('pointerdown', dismiss);
+          window.removeEventListener('wheel', dismiss);
+          window.removeEventListener('touchmove', dismiss);
+          window.removeEventListener('keydown', dismiss);
+        };
+
+        window.addEventListener('pointerdown', dismiss, { passive: true });
+        window.addEventListener('wheel', dismiss, { passive: true });
+        window.addEventListener('touchmove', dismiss, { passive: true });
+        window.addEventListener('keydown', dismiss, { passive: true });
+      }
+
+      if (about) {
+        about.addEventListener('click', () => {
+          sessionStorage.setItem('kritor-return-from-about', '1');
+        });
+      }
     })();
   </script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
