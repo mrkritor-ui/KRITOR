@@ -72,18 +72,28 @@
       const currentPage = pageFor(location.href);
       const returningToCatalogue = targetPage === "catalogue" && currentPage !== "catalogue";
       const direction = targetPage === "about" ? "forward" : "backward";
+
+      // Static Burst is a live canvas/animation layered over the catalogue.
+      // Clean it BEFORE startViewTransition() takes its old-page snapshot.
+      // pagehide/visibilitychange are not sufficient for this SPA navigation.
+      if (currentPage === "catalogue" && targetPage !== "catalogue") {
+        window.dispatchEvent(new Event("kritor:cleanup-static-burst"));
+      }
+
       const update = async () => {
         document.documentElement.dataset.kritorTransition = direction;
         await renderDocument(html, targetPage, returningToCatalogue);
         if (replace) history.replaceState({ page: targetPage }, "", url);
         else history.pushState({ page: targetPage }, "", url);
       };
+
       if (document.startViewTransition) {
         const transition = document.startViewTransition(update);
         await transition.finished.catch(() => {});
       } else {
         await update();
       }
+
       document.documentElement.removeAttribute("data-kritor-transition");
     } catch (error) {
       console.error("KRITOR navigation failed:", error);
