@@ -44,21 +44,37 @@
     });
   }
 
+  function placeReturnGifInHeader() {
+    const overlay = document.getElementById("kritor-gif-overlay");
+    const controls = document.querySelector(".catalog-controls");
+    if (!overlay || !controls) return;
+
+    const img = overlay.querySelector("img");
+    if (!img) return;
+
+    img.classList.add("kritor-return-gif");
+    controls.insertBefore(img, controls.firstChild);
+    overlay.remove();
+  }
+
   async function renderDocument(html, page) {
     const parsed = new DOMParser().parseFromString(html, "text/html");
     document.title = parsed.title;
 
-    // Load destination CSS before the new snapshot is taken.
     await loadStylesheet(PAGE_STYLES[page]);
 
     const newBody = parsed.body.cloneNode(true);
     document.body.replaceWith(newBody);
     removeOldPageStyles(page);
 
-    // ARTWORKS is a global const, so only evaluate it once per document.
     if (page === "catalogue") {
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
       await loadScript("script.js");
+
+      if (sessionStorage.getItem("kritor-return-from-about") === "1") {
+        sessionStorage.removeItem("kritor-return-from-about");
+        placeReturnGifInHeader();
+      }
     }
 
     window.scrollTo(0, 0);
@@ -74,6 +90,11 @@
 
       const html = await response.text();
       const targetPage = pageFor(url);
+
+      if (targetPage === "about" && pageFor(location.href) === "catalogue") {
+        sessionStorage.setItem("kritor-return-from-about", "1");
+      }
+
       const direction = targetPage === "about" ? "forward" : "backward";
 
       const update = async () => {
