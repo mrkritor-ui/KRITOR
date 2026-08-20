@@ -8,8 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="KRITOR">
+  <meta name="mobile-web-app-title" content="KRITOR">
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="stylesheet" href="style.css?v=12" data-kritor-page-style>
@@ -43,9 +42,9 @@
   <script>
     (() => {
       const overlay = document.getElementById('kritor-gif-overlay');
-      const returning = sessionStorage.getItem('kritor-return-from-artwork') === '1';
+      const returning = sessionStorage.getItem('kritor-return-to-catalog') === '1';
       if (returning) {
-        sessionStorage.removeItem('kritor-return-from-artwork');
+        sessionStorage.removeItem('kritor-return-to-catalog');
         overlay.classList.add('returning');
         return;
       }
