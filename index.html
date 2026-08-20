@@ -45,6 +45,31 @@
       if(tile)tile.style.viewTransitionName='returning-artwork';
     }
   </script>
+  <script>
+    // If the catalogue is idle for 15 seconds, bring the landing GIF back.
+    // Any meaningful interaction dismisses it again and restarts the idle timer.
+    (function(){
+      const overlay=document.getElementById('kritor-gif-overlay');
+      if(!overlay)return;
+      let timer=null;
+      const show=()=>{
+        overlay.classList.remove('is-hidden','is-fading');
+      };
+      const dismiss=()=>{
+        overlay.classList.add('is-fading');
+        window.setTimeout(()=>overlay.classList.add('is-hidden'),1500);
+      };
+      const reset=()=>{
+        window.clearTimeout(timer);
+        dismiss();
+        timer=window.setTimeout(show,15000);
+      };
+      ['pointerdown','keydown','wheel','touchstart'].forEach(type=>{
+        window.addEventListener(type,reset,{passive:true});
+      });
+      timer=window.setTimeout(show,15000);
+    })();
+  </script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
 </body>
 </html>
