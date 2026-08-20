@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="style.css?v=12" data-kritor-page-style>
   <link rel="stylesheet" href="transitions.css?v=11">
   <script src="spa-transition.js?v=3"></script>
+  <script>window.__kritorReturnWork=new URLSearchParams(location.search).get('work');if(window.__kritorReturnWork)document.documentElement.classList.add('returning-artwork');</script>
   <style>
     #kritor-gif-overlay{position:fixed;inset:0;z-index:99998;display:grid;place-items:center;pointer-events:none;opacity:1;transition:opacity 1.5s cubic-bezier(.22,.61,.36,1);will-change:opacity}
     #kritor-gif-overlay img{display:block;width:min(72vw,760px);height:auto;max-width:90vw;max-height:55vh;object-fit:contain}
@@ -38,6 +39,12 @@
 
   <script src="artworks.js"></script>
   <script src="script.js?v=7"></script>
+  <script>
+    if(window.__kritorReturnWork){
+      const tile=document.querySelector('.tile[data-work-id="'+CSS.escape(window.__kritorReturnWork)+'"]');
+      if(tile)tile.style.viewTransitionName='returning-artwork';
+    }
+  </script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
 </body>
 </html>
