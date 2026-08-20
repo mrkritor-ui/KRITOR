@@ -1,16 +1,20 @@
 (function () {
   "use strict";
+
   const PAGE_STYLES = { catalogue: "style.css", about: "about.css" };
   let navigating = false;
+
   function pageFor(url) {
     const path = new URL(url, location.href).pathname.replace(/\/$/, "");
     return path.endsWith("/about.html") ? "about" : "catalogue";
   }
+
   function isKritorPage(url) {
     const u = new URL(url, location.href);
     if (u.origin !== location.origin) return false;
     return /(?:^|\/)about\.html$/.test(u.pathname) || /(?:^|\/)index\.html$/.test(u.pathname) || /\/$/.test(u.pathname);
   }
+
   function loadStylesheet(href) {
     return new Promise((resolve, reject) => {
       const link = document.createElement("link");
@@ -22,12 +26,14 @@
       document.head.appendChild(link);
     });
   }
+
   function removeOldPageStyles(page) {
     const wanted = PAGE_STYLES[page];
     document.querySelectorAll("link[data-kritor-page-style]").forEach(link => {
       if (!new URL(link.href, location.href).pathname.endsWith(`/${wanted}`)) link.remove();
     });
   }
+
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement("script");
@@ -37,18 +43,19 @@
       document.body.appendChild(script);
     });
   }
+
   async function renderDocument(html, page) {
     const parsed = new DOMParser().parseFromString(html, "text/html");
     document.title = parsed.title;
     await loadStylesheet(PAGE_STYLES[page]);
-    const newBody = parsed.body.cloneNode(true);
-    document.body.replaceWith(newBody);
+    document.body.replaceWith(parsed.body.cloneNode(true));
     removeOldPageStyles(page);
     if (page === "catalogue") {
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
       await loadScript("script.js");
     }
   }
+
   async function navigate(url, replace) {
     if (navigating) return;
     navigating = true;
@@ -58,7 +65,7 @@
       const html = await response.text();
       const targetPage = pageFor(url);
       const currentPage = pageFor(location.href);
-      if (targetPage === "catalogue" && currentPage === "about") {
+      if (targetPage === "catalogue" && currentPage !== "catalogue") {
         try { sessionStorage.setItem("kritor-return-to-catalog", "1"); } catch (e) {}
       }
       const direction = targetPage === "about" ? "forward" : "backward";
@@ -82,6 +89,7 @@
       navigating = false;
     }
   }
+
   document.addEventListener("click", event => {
     const link = event.target.closest("a[href]");
     if (!link || event.defaultPrevented) return;
@@ -94,6 +102,7 @@
     event.preventDefault();
     navigate(link.href, false);
   }, true);
+
   window.addEventListener("popstate", () => navigate(location.href, true));
   history.replaceState({ page: pageFor(location.href) }, "", location.href);
 })();
