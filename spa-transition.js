@@ -47,13 +47,10 @@
   async function renderDocument(html, page) {
     const parsed = new DOMParser().parseFromString(html, "text/html");
     document.title = parsed.title;
-
     await loadStylesheet(PAGE_STYLES[page]);
-
     const newBody = parsed.body.cloneNode(true);
     document.body.replaceWith(newBody);
     removeOldPageStyles(page);
-
     if (page === "catalogue") {
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
       await loadScript("script.js");
@@ -63,29 +60,28 @@
   async function navigate(url, replace) {
     if (navigating) return;
     navigating = true;
-
     try {
+      const targetPage = pageFor(url);
+      const currentPage = pageFor(location.href);
+      if (targetPage === "catalogue" && currentPage === "about") {
+        try { sessionStorage.setItem("kritor-return-to-catalog", "1"); } catch (e) {}
+      }
       const response = await fetch(url, { cache: "no-store" });
       if (!response.ok) throw new Error(`Navigation failed: ${response.status}`);
-
       const html = await response.text();
-      const targetPage = pageFor(url);
       const direction = targetPage === "about" ? "forward" : "backward";
-
       const update = async () => {
         document.documentElement.dataset.kritorTransition = direction;
         await renderDocument(html, targetPage);
         if (replace) history.replaceState({ page: targetPage }, "", url);
         else history.pushState({ page: targetPage }, "", url);
       };
-
       if (document.startViewTransition) {
         const transition = document.startViewTransition(update);
         await transition.finished.catch(() => {});
       } else {
         await update();
       }
-
       document.documentElement.removeAttribute("data-kritor-transition");
     } catch (error) {
       console.error("KRITOR navigation failed:", error);
@@ -101,16 +97,13 @@
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (link.target && link.target !== "_self") return;
     if (!isKritorPage(link.href)) return;
-
     const target = pageFor(link.href);
     const current = pageFor(location.href);
     if (target === current) return;
-
     event.preventDefault();
     navigate(link.href, false);
   }, true);
 
   window.addEventListener("popstate", () => navigate(location.href, true));
-
   history.replaceState({ page: pageFor(location.href) }, "", location.href);
 })();
