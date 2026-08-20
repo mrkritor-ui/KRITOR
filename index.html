@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="KRITOR">
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icon.png">
@@ -19,6 +20,7 @@
     #kritor-gif-overlay img{display:block;width:min(72vw,760px);height:auto;max-width:90vw;max-height:55vh;object-fit:contain}
     #kritor-gif-overlay.is-fading{opacity:0}
     #kritor-gif-overlay.is-hidden{display:none}
+    #kritor-gif-overlay.returning{display:none!important}
   </style>
 </head>
 <body>
@@ -37,10 +39,16 @@
   </div>
 
   <script src="artworks.js"></script>
-  <script src="script.js?v=5"></script>
+  <script src="script.js?v=6"></script>
   <script>
     (() => {
       const overlay = document.getElementById('kritor-gif-overlay');
+      const returning = sessionStorage.getItem('kritor-return-from-artwork') === '1';
+      if (returning) {
+        sessionStorage.removeItem('kritor-return-from-artwork');
+        overlay.classList.add('returning');
+        return;
+      }
       let dismissed = false;
       const dismiss = () => {
         if (dismissed) return;
