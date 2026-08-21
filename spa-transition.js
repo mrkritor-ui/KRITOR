@@ -7,13 +7,25 @@
 
   function pageFor(url) {
     const path = new URL(url, location.href).pathname.replace(/\/$/, "");
-    return path.endsWith("/about.html") ? "about" : "catalogue";
+    return path.endsWith("/about") || path.endsWith("/about.html") ? "about" : "catalogue";
+  }
+
+  function cleanUrlFor(url) {
+    const u = new URL(url, location.href);
+    const path = u.pathname;
+    if (path.endsWith("/index.html")) {
+      u.pathname = path.slice(0, -"index.html".length);
+    } else if (path.endsWith("/about.html")) {
+      u.pathname = path.slice(0, -"about.html".length) + "about/";
+    }
+    return u.href;
   }
 
   function isKritorPage(url) {
     const u = new URL(url, location.href);
     if (u.origin !== location.origin) return false;
-    return /(?:^|\/)about\.html$/.test(u.pathname) || /(?:^|\/)index\.html$/.test(u.pathname) || /\/$/.test(u.pathname);
+    const path = u.pathname.replace(/\/$/, "");
+    return path.endsWith("/about") || path.endsWith("/about.html") || path.endsWith("/index.html") || path === "";
   }
 
   function loadStylesheet(href) {
@@ -87,14 +99,17 @@
     if (navigating) return;
     navigating = true;
     try {
-      const response = await fetch(url, { cache: "no-store" });
+      const requestedUrl = new URL(url, location.href);
+      const fetchUrl = requestedUrl.href;
+      const response = await fetch(fetchUrl, { cache: "no-store" });
       if (!response.ok) throw new Error(`Navigation failed: ${response.status}`);
       const html = await response.text();
-      const targetPage = pageFor(url);
+      const targetPage = pageFor(requestedUrl.href);
       const currentPage = pageFor(location.href);
       const returningToCatalogue = targetPage === "catalogue" && currentPage !== "catalogue";
-      const returningFromAbout = returningToCatalogue && currentPage === "about" && !new URL(url, location.href).searchParams.has("work");
+      const returningFromAbout = returningToCatalogue && currentPage === "about" && !requestedUrl.searchParams.has("work");
       const direction = targetPage === "about" ? "forward" : "backward";
+      const historyUrl = cleanUrlFor(requestedUrl.href);
 
       if (currentPage === "catalogue" && targetPage !== "catalogue") {
         saveCataloguePosition();
@@ -104,8 +119,8 @@
       const update = async () => {
         document.documentElement.dataset.kritorTransition = direction;
         await renderDocument(html, targetPage, returningToCatalogue);
-        if (replace) history.replaceState({ page: targetPage }, "", url);
-        else history.pushState({ page: targetPage }, "", url);
+        if (replace) history.replaceState({ page: targetPage }, "", historyUrl);
+        else history.pushState({ page: targetPage }, "", historyUrl);
 
         // About -> catalogue returns to exactly the catalogue position the user left.
         // Artwork -> catalogue keeps using its existing work-specific return behaviour.
@@ -142,5 +157,12 @@
   }, true);
 
   window.addEventListener("popstate", () => navigate(location.href, true));
-  history.replaceState({ page: pageFor(location.href) }, "", location.href);
+
+  // Canonicalise legacy file URLs immediately without reloading the page.
+  const initialCleanUrl = cleanUrlFor(location.href);
+  if (initialCleanUrl !== location.href) {
+    history.replaceState({ page: pageFor(initialCleanUrl) }, "", initialCleanUrl);
+  } else {
+    history.replaceState({ page: pageFor(location.href) }, "", location.href);
+  }
 })();
