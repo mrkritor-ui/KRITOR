@@ -17,10 +17,9 @@
   <script src="spa-transition.js?v=4"></script>
   <script>window.__kritorReturnWork=new URLSearchParams(location.search).get('work');if(window.__kritorReturnWork)document.documentElement.classList.add('returning-artwork');</script>
   <style>
-    #kritor-gif-overlay{position:fixed;inset:0;z-index:99998;display:grid;place-items:center;pointer-events:none;opacity:1;transition:opacity 1.5s cubic-bezier(.22,.61,.36,1);will-change:opacity}
-    #kritor-gif-overlay img{display:block;width:min(72vw,760px);height:auto;max-width:90vw;max-height:55vh;object-fit:contain}
-    #kritor-gif-overlay.is-fading{opacity:0}
-    #kritor-gif-overlay.is-hidden{display:none}
+    /* KRITOR top logo — fixed to viewport, centred over catalogue. */
+    #kritor-top-logo{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:100000;width:min(190px,32vw);height:auto;opacity:0;pointer-events:none;transition:opacity .8s cubic-bezier(.22,.61,.36,1);will-change:opacity}
+    #kritor-top-logo.is-visible{opacity:1}
   </style>
 </head>
 <body>
@@ -31,8 +30,8 @@
     </div>
     <a class="about-link" href="/about/">About</a>
   </header>
+  <img id="kritor-top-logo" src="kritor top text.png" alt="KRITOR">
   <main id="grid" class="grid" aria-label="Artwork catalogue"></main>
-  <div id="kritor-gif-overlay" aria-hidden="true"><img src="images/_3dtext2gif_wcyfjsy_pjqbbag KRITOR GIF.gif" alt=""></div>
   <script src="artworks.js"></script>
   <script src="script.js?v=7"></script>
   <script src="clean-work-links.js?v=1"></script>
@@ -40,7 +39,20 @@
     if(window.__kritorReturnWork){const tile=document.querySelector('.tile[data-work-id="'+CSS.escape(window.__kritorReturnWork)+'"]');if(tile)tile.style.viewTransitionName='returning-artwork';}
   </script>
   <script>
-    (function(){const overlay=document.getElementById('kritor-gif-overlay');if(!overlay)return;let timer=null;const show=()=>overlay.classList.remove('is-hidden','is-fading');const dismiss=()=>{overlay.classList.add('is-fading');window.setTimeout(()=>overlay.classList.add('is-hidden'),1500)};const reset=()=>{window.clearTimeout(timer);dismiss();timer=window.setTimeout(show,15000)};['pointerdown','keydown','wheel','touchstart'].forEach(type=>window.addEventListener(type,reset,{passive:true}));timer=window.setTimeout(show,15000)})();
+    // Logo mechanic: invisible on landing, then appears on the first scroll or interaction.
+    // Once revealed it stays visible for the rest of the visit.
+    (function(){
+      const logo=document.getElementById('kritor-top-logo');
+      if(!logo)return;
+      let revealed=false;
+      const reveal=()=>{
+        if(revealed)return;
+        revealed=true;
+        logo.classList.add('is-visible');
+        ['scroll','pointerdown','pointermove','keydown','wheel','touchstart'].forEach(type=>window.removeEventListener(type,reveal));
+      };
+      ['scroll','pointerdown','pointermove','keydown','wheel','touchstart'].forEach(type=>window.addEventListener(type,reveal,{passive:true}));
+    })();
   </script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
 </body>
