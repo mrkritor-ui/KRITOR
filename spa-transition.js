@@ -5,6 +5,10 @@
   const CATALOG_SCROLL_KEY = "kritorCatalogScroll";
   let navigating = false;
 
+  function siteRoot(path) {
+    return new URL(path.replace(/^\//, ""), location.origin + "/").href;
+  }
+
   function pageFor(url) {
     const path = new URL(url, location.href).pathname.replace(/\/$/, "");
     return path.endsWith("/about") || path.endsWith("/about.html") ? "about" : "catalogue";
@@ -29,7 +33,7 @@
     return new Promise((resolve, reject) => {
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = `${href}?vt=${Date.now()}`;
+      link.href = `${siteRoot(href)}?vt=${Date.now()}`;
       link.dataset.kritorPageStyle = "true";
       link.onload = resolve;
       link.onerror = reject;
@@ -47,7 +51,7 @@
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = `${src}?vt=${Date.now()}`;
+      script.src = `${siteRoot(src)}?vt=${Date.now()}`;
       script.onload = resolve;
       script.onerror = reject;
       document.body.appendChild(script);
@@ -120,7 +124,7 @@
       document.documentElement.removeAttribute("data-kritor-transition");
     } catch (error) {
       console.error("KRITOR navigation failed:", error);
-      window.location.href = url;
+      window.location.href = cleanUrlFor(url);
     } finally { navigating = false; }
   }
 
