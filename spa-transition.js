@@ -58,6 +58,20 @@
     });
   }
 
+  function initCatalogueLogo() {
+    const logo = document.getElementById("kritor-top-logo");
+    if (!logo || logo.dataset.kritorLogoReady === "true") return;
+    logo.dataset.kritorLogoReady = "true";
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      logo.classList.add("is-visible");
+      ["scroll", "pointerdown", "pointermove", "keydown", "wheel", "touchstart"].forEach(type => window.removeEventListener(type, reveal));
+    };
+    ["scroll", "pointerdown", "pointermove", "keydown", "wheel", "touchstart"].forEach(type => window.addEventListener(type, reveal, {passive: true}));
+  }
+
   function saveCataloguePosition() {
     try { sessionStorage.setItem(CATALOG_SCROLL_KEY, JSON.stringify({x: window.scrollX || 0, y: window.scrollY || 0})); } catch (_) {}
   }
@@ -85,6 +99,7 @@
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
       await loadScript("script.js");
       await loadScript("clean-work-links.js");
+      initCatalogueLogo();
     }
   }
 
