@@ -2,6 +2,7 @@
   "use strict";
 
   const PAGE_STYLES = { catalogue: "style.css", about: "about.css" };
+  const CATALOG_SCROLL_KEY = "kritorCatalogScroll";
   let navigating = false;
 
   function pageFor(url) {
@@ -44,6 +45,27 @@
     });
   }
 
+  function saveCataloguePosition() {
+    try {
+      sessionStorage.setItem(CATALOG_SCROLL_KEY, JSON.stringify({
+        x: window.scrollX || 0,
+        y: window.scrollY || 0
+      }));
+    } catch (_) {}
+  }
+
+  function restoreCataloguePosition() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(CATALOG_SCROLL_KEY) || "null");
+      if (!saved || typeof saved.y !== "number") return;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo({ left: saved.x || 0, top: saved.y, behavior: "instant" });
+        });
+      });
+    } catch (_) {}
+  }
+
   async function renderDocument(html, page, suppressOverlay) {
     const parsed = new DOMParser().parseFromString(html, "text/html");
     document.title = parsed.title;
@@ -71,12 +93,11 @@
       const targetPage = pageFor(url);
       const currentPage = pageFor(location.href);
       const returningToCatalogue = targetPage === "catalogue" && currentPage !== "catalogue";
+      const returningFromAbout = returningToCatalogue && currentPage === "about" && !new URL(url, location.href).searchParams.has("work");
       const direction = targetPage === "about" ? "forward" : "backward";
 
-      // Static Burst is a live canvas/animation layered over the catalogue.
-      // Clean it BEFORE startViewTransition() takes its old-page snapshot.
-      // pagehide/visibilitychange are not sufficient for this SPA navigation.
       if (currentPage === "catalogue" && targetPage !== "catalogue") {
+        saveCataloguePosition();
         window.dispatchEvent(new Event("kritor:cleanup-static-burst"));
       }
 
@@ -85,6 +106,10 @@
         await renderDocument(html, targetPage, returningToCatalogue);
         if (replace) history.replaceState({ page: targetPage }, "", url);
         else history.pushState({ page: targetPage }, "", url);
+
+        // About -> catalogue returns to exactly the catalogue position the user left.
+        // Artwork -> catalogue keeps using its existing work-specific return behaviour.
+        if (returningFromAbout) restoreCataloguePosition();
       };
 
       if (document.startViewTransition) {
