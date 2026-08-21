@@ -13,11 +13,8 @@
   function cleanUrlFor(url) {
     const u = new URL(url, location.href);
     const path = u.pathname;
-    if (path.endsWith("/index.html")) {
-      u.pathname = path.slice(0, -"index.html".length);
-    } else if (path.endsWith("/about.html")) {
-      u.pathname = path.slice(0, -"about.html".length) + "about/";
-    }
+    if (path.endsWith("/index.html")) u.pathname = path.slice(0, -"index.html".length);
+    else if (path.endsWith("/about.html")) u.pathname = path.slice(0, -"about.html".length) + "about/";
     return u.href;
   }
 
@@ -58,23 +55,14 @@
   }
 
   function saveCataloguePosition() {
-    try {
-      sessionStorage.setItem(CATALOG_SCROLL_KEY, JSON.stringify({
-        x: window.scrollX || 0,
-        y: window.scrollY || 0
-      }));
-    } catch (_) {}
+    try { sessionStorage.setItem(CATALOG_SCROLL_KEY, JSON.stringify({x: window.scrollX || 0, y: window.scrollY || 0})); } catch (_) {}
   }
 
   function restoreCataloguePosition() {
     try {
       const saved = JSON.parse(sessionStorage.getItem(CATALOG_SCROLL_KEY) || "null");
       if (!saved || typeof saved.y !== "number") return;
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.scrollTo({ left: saved.x || 0, top: saved.y, behavior: "instant" });
-        });
-      });
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({left: saved.x || 0, top: saved.y, behavior: "instant"})));
     } catch (_) {}
   }
 
@@ -92,6 +80,7 @@
     if (page === "catalogue") {
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
       await loadScript("script.js");
+      await loadScript("clean-work-links.js");
     }
   }
 
@@ -100,8 +89,7 @@
     navigating = true;
     try {
       const requestedUrl = new URL(url, location.href);
-      const fetchUrl = requestedUrl.href;
-      const response = await fetch(fetchUrl, { cache: "no-store" });
+      const response = await fetch(requestedUrl.href, {cache: "no-store"});
       if (!response.ok) throw new Error(`Navigation failed: ${response.status}`);
       const html = await response.text();
       const targetPage = pageFor(requestedUrl.href);
@@ -119,28 +107,21 @@
       const update = async () => {
         document.documentElement.dataset.kritorTransition = direction;
         await renderDocument(html, targetPage, returningToCatalogue);
-        if (replace) history.replaceState({ page: targetPage }, "", historyUrl);
-        else history.pushState({ page: targetPage }, "", historyUrl);
-
-        // About -> catalogue returns to exactly the catalogue position the user left.
-        // Artwork -> catalogue keeps using its existing work-specific return behaviour.
+        if (replace) history.replaceState({page: targetPage}, "", historyUrl);
+        else history.pushState({page: targetPage}, "", historyUrl);
         if (returningFromAbout) restoreCataloguePosition();
       };
 
       if (document.startViewTransition) {
         const transition = document.startViewTransition(update);
         await transition.finished.catch(() => {});
-      } else {
-        await update();
-      }
+      } else await update();
 
       document.documentElement.removeAttribute("data-kritor-transition");
     } catch (error) {
       console.error("KRITOR navigation failed:", error);
       window.location.href = url;
-    } finally {
-      navigating = false;
-    }
+    } finally { navigating = false; }
   }
 
   document.addEventListener("click", event => {
@@ -149,20 +130,14 @@
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (link.target && link.target !== "_self") return;
     if (!isKritorPage(link.href)) return;
-    const target = pageFor(link.href);
-    const current = pageFor(location.href);
+    const target = pageFor(link.href), current = pageFor(location.href);
     if (target === current) return;
     event.preventDefault();
     navigate(link.href, false);
   }, true);
 
   window.addEventListener("popstate", () => navigate(location.href, true));
-
-  // Canonicalise legacy file URLs immediately without reloading the page.
   const initialCleanUrl = cleanUrlFor(location.href);
-  if (initialCleanUrl !== location.href) {
-    history.replaceState({ page: pageFor(initialCleanUrl) }, "", initialCleanUrl);
-  } else {
-    history.replaceState({ page: pageFor(location.href) }, "", location.href);
-  }
+  if (initialCleanUrl !== location.href) history.replaceState({page: pageFor(initialCleanUrl)}, "", initialCleanUrl);
+  else history.replaceState({page: pageFor(location.href)}, "", location.href);
 })();
