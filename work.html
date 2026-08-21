@@ -4,10 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <title>KRITOR</title>
+<link rel="canonical" href="/">
 <link rel="stylesheet" href="work.css">
 </head>
 <body>
-<header class="work-header"><a href="index.html?return=catalogue" aria-label="Back to catalogue">+</a></header>
+<header class="work-header"><a href="/?return=catalogue" aria-label="Back to catalogue">+</a></header>
 <main id="work-page"></main>
 <script src="artworks.js"></script><script src="work.js"></script>
+<script>
+(function(){
+  const id=new URLSearchParams(location.search).get('id');
+  if(id && /^work-[A-Za-z0-9_-]+$/.test(id)){
+    history.replaceState(history.state,'','/' + encodeURIComponent(id) + '/');
+    document.querySelectorAll('a[href*="work.html?id="]').forEach(function(a){
+      const u=new URL(a.href,location.href),rid=u.searchParams.get('id');
+      if(rid)a.href='/' + encodeURIComponent(rid) + '/';
+    });
+  }
+})();
+</script>
 </body></html>
