@@ -12,7 +12,14 @@
   <meta name="mobile-web-app-title" content="KRITOR">
   <meta name="theme-color" content="#f1f0ee">
   <link rel="apple-touch-icon" href="../icon.png">
-  <link rel="stylesheet" href="../type.css?v=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Loaded async: media="print" keeps it out of the critical path, so a slow
+       or blocked font host can never delay rendering or script execution. -->
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap"></noscript>
+  <link rel="stylesheet" href="../type.css?v=2">
   <link rel="stylesheet" href="../store.css?v=4" data-kritor-page-style>
   <link rel="stylesheet" href="../cart.css?v=2">
   <link rel="stylesheet" href="../transitions.css?v=11">

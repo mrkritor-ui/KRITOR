@@ -22,7 +22,14 @@
        Inter               the safest neutral
 */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+   The webfont itself is NOT imported here. An @import is render-blocking, and a
+   pending stylesheet blocks classic scripts from executing — so a slow or
+   unreachable fonts.googleapis.com would leave pages blank rather than merely
+   unstyled. Each page instead loads the font through an async <link> that can
+   never gate parsing, and falls back to the system mono until it arrives.
+   If you swap the typeface, change the stack below AND the <link> href in
+   index.html, about/, store/, work.html, product.html and checkout/.
+*/
 
 :root {
   --ui-font: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
