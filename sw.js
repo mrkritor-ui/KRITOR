@@ -10,6 +10,11 @@ const APP_FILES = [
   "./store.css",
   "./store.js",
   "./products.js",
+  "./cart.css",
+  "./cart.js",
+  "./product.html",
+  "./product.css",
+  "./product.js",
   "./icon.png"
 ];
 
@@ -105,6 +110,44 @@ self.addEventListener(
     if (
       url.hostname ===
       "api.github.com"
+    ) {
+
+      return;
+
+    }
+
+
+    /* -----------------------------------------------------
+       Never intercept Stripe.
+
+       Checkout runs on js.stripe.com scripts, api.stripe.com
+       calls and cross-origin payment iframes. Serving any of
+       those from cache breaks the payment session, and a
+       stale one can fail a real charge — always go to the
+       network, every time.
+    ----------------------------------------------------- */
+
+    if (
+      url.hostname === "js.stripe.com" ||
+      url.hostname === "api.stripe.com" ||
+      url.hostname.endsWith(".stripe.com") ||
+      url.hostname.endsWith(".stripe.network")
+    ) {
+
+      return;
+
+    }
+
+
+    /* -----------------------------------------------------
+       Never cache the checkout page or the payment worker.
+       Both must reflect live prices and live stock.
+    ----------------------------------------------------- */
+
+    if (
+      url.pathname.startsWith("/checkout") ||
+      url.pathname.endsWith("/create-payment-intent") ||
+      url.pathname.endsWith("/update-payment-intent")
     ) {
 
       return;

@@ -1,0 +1,271 @@
+/* KRITOR BAG — bag button + drawer. Loaded on every store-side page and
+   deliberately NOT marked as a page style, so the SPA swap leaves it alone. */
+
+.bag-root {
+  --bag-ink: #171716;
+  --bag-muted: #77746d;
+  --bag-line: rgba(23, 23, 22, .14);
+  --bag-ground: #f7f6f4;
+}
+
+/* ---------- button ---------- */
+
+.bag-button {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 10px);
+  right: var(--page-pad, 10px);
+  z-index: 100002;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--bag-muted);
+  padding: 4px 0 4px 10px;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  transition: color .3s ease;
+}
+
+/* Sitting inside a page's own nav row rather than pinned to the viewport. */
+.bag-root.is-slotted .bag-button,
+[data-bag-slot] .bag-button {
+  position: static;
+  padding: 0;
+}
+
+.bag-button.has-items { color: var(--bag-ink); }
+.bag-button:active { opacity: .45; }
+
+.bag-count {
+  font-size: 9px;
+  letter-spacing: .08em;
+  min-width: 1em;
+}
+
+.bag-button:not(.has-items) .bag-count { opacity: .5; }
+
+/* ---------- scrim + drawer ---------- */
+
+.bag-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100010;
+  background: rgba(23, 23, 22, .28);
+  opacity: 0;
+  transition: opacity .42s cubic-bezier(.22, 1, .36, 1);
+}
+
+.bag-root.is-open .bag-scrim { opacity: 1; }
+
+.bag-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100011;
+  width: min(420px, 100vw);
+  background: var(--bag-ground);
+  color: var(--bag-ink);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .52s cubic-bezier(.22, 1, .36, 1);
+  will-change: transform;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bag-root.is-open .bag-drawer { transform: translateX(0); }
+
+html.bag-locked, html.bag-locked body { overflow: hidden; }
+
+.bag-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px 14px;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--bag-line);
+}
+
+.bag-close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--bag-muted);
+  font: inherit;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ---------- lines ---------- */
+
+.bag-lines {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 20px;
+}
+
+.bag-empty {
+  color: var(--bag-muted);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 40px 0;
+  margin: 0;
+  text-align: center;
+}
+
+.bag-line {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--bag-line);
+  align-items: start;
+}
+
+.bag-line:last-child { border-bottom: 0; }
+
+.bag-line-image {
+  display: block;
+  width: 64px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.bag-line-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.bag-line-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bag-line-title {
+  color: inherit;
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.bag-line-meta {
+  color: var(--bag-muted);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.bag-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  border: 1px solid var(--bag-line);
+  padding: 3px 9px;
+  align-self: flex-start;
+}
+
+.bag-qty button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.bag-qty button:disabled { opacity: .25; cursor: default; }
+.bag-qty span { font-size: 11px; min-width: 1.2em; text-align: center; }
+
+.bag-line-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.bag-line-price { font-size: 11px; letter-spacing: .06em; }
+
+.bag-line-remove {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--bag-muted);
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ---------- footer ---------- */
+
+.bag-foot {
+  border-top: 1px solid var(--bag-line);
+  padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
+}
+
+.bag-subtotal {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.bag-note {
+  color: var(--bag-muted);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin: 8px 0 14px;
+}
+
+.bag-checkout {
+  display: block;
+  text-align: center;
+  background: var(--bag-ink);
+  color: var(--bag-ground);
+  text-decoration: none;
+  padding: 15px;
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.bag-checkout.is-disabled { opacity: .3; pointer-events: none; }
+
+@media (max-width: 699px) {
+  .bag-drawer { width: 100vw; }
+  .bag-line { grid-template-columns: 56px 1fr auto; }
+  .bag-line-image { width: 56px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bag-drawer, .bag-scrim { transition-duration: .01ms; }
+}

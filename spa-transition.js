@@ -52,6 +52,22 @@
     });
   }
 
+  /* A stylesheet that outlives page swaps — deliberately not tagged as a page
+     style, so removeOldPageStyles leaves it alone. */
+  function loadPersistentStylesheet(href) {
+    const wanted = siteRoot(href);
+    if (document.querySelector(`link[data-kritor-persistent="${href}"]`)) return Promise.resolve();
+    return new Promise(resolve => {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = wanted;
+      link.dataset.kritorPersistent = href;
+      link.onload = resolve;
+      link.onerror = resolve;
+      document.head.appendChild(link);
+    });
+  }
+
   function removeOldPageStyles(page) {
     const wanted = PAGE_STYLES[page];
     document.querySelectorAll("link[data-kritor-page-style]").forEach(link => {
@@ -118,11 +134,17 @@
       await loadScript("clean-work-links.js");
       initGridLogo();
     } else if (page === "store") {
-      if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
-      if (typeof PRODUCTS === "undefined") await loadScript("products.js");
+      await loadPersistentStylesheet("cart.css");
+      if (typeof SHOP_ITEMS === "undefined") await loadScript("products.js");
+      /* cart.js defines window.KritorCart once and then rebuilds its UI from
+         the page-rendered event, so it must only ever be loaded once. */
+      if (!window.KritorCart) await loadScript("cart.js");
       await loadScript("store.js");
       initGridLogo();
     }
+    /* The body swap took the bag button and drawer with it — cart.js listens
+       for this to rebuild them against the new body. */
+    window.dispatchEvent(new Event("kritor:page-rendered"));
   }
 
   async function navigate(url, replace) {

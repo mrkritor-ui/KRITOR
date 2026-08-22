@@ -1,0 +1,7 @@
+# Built by the Pages workflow from products.js on every deploy.
+# Committing them would let a stale copy shadow the real source.
+/products.json
+/shop/*/index.html
+
+node_modules/
+.DS_Store

@@ -29,6 +29,50 @@ jobs:
           sed -i "s/__BUILD_VERSION__/$VERSION/g" sw.js
           echo "$VERSION" > version.txt
 
+      # products.js is the single source of truth for the store. The payment
+      # worker needs it as JSON, and each item needs a directory so
+      # /shop/<id>/ resolves on a static host. Both are produced here at build
+      # time so nothing is committed back to the branch.
+      - name: Build store routes and catalogue
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const path = require('path');
+          const { SHOP_ITEMS } = require('./products.js');
+
+          if (!Array.isArray(SHOP_ITEMS)) {
+            throw new Error('products.js did not export SHOP_ITEMS');
+          }
+
+          const seen = new Set();
+          for (const item of SHOP_ITEMS) {
+            if (!item.id || !/^[a-z0-9][a-z0-9-]*$/.test(item.id)) {
+              throw new Error(`Invalid shop item id: ${JSON.stringify(item.id)}`);
+            }
+            if (seen.has(item.id)) throw new Error(`Duplicate shop item id: ${item.id}`);
+            seen.add(item.id);
+            if (!Number.isInteger(item.price) || item.price < 0) {
+              throw new Error(`${item.id}: price must be an integer in cents`);
+            }
+            if (!item.currency) throw new Error(`${item.id}: currency is required`);
+          }
+
+          fs.writeFileSync('products.json', JSON.stringify(SHOP_ITEMS));
+
+          for (const item of SHOP_ITEMS) {
+            const dir = path.join('shop', item.id);
+            fs.mkdirSync(dir, { recursive: true });
+            fs.writeFileSync(path.join(dir, 'index.html'),
+              '<!doctype html><html lang="en"><head><meta charset="UTF-8">' +
+              '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+              '<title>KRITOR</title><script>location.replace(' +
+              JSON.stringify('/product.html?id=' + item.id) +
+              ');</scr' + 'ipt></head><body></body></html>');
+          }
+
+          console.log(`Built ${SHOP_ITEMS.length} store routes`);
+          JS
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

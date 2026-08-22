@@ -1,0 +1,14 @@
+name = "kritor-payments"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[vars]
+# The origin serving products.json — your live KRITOR site.
+SITE_ORIGIN = "https://mrkritor-ui.github.io"
+
+# Origins allowed to call this worker. Include every host the store is served
+# from, comma separated, no trailing slashes.
+ALLOWED_ORIGINS = "https://mrkritor-ui.github.io"
+
+# STRIPE_SECRET_KEY is NOT set here — it is a secret:
+#   npx wrangler secret put STRIPE_SECRET_KEY

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>KRITOR</title>
+<meta name="theme-color" content="#f1f0ee">
+<link rel="stylesheet" href="/work.css">
+<link rel="stylesheet" href="/product.css">
+<link rel="stylesheet" href="/cart.css">
+</head>
+<body>
+<header class="work-header">
+  <a href="/store/" aria-label="Back to store">+</a>
+  <span class="work-header-bag" data-bag-slot></span>
+</header>
+<main id="product-page"></main>
+<script src="/products.js"></script>
+<script src="/cart.js"></script>
+<script src="/product.js"></script>
+<script>
+/* /shop/<id>/ redirects here to resolve on a static host; put the clean URL
+   back so the address bar and any share match the route the customer clicked. */
+(function(){
+  var id=new URLSearchParams(location.search).get('id');
+  if(id&&/^[a-z0-9][a-z0-9-]*$/.test(id)){
+    history.replaceState(history.state,'','/shop/'+encodeURIComponent(id)+'/');
+  }
+})();
+</script>
+</body>
+</html>
