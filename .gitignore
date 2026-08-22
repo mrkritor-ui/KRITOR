@@ -2,6 +2,7 @@
 # Committing them would let a stale copy shadow the real source.
 /products.json
 /shop/*/index.html
+/work-*/
 
 # Responsive image renditions and their manifest, built by
 # tools/build-images.py. Keeping them out of git is deliberate: the repo holds

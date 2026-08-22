@@ -1,15 +1,16 @@
 /* KRITOR — typography.
 
-   One typeface across every store surface: nav, bag, product meta, checkout.
+   One typeface across every surface: nav, work and product meta, bag, checkout.
    Loaded on every page and deliberately NOT tagged as a page style, so the SPA
    swap leaves it in place.
 
-   TO CHANGE THE TYPEFACE, change it here and nowhere else. Every other
-   stylesheet reads --ui-font.
+   TO CHANGE THE TYPEFACE, change --ui-font below AND the <link href> in
+   index.html, about/, store/, work.html, product.html and checkout/. Nothing
+   else reads a font name directly.
 
    Currently IBM Plex Mono — a monospace, chosen to match the stark
    order-summary look the store is modelled on. Alternates worth trying, all on
-   Google Fonts (swap the @import and the stack together):
+   Google Fonts:
 
      Mono, same register
        DM Mono             lighter, more elegant
@@ -20,22 +21,22 @@
        Jost                geometric, Futura-like — classic gallery signage
        Archivo             neutral grotesque, wide tracking
        Inter               the safest neutral
-*/
 
-   The webfont itself is NOT imported here. An @import is render-blocking, and a
-   pending stylesheet blocks classic scripts from executing — so a slow or
+   The webfont itself is NOT imported here. An @import is render-blocking, and
+   a pending stylesheet blocks classic scripts from executing — so a slow or
    unreachable fonts.googleapis.com would leave pages blank rather than merely
-   unstyled. Each page instead loads the font through an async <link> that can
-   never gate parsing, and falls back to the system mono until it arrives.
-   If you swap the typeface, change the stack below AND the <link> href in
-   index.html, about/, store/, work.html, product.html and checkout/.
-*/
+   unstyled. Each page loads it through an async <link> that cannot gate
+   parsing, and falls back to the system mono until it arrives. */
 
 :root {
   --ui-font: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Display weight for the few large moments — a product title, a total.
-     Kept separate so the UI stays light while headlines can carry weight. */
+  /* The display face for the few large moments — a work's title. Deliberately
+     a grotesque against the mono, so the title carries weight and the data
+     around it stays technical. */
+  --display-font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Kept separate so the UI stays light while headlines can carry weight. */
   --ui-display-weight: 500;
   --ui-weight: 400;
   --ui-light: 300;

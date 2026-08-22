@@ -169,6 +169,9 @@
       if (currentPage === "catalogue") window.dispatchEvent(new Event("kritor:cleanup-static-burst"));
 
       const update = async () => {
+        /* The grid-to-work zoom is a different transition with its own rules;
+           make sure a leftover direction cannot style this slide. */
+        delete document.documentElement.dataset.kritorZoom;
         document.documentElement.dataset.kritorTransition = direction;
         await renderDocument(html, targetPage, returningToCatalogue);
         if (replace) history.replaceState({page: targetPage}, "", historyUrl);

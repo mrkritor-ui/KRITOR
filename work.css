@@ -7,10 +7,10 @@ html.returning-artwork::view-transition-group(root){animation:none}html.returnin
    A heavy display title over technical data set in the UI mono: label left,
    value hard right, one row each. */
 
-.meta { font-family: var(--ui-font); }
+.meta { font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
 
 .title {
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--display-font, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif);
   font-size: 40px;
   font-weight: 900;
   letter-spacing: -.04em;
@@ -44,7 +44,7 @@ html.returning-artwork::view-transition-group(root){animation:none}html.returnin
 .details span:not(.label) { text-align: right; color: #171716; }
 
 .text-toggle {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 11px;
   font-weight: var(--ui-weight);
   letter-spacing: .14em;
@@ -54,7 +54,7 @@ html.returning-artwork::view-transition-group(root){animation:none}html.returnin
 }
 
 .text {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 13px;
   font-weight: var(--ui-weight);
   line-height: 1.8;
@@ -63,7 +63,7 @@ html.returning-artwork::view-transition-group(root){animation:none}html.returnin
 }
 
 .ar {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   border: 0;
   background: #171716;
   color: #f1f0ee;
@@ -75,7 +75,7 @@ html.returning-artwork::view-transition-group(root){animation:none}html.returnin
 }
 
 .similar h2 {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 11px;
   font-weight: var(--ui-weight);
   letter-spacing: .16em;

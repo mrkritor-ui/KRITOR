@@ -16,7 +16,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-weight: var(--ui-weight);
   overscroll-behavior: none;
 }

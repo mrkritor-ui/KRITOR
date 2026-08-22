@@ -1,0 +1,72 @@
+/* KRITOR — grid ↔ work zoom.
+
+   Loaded on the grids and on the work / product pages. The direction is set on
+   <html> by zoom-transition.js before first paint; without it the browser's
+   default cross-fade applies, which is the right thing for a plain reload.
+
+   In a cross-document view transition the arriving document styles BOTH
+   snapshots, so these rules cover the page being left as well as the one being
+   entered. */
+
+@view-transition { navigation: auto; }
+
+/* ---------- going in: tile -> work ---------- */
+
+@keyframes kritor-zoom-in-old {
+  from { transform: scale(1);    opacity: 1; }
+  to   { transform: scale(1.18); opacity: 0; }
+}
+
+@keyframes kritor-zoom-in-new {
+  from { transform: scale(.92); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+html[data-kritor-zoom="in"]::view-transition-old(root) {
+  animation: 520ms cubic-bezier(.4, 0, .2, 1) both kritor-zoom-in-old;
+}
+
+html[data-kritor-zoom="in"]::view-transition-new(root) {
+  animation: 520ms cubic-bezier(.16, 1, .3, 1) both kritor-zoom-in-new;
+  animation-delay: 60ms;
+}
+
+/* ---------- coming back: work -> grid ---------- */
+
+@keyframes kritor-zoom-out-old {
+  from { transform: scale(1);   opacity: 1; }
+  to   { transform: scale(.86); opacity: 0; }
+}
+
+@keyframes kritor-zoom-out-new {
+  from { transform: scale(1.12); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+html[data-kritor-zoom="out"]::view-transition-old(root) {
+  animation: 460ms cubic-bezier(.4, 0, .2, 1) both kritor-zoom-out-old;
+}
+
+html[data-kritor-zoom="out"]::view-transition-new(root) {
+  animation: 520ms cubic-bezier(.16, 1, .3, 1) both kritor-zoom-out-new;
+  animation-delay: 40ms;
+}
+
+/* Both snapshots occupy the same space and scale about the centre, so the
+   zoom reads as one continuous move rather than two crossfading pictures. */
+html[data-kritor-zoom]::view-transition-old(root),
+html[data-kritor-zoom]::view-transition-new(root) {
+  transform-origin: 50% 45%;
+  mix-blend-mode: normal;
+}
+
+html[data-kritor-zoom]::view-transition-group(root) {
+  animation-duration: 520ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-kritor-zoom]::view-transition-old(root),
+  html[data-kritor-zoom]::view-transition-new(root) {
+    animation-duration: .01ms;
+  }
+}

@@ -21,16 +21,30 @@
   background: transparent;
   color: var(--bag-muted);
   padding: 4px 0 4px 10px;
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-weight: var(--ui-weight);
   font-size: 10px;
   letter-spacing: .12em;
   text-transform: uppercase;
   cursor: pointer;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
   transition: color .3s ease;
+}
+
+/* Line-art tote. Stroked with currentColor so it picks up the same muted /
+   ink shift as the nav links beside it. */
+.bag-icon {
+  width: 17px;
+  height: 19px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 /* Sitting inside a page's own nav row rather than pinned to the viewport. */
@@ -43,7 +57,7 @@
 .bag-button.has-items { color: var(--bag-ink); }
 .bag-button:active { opacity: .45; }
 
-.bag-count { font-size: 10px; letter-spacing: .04em; min-width: 1em; }
+.bag-count { font-size: 10px; letter-spacing: .04em; min-width: .8em; line-height: 1; }
 .bag-button:not(.has-items) .bag-count { opacity: .45; }
 
 /* ---------- scrim + drawer ---------- */
@@ -68,7 +82,7 @@
   width: min(560px, 100vw);
   background: var(--bag-ground);
   color: var(--bag-ink);
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   display: flex;
   flex-direction: column;
   transform: translateX(100%);

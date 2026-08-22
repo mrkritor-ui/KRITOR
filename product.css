@@ -1,11 +1,11 @@
 /* KRITOR STORE — product page. Layers over work.css so an item page reads as
    the same object as a catalogue work page, on the store's grey ground. */
 
-html, body { background: #f1f0ee; font-family: var(--ui-font); }
+html, body { background: #f1f0ee; font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
 .inspect { background: #f1f0ee; }
 
 .work-header { justify-content: space-between; padding: 16px 20px; height: auto; }
-.work-header a { font-family: var(--ui-font); }
+.work-header a { font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
 .work-header-bag { display: flex; align-items: center; }
 
 /* Title, year, details, text and the AR button all come from work.css, which
@@ -16,7 +16,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font); }
 /* ---------- price ---------- */
 
 .product-price {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 18px;
   font-weight: var(--ui-display-weight);
   letter-spacing: .06em;
@@ -72,7 +72,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font); }
   border: 0;
   background: none;
   color: #171716;
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 18px;
   line-height: 1;
   padding: 8px 2px;
@@ -82,7 +82,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font); }
 .product-qty button:disabled { opacity: .25; cursor: default; }
 
 .product-qty span {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 15px;
   font-weight: var(--ui-weight);
   min-width: 1.4em;
@@ -95,7 +95,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font); }
   border: 0;
   background: #171716;
   color: #f1f0ee;
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 12px;
   font-weight: var(--ui-weight);
   letter-spacing: .18em;
@@ -109,7 +109,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font); }
 .product-add.is-added { opacity: .55; }
 
 .product-stock {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   margin: 14px 0 0;
   font-size: 11px;
   letter-spacing: .1em;
@@ -118,7 +118,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font); }
 }
 
 .product-soldout {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   margin: 34px 0 0;
   font-size: 12px;
   letter-spacing: .16em;
@@ -127,7 +127,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font); }
 }
 
 .product-missing {
-  font-family: var(--ui-font);
+  font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 13px;
   letter-spacing: .06em;
   padding: 40px 0;

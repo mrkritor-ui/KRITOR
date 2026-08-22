@@ -170,7 +170,11 @@
     root.className = "bag-root is-slotted";
     root.innerHTML = `
       <button class="bag-button" type="button" aria-label="Open bag" aria-haspopup="dialog">
-        Bag<span class="bag-count" aria-hidden="true">0</span>
+        <svg class="bag-icon" viewBox="0 0 20 22" aria-hidden="true" focusable="false">
+          <path d="M2.6 6.4h14.8l-1.15 14.1H3.75z"/>
+          <path d="M6.9 6.4V4.7a3.1 3.1 0 0 1 6.2 0v1.7"/>
+        </svg>
+        <span class="bag-count" aria-hidden="true">0</span>
       </button>
       <div class="bag-scrim" hidden></div>
       <aside class="bag-drawer" role="dialog" aria-modal="true" aria-label="Your bag" hidden>

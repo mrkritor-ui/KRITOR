@@ -29,10 +29,12 @@ jobs:
           sed -i "s/__BUILD_VERSION__/$VERSION/g" sw.js
           echo "$VERSION" > version.txt
 
-      # products.js is the single source of truth for the store. The payment
-      # worker needs it as JSON, and each item needs a directory so
-      # /shop/<id>/ resolves on a static host. Both are produced here at build
-      # time so nothing is committed back to the branch.
+      # Every work and every shop item gets a real page at its clean URL.
+      # These used to be redirect stubs, but a redirect breaks the view
+      # transition between the grid and the item — the browser cannot animate
+      # across an extra navigation — so the page itself is written there.
+      # Both files reference everything root-absolutely, so one copy works at
+      # any depth.
       - name: Build store routes and catalogue
         run: |
           node - <<'JS'
@@ -59,18 +61,29 @@ jobs:
 
           fs.writeFileSync('products.json', JSON.stringify(SHOP_ITEMS));
 
+          const productPage = fs.readFileSync('product.html', 'utf8');
           for (const item of SHOP_ITEMS) {
             const dir = path.join('shop', item.id);
             fs.mkdirSync(dir, { recursive: true });
-            fs.writeFileSync(path.join(dir, 'index.html'),
-              '<!doctype html><html lang="en"><head><meta charset="UTF-8">' +
-              '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-              '<title>KRITOR</title><script>location.replace(' +
-              JSON.stringify('/product.html?id=' + item.id) +
-              ');</scr' + 'ipt></head><body></body></html>');
+            fs.writeFileSync(path.join(dir, 'index.html'), productPage);
           }
 
-          console.log(`Built ${SHOP_ITEMS.length} store routes`);
+          // Work pages resolve their id from the path, so the same file serves
+          // every one of them.
+          const artworksSrc = fs.readFileSync('artworks.js', 'utf8');
+          const artworks = JSON.parse(
+            artworksSrc.slice(artworksSrc.indexOf('['), artworksSrc.lastIndexOf(']') + 1)
+          );
+          const workPage = fs.readFileSync('work.html', 'utf8');
+          for (const work of artworks) {
+            if (!/^work-[A-Za-z0-9_-]+$/.test(work.id)) {
+              throw new Error(`Invalid artwork id: ${JSON.stringify(work.id)}`);
+            }
+            fs.mkdirSync(work.id, { recursive: true });
+            fs.writeFileSync(path.join(work.id, 'index.html'), workPage);
+          }
+
+          console.log(`Built ${SHOP_ITEMS.length} store routes and ${artworks.length} work routes`);
           JS
 
       # The catalogue is the landing screen, so the originals must never be what

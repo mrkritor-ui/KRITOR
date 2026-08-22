@@ -12,6 +12,8 @@ const APP_FILES = [
   "./products.js",
   "./type.css",
   "./tile-image.js",
+  "./zoom.css",
+  "./zoom-transition.js",
   "./work.css",
   "./cart.css",
   "./cart.js",
