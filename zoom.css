@@ -1,82 +1,56 @@
-/* KRITOR — grid ↔ work zoom.
+/* KRITOR — grid ↔ work transition.
 
-   Loaded on the grids and on the work / product pages. zoom-transition.js sets
-   the direction and the origin on <html> before first paint; without them the
-   browser's default cross-fade applies, which is right for a plain reload.
-
-   In a cross-document view transition the arriving document styles BOTH
-   snapshots, so these rules cover the page being left as well as the one being
-   entered. */
+   One object travels: the artwork. zoom-transition.js gives the tile image and
+   the hero image the same view-transition-name, and the browser interpolates
+   the geometry between them. Everything else cross-fades quickly underneath. */
 
 @view-transition { navigation: auto; }
 
-/* The point the zoom grows from — the centre of the tile that was clicked,
-   in viewport percentages. The fallback is the middle of the screen, slightly
-   high, which is where a grid reads from when nothing better is known. */
-html {
-  --kritor-zoom-x: 50%;
-  --kritor-zoom-y: 45%;
+/* ---------- the artwork ---------- */
+
+::view-transition-group(kritor-work) {
+  animation-duration: 500ms;
+  /* An even curve, not a front-loaded one. cubic-bezier(.22,1,.36,1) is most
+     of the way there by a third of its duration, so the work appeared to snap
+     into place and then drift; this accelerates and settles instead, which is
+     what makes a travelling object read as one continuous move. */
+  animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+  /* Above the fading page, so the work is never dimmed mid-flight. */
+  z-index: 10;
 }
 
-/* ---------- going in: tile -> work ---------- */
-
-@keyframes kritor-zoom-in-old {
-  from { transform: scale(1);    opacity: 1; }
-  to   { transform: scale(1.18); opacity: 0; }
+/* Old and new are the same picture, so cross-fading them only produces a
+   shimmer. Holding both opaque lets the group's geometry do all the work and
+   the movement reads as one continuous object. */
+::view-transition-old(kritor-work),
+::view-transition-new(kritor-work) {
+  animation: none;
+  mix-blend-mode: normal;
+  /* The tile is square and the work page is not, so without this the image
+     would squash on the way through. */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-@keyframes kritor-zoom-in-new {
-  from { transform: scale(.92); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
+/* ---------- everything else ---------- */
+
+/* Short, so the page is out of the way while the artwork is still moving —
+   the work leads and the chrome follows. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 260ms;
+  animation-timing-function: ease;
 }
 
-html[data-kritor-zoom="in"]::view-transition-old(root) {
-  animation: 460ms cubic-bezier(.4, 0, .2, 1) both kritor-zoom-in-old;
-}
-
-html[data-kritor-zoom="in"]::view-transition-new(root) {
-  animation: 480ms cubic-bezier(.16, 1, .3, 1) both kritor-zoom-in-new;
+::view-transition-new(root) {
   animation-delay: 40ms;
 }
 
-/* ---------- coming back: work -> grid ---------- */
-
-@keyframes kritor-zoom-out-old {
-  from { transform: scale(1);   opacity: 1; }
-  to   { transform: scale(.86); opacity: 0; }
-}
-
-@keyframes kritor-zoom-out-new {
-  from { transform: scale(1.12); opacity: 0; }
-  to   { transform: scale(1);    opacity: 1; }
-}
-
-html[data-kritor-zoom="out"]::view-transition-old(root) {
-  animation: 420ms cubic-bezier(.4, 0, .2, 1) both kritor-zoom-out-old;
-}
-
-html[data-kritor-zoom="out"]::view-transition-new(root) {
-  animation: 480ms cubic-bezier(.16, 1, .3, 1) both kritor-zoom-out-new;
-  animation-delay: 30ms;
-}
-
-/* Both snapshots scale about the clicked tile and sit in the same place, so
-   the movement reads as one push rather than two pictures crossfading. */
-html[data-kritor-zoom]::view-transition-old(root),
-html[data-kritor-zoom]::view-transition-new(root) {
-  transform-origin: var(--kritor-zoom-x) var(--kritor-zoom-y);
-  mix-blend-mode: normal;
-}
-
-/* The group wrapper would otherwise run its own default animation underneath
-   and soften the whole thing. */
-html[data-kritor-zoom]::view-transition-group(root) {
-  animation: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  html[data-kritor-zoom]::view-transition-old(root),
-  html[data-kritor-zoom]::view-transition-new(root) {
+  ::view-transition-group(kritor-work),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
     animation-duration: .01ms;
   }
 }

@@ -1,193 +1,126 @@
-/* KRITOR — grid ↔ work zoom.
+/* KRITOR — grid ↔ work transition.
 
-   Clicking a tile pushes into the work; going back pulls out of it. The zoom
-   grows from the tile you actually clicked rather than the middle of the
-   screen, so a work in the bottom-right corner comes towards you from the
-   bottom-right instead of sliding across the page first.
+   The artwork itself travels. Click a tile and that image moves and grows into
+   its place on the work page; go back and it returns to its square in the grid.
+   Everything else — header, titles, the rest of the grid — fades quietly
+   underneath.
 
-   Two paths, same motion:
+   This is what makes the movement read as continuous rather than as two pages
+   crossfading: there is one object on screen the whole time, and the eye
+   follows it. Scaling the whole page instead looks busy, because the text and
+   the chrome scale too and nothing holds still.
 
-     * Where the browser supports cross-document view transitions (Chrome 126+,
-       Safari 18.2+) the browser animates snapshots of the two pages and this
-       file only supplies the direction and the origin, via CSS custom
-       properties read by zoom.css.
+   How it works: the same `view-transition-name` is put on the tile image on the
+   way out and on the hero image on the way in. The browser matches them by name
+   across the two documents and animates the geometry between them.
 
-     * Everywhere else — Firefox, older Safari — the same movement is played
-       with the Web Animations API: the outgoing page scales away, navigation
-       happens, and the arriving page scales in. Slightly less smooth than the
-       native path, but identical in shape and available everywhere.
-
-   The direction is written on the way out and read once on the way in, so a
-   reload or a hand-typed URL animates nothing. */
+   Needs cross-document view transitions (Chrome 126+, Safari 18.2+). Without
+   them the pages simply cross-fade, which is unremarkable but never broken. */
 (function () {
   "use strict";
 
-  const KEY = "kritor-zoom";
-  const ORIGIN_KEY = "kritor-zoom-origin";
+  const NAME = "kritor-work";
+  const KEY = "kritor-work-id";
 
-  /* pagereveal ships alongside cross-document view transitions, so it is a
-     reliable stand-in for "the browser will animate this navigation for us". */
   const NATIVE = typeof document.startViewTransition === "function" && "onpagereveal" in window;
-
-  const OUT_MS = 340;
-  const IN_MS = 460;
-  const OUT_EASE = "cubic-bezier(.4, 0, .2, 1)";
-  const IN_EASE = "cubic-bezier(.16, 1, .3, 1)";
 
   const reducedMotion = () =>
     window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------- direction + origin ---------- */
+  /* ---------- which work is travelling ---------- */
 
-  /* Where on screen the zoom should grow from, as viewport percentages. */
-  function originOf(element) {
-    if (!element) return null;
-    const box = element.getBoundingClientRect();
-    if (!box.width || !box.height) return null;
-    return {
-      x: +(((box.left + box.width / 2) / window.innerWidth) * 100).toFixed(2),
-      y: +(((box.top + box.height / 2) / window.innerHeight) * 100).toFixed(2)
-    };
+  function remember(id) {
+    try { id ? sessionStorage.setItem(KEY, id) : sessionStorage.removeItem(KEY); } catch (_) {}
   }
 
-  function store(direction, origin) {
-    try {
-      sessionStorage.setItem(KEY, direction);
-      /* Kept separately so the return trip can pull back towards the same tile
-         the work grew out of. */
-      if (origin) sessionStorage.setItem(ORIGIN_KEY, JSON.stringify(origin));
-    } catch (_) {}
+  function remembered() {
+    try { return sessionStorage.getItem(KEY) || ""; } catch (_) { return ""; }
   }
 
-  function savedOrigin() {
-    try {
-      const raw = JSON.parse(sessionStorage.getItem(ORIGIN_KEY) || "null");
-      if (raw && Number.isFinite(raw.x) && Number.isFinite(raw.y)) return raw;
-    } catch (_) {}
-    return null;
-  }
+  /* ---------- naming ---------- */
 
-  function applyOrigin(origin) {
-    const root = document.documentElement;
-    const x = `${origin ? origin.x : 50}%`;
-    const y = `${origin ? origin.y : 45}%`;
-    root.style.setProperty("--kritor-zoom-x", x);
-    root.style.setProperty("--kritor-zoom-y", y);
-    /* The native path reads the custom properties from the view-transition
-       pseudo-elements; the fallback animates this element itself, so it needs
-       a real transform-origin as well. */
-    root.style.transformOrigin = `${x} ${y}`;
-  }
-
-  /* Reads the direction and clears it. Runs from the head, before first paint. */
-  function consume() {
-    let direction = null;
-    try {
-      direction = sessionStorage.getItem(KEY);
-      sessionStorage.removeItem(KEY);
-    } catch (_) {}
-    if (direction !== "in" && direction !== "out") return;
-
-    const root = document.documentElement;
-    applyOrigin(savedOrigin());
-    root.dataset.kritorZoom = direction;
-
-    if (!NATIVE && !reducedMotion()) playArrival(direction);
-
-    /* Drop it once played. Left in place it would also colour the SPA's slide
-       between catalogue, store and about. */
-    const clear = () => {
-      delete root.dataset.kritorZoom;
-      root.style.removeProperty("--kritor-zoom-x");
-      root.style.removeProperty("--kritor-zoom-y");
-      root.style.removeProperty("transform-origin");
-    };
-    if (NATIVE) {
-      window.addEventListener("pagereveal", event => {
-        if (event.viewTransition) event.viewTransition.finished.finally(clear);
-        else clear();
-      }, {once: true});
-    }
-    setTimeout(clear, Math.max(IN_MS, 1200) + 400);
-  }
-
-  /* ---------- the non-native path ---------- */
-
-  function playArrival(direction) {
-    const from = direction === "in" ? "scale(.92)" : "scale(1.12)";
-    const run = () => {
-      document.documentElement.animate(
-        [{transform: from, opacity: 0}, {transform: "scale(1)", opacity: 1}],
-        {duration: IN_MS, easing: IN_EASE}
-      );
-    };
-    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run, {once: true});
-    else run();
-  }
-
-  /* Plays the outgoing half, then follows the link. Returns true when it has
-     taken responsibility for the navigation. */
-  function playDeparture(url, direction) {
-    if (NATIVE || reducedMotion()) return false;
-    const root = document.documentElement;
-    const to = direction === "in" ? "scale(1.18)" : "scale(.86)";
-    let navigated = false;
-    const go = () => { if (!navigated) { navigated = true; window.location.href = url; } };
-
-    const animation = root.animate(
-      [{transform: "scale(1)", opacity: 1}, {transform: to, opacity: 0}],
-      {duration: OUT_MS, easing: OUT_EASE, fill: "forwards"}
-    );
-    animation.finished.then(go).catch(go);
-    /* Never let a dropped animation frame strand the visitor on a faded page. */
-    setTimeout(go, OUT_MS + 250);
-    return true;
-  }
-
-  /* ---------- link handling ---------- */
-
-  function handle(link, direction, origin) {
-    applyOrigin(origin);
-    store(direction, origin);
-    return playDeparture(link.href, direction);
-  }
-
-  function plainClick(event) {
-    return !event.defaultPrevented && event.button === 0 &&
-      !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
-  }
-
-  /* A grid tile going to a work or product page: push in, from that tile. */
-  function watchGrid() {
-    document.addEventListener("click", event => {
-      if (!plainClick(event)) return;
-      const link = event.target.closest("a.tile");
-      if (!link || (link.target && link.target !== "_self")) return;
-      if (handle(link, "in", originOf(link))) event.preventDefault();
+  /* Only one element may carry a given name, so clear before setting. */
+  function clearName() {
+    document.querySelectorAll("[data-kritor-named]").forEach(el => {
+      el.style.viewTransitionName = "";
+      delete el.dataset.kritorNamed;
     });
   }
 
-  /* The back control on a work or product page: pull out, towards the tile it
-     came from. Anything else leaving the page is left alone. */
+  function name(element) {
+    if (!element) return false;
+    clearName();
+    element.style.viewTransitionName = NAME;
+    element.dataset.kritorNamed = "true";
+    return true;
+  }
+
+  /* The <img> inside a tile, not the tile itself: the tile is a padded square
+     and the picture inside it is what the eye is actually following. */
+  function tileImage(id) {
+    if (!id) return null;
+    const tile = document.querySelector(`.tile[data-work-id="${CSS.escape(id)}"]`);
+    return tile ? tile.querySelector("img") : null;
+  }
+
+  function heroImage() {
+    return document.querySelector(".art-wrap img.art");
+  }
+
+  /* ---------- leaving ---------- */
+
+  function watchGrid() {
+    document.addEventListener("click", event => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const tile = event.target.closest("a.tile");
+      if (!tile || (tile.target && tile.target !== "_self")) return;
+
+      remember(tile.dataset.workId || "");
+      if (NATIVE && !reducedMotion()) name(tile.querySelector("img"));
+    });
+  }
+
   function watchDetail() {
     document.addEventListener("click", event => {
-      if (!plainClick(event)) return;
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const link = event.target.closest("a");
       if (!link || (link.target && link.target !== "_self")) return;
 
+      /* Going back to the grid: the hero is what shrinks into the tile. */
       if (link.closest(".work-header")) {
-        if (handle(link, "out", savedOrigin())) event.preventDefault();
-      } else if (link.closest(".similar")) {
-        if (handle(link, "in", originOf(link))) event.preventDefault();
+        if (NATIVE && !reducedMotion()) name(heroImage());
+        return;
+      }
+      /* Another work in the same series: that thumbnail leads. */
+      if (link.closest(".similar")) {
+        const match = link.getAttribute("href").match(/(work-[A-Za-z0-9_-]+)/);
+        remember(match ? match[1] : "");
+        if (NATIVE && !reducedMotion()) name(link.querySelector("img"));
       }
     });
   }
 
-  window.addEventListener("popstate", () => store("out", savedOrigin()));
+  /* ---------- arriving ---------- */
 
-  window.KritorZoom = {consume, originOf, NATIVE};
+  /* Runs before the browser captures the incoming snapshot, so the name has to
+     be in place by the time this returns. */
+  function onReveal(event) {
+    if (!event.viewTransition || reducedMotion()) return;
+    const target = heroImage() || tileImage(remembered());
+    if (!name(target)) return;
+    /* Once the transition is done the name must go, or the element stays
+       promoted to its own layer for the rest of the page's life. */
+    event.viewTransition.finished.finally(clearName);
+  }
 
-  consume();
+  if (NATIVE) window.addEventListener("pagereveal", onReveal);
+
+  /* A cancelled navigation would otherwise leave the tile named. */
+  window.addEventListener("pageshow", clearName);
+
+  window.KritorZoom = {NATIVE, name, clearName, tileImage, heroImage};
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", attach);
   else attach();
