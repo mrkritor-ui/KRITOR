@@ -13,12 +13,14 @@
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="stylesheet" href="type.css?v=1">
-  <link rel="stylesheet" href="style.css?v=13" data-kritor-page-style>
+  <link rel="stylesheet" href="style.css?v=14" data-kritor-page-style>
   <link rel="stylesheet" href="transitions.css?v=11">
   <script src="spa-transition.js?v=5"></script>
   <script>window.__kritorReturnWork=new URLSearchParams(location.search).get('work');if(window.__kritorReturnWork)document.documentElement.classList.add('returning-artwork');</script>
   <style>
-    #kritor-top-logo{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:100000;width:min(120px,22vw);height:auto;display:block;opacity:0;pointer-events:none;transition:opacity .8s cubic-bezier(.22,.61,.36,1);will-change:opacity}
+    /* Sits in the header's centre grid track — see .site-header in style.css.
+       Being a grid item is what stops it colliding: tracks cannot overlap. */
+    #kritor-top-logo{justify-self:center;width:min(120px,22vw);max-width:100%;height:auto;display:block;opacity:0;pointer-events:none;transition:opacity .8s cubic-bezier(.22,.61,.36,1);will-change:opacity}
     #kritor-top-logo.is-visible{opacity:1}
   </style>
 </head>
@@ -29,11 +31,11 @@
       <button id="shuffle-control" class="shuffle-control" type="button" aria-label="Shuffle artwork order" title="Shuffle artwork order">↻</button>
       <a class="nav-link nav-link-inline" href="/store/">Store</a>
     </div>
+    <img id="kritor-top-logo" src="/images/kritor%20top%20text.png" alt="KRITOR">
     <nav class="site-nav">
       <a class="nav-link" href="/about/">About</a>
     </nav>
   </header>
-  <img id="kritor-top-logo" src="/images/kritor%20top%20text.png" alt="KRITOR">
   <main id="grid" class="grid" aria-label="Artwork catalogue"></main>
   <script src="artworks.js"></script>
   <script src="script.js?v=7"></script>
