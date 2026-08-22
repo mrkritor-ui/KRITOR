@@ -73,6 +73,30 @@ jobs:
           console.log(`Built ${SHOP_ITEMS.length} store routes`);
           JS
 
+      # The catalogue is the landing screen, so the originals must never be what
+      # a phone downloads. This builds AVIF/WebP renditions plus an inline blur
+      # placeholder for every image. Built here rather than committed, so the
+      # derivatives cannot drift from the originals and the repo does not carry
+      # two copies of every painting.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Cache image renditions
+        uses: actions/cache@v4
+        with:
+          path: derived
+          # Renditions are named by a hash of their source, so a changed image
+          # simply misses the cache and is rebuilt; the rest are reused.
+          key: derived-${{ hashFiles('images/**', 'shop/**', 'tools/build-images.py') }}
+          restore-keys: derived-
+
+      - name: Build responsive images
+        run: |
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet Pillow pillow-avif-plugin
+          python tools/build-images.py
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

@@ -148,10 +148,9 @@
   function thumbFor(item) {
     const first = (item.images && item.images[0]) || "";
     if (!first) return "";
-    const slash = first.lastIndexOf("/");
-    const dot = first.lastIndexOf(".");
-    if (slash === -1 || dot <= slash) return assetPath(first);
-    return assetPath(`${first.slice(0, slash)}/thumbs/${first.slice(slash + 1, dot)}.webp`);
+    /* A bag line is ~100px, so ask the build manifest for a small rendition
+       rather than guessing at a path that may not exist. */
+    return window.KritorTileImage ? window.KritorTileImage.pick(first, 240) : assetPath(first);
   }
 
   /* ---------- drawer UI ---------- */

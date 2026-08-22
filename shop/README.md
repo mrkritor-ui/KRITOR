@@ -8,10 +8,13 @@ changes the archive.
 |---|---|---|
 | Data file | `artworks.js` (`ARTWORKS`) | `products.js` (`SHOP_ITEMS`) |
 | Images live in | `images/` | `shop/<item-id>/` |
-| Thumbnails generated into | `images/thumbs/` | `shop/<item-id>/thumbs/` |
-| Workflow | `.github/workflows/generate-thumbnails.yml` | `.github/workflows/generate-shop-thumbnails.yml` |
 | Page | `/` | `/store/` |
 | Item page | `/work-01/` | `/shop/<item-id>/` |
+
+Both go through the same image pipeline: `tools/build-images.py` reads
+`artworks.js` and `products.js`, and the Pages workflow runs it on every deploy
+to produce AVIF/WebP renditions and blur placeholders. You never generate
+thumbnails by hand, and there is nothing to commit.
 
 ---
 
@@ -56,10 +59,10 @@ shop/artshed-original/03-framed.png
 }
 ```
 
-**4. Push.** `generate-shop-thumbnails.yml` builds
-`shop/artshed-original/thumbs/*.webp` and commits them back. The store page
-prefers the thumbnail and falls back to the full image if it isn't there yet,
-so the item is live immediately either way.
+**4. Push.** The deploy builds the renditions for your new photographs
+automatically — several widths in AVIF and WebP, plus the tiny inline
+placeholder the grid paints first. Nothing is committed back, and the store
+never serves your full-size originals.
 
 The item page appears at `/shop/artshed-original/` — no extra file needed, the
 `/shop/` directory resolves any id via `product.html`.

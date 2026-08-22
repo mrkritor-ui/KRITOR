@@ -130,12 +130,16 @@
     removeOldPageStyles(page);
     if (page === "catalogue") {
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
+      if (typeof IMAGE_MANIFEST === "undefined") await loadScript("image-manifest.js");
+      if (!window.KritorTileImage) await loadScript("tile-image.js");
       await loadScript("script.js");
       await loadScript("clean-work-links.js");
       initGridLogo();
     } else if (page === "store") {
       await loadPersistentStylesheet("cart.css");
       if (typeof SHOP_ITEMS === "undefined") await loadScript("products.js");
+      if (typeof IMAGE_MANIFEST === "undefined") await loadScript("image-manifest.js");
+      if (!window.KritorTileImage) await loadScript("tile-image.js");
       /* cart.js defines window.KritorCart once and then rebuilds its UI from
          the page-rendered event, so it must only ever be loaded once. */
       if (!window.KritorCart) await loadScript("cart.js");

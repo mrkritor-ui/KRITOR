@@ -7,7 +7,7 @@
 
    ADDING AN ITEM
    Drop the product photographs into  shop/<item-id>/  and add an entry below.
-   The thumbnail workflow generates shop/<item-id>/thumbs/ automatically on push.
+   The deploy builds every rendition the store needs from these originals.
    See shop/README.md for the full workflow.
 
    FIELDS

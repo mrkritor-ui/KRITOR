@@ -32,8 +32,13 @@
   const max = cart ? cart.maxFor(item) : (item.stock || 0);
   const soldOut = max < 1;
 
-  const images = (item.images || []).map(assetPath);
-  const hero = images[0] || "";
+  /* Renditions from the build manifest; the inspect view keeps the original so
+     pinch-zoom still reaches full detail. */
+  const rendition = (path, width) =>
+    window.KritorTileImage ? window.KritorTileImage.pick(path, width) : assetPath(path);
+  const sources = item.images || [];
+  const images = sources.map(assetPath);
+  const hero = sources.length ? rendition(sources[0], 1440) : "";
 
   function esc(value) {
     return String(value == null ? "" : value).replace(/[&<>"']/g, c => (
@@ -57,9 +62,9 @@
       <div class="art-wrap" id="art-wrap">
         <img class="art" id="hero-image" src="${esc(hero)}" alt="${esc(item.title || "Product")}">
       </div>
-      ${images.length > 1 ? `<div class="product-gallery">${images.map((src, index) =>
-        `<button type="button" class="product-thumb${index === 0 ? " is-active" : ""}" data-src="${esc(src)}" aria-label="View image ${index + 1}">
-           <img src="${esc(src)}" alt="" loading="lazy">
+      ${sources.length > 1 ? `<div class="product-gallery">${sources.map((path, index) =>
+        `<button type="button" class="product-thumb${index === 0 ? " is-active" : ""}" data-src="${esc(rendition(path, 1440))}" aria-label="View image ${index + 1}">
+           <img src="${esc(rendition(path, 240))}" alt="" loading="lazy" decoding="async">
          </button>`).join("")}</div>` : ""}
       <section class="meta">
         <div class="title">${esc(item.title || "Untitled")}</div>

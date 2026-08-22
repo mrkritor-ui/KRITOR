@@ -49,3 +49,11 @@ html.returning-artwork::view-transition-old(returning-artwork),html.returning-ar
 #kritor-top-logo{grid-area:logo;justify-self:center;width:min(120px,32vw)}
 .grid{padding-top:78px}
 }
+
+/* Responsive tile images. The <picture> carries the inline blur placeholder so
+   a tile shows the work's colours on the first paint, then the real rendition
+   fades over it once decoded. */
+.tile picture{display:block;width:100%;height:100%;background-size:contain;background-position:center;background-repeat:no-repeat}
+.tile picture img{display:block;width:100%;height:100%;object-fit:contain;background:transparent;transition:opacity .45s ease}
+.tile picture.is-loading img{opacity:0}
+@media(prefers-reduced-motion:reduce){.tile picture img{transition:none}}

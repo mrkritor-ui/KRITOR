@@ -103,9 +103,9 @@ worker's figure on the pay button before confirming.
 ## products.json
 
 The worker reads `products.json` from the live site rather than keeping its own
-copy, so `products.js` stays the single source of truth. The
-`generate-shop-thumbnails` workflow regenerates `products.json` from
-`products.js` on every push, and the worker caches it for 60 seconds.
+copy, so `products.js` stays the single source of truth. The Pages deploy
+regenerates `products.json` from `products.js` on every push, and the worker
+caches it for 60 seconds.
 
 A price change is therefore live about a minute after the Pages deploy finishes.
 
