@@ -92,6 +92,16 @@ def fingerprint(path):
     return hashlib.sha1(path.read_bytes()).hexdigest()[:12]
 
 
+def has_alpha(im):
+    """Whether the file carries an alpha channel at all.
+
+    Deliberately a question about the file, not about its pixels. Nothing here
+    inspects content or decides what part of a work is background — a PNG with
+    transparency stays transparent all the way through, and that is the whole
+    rule."""
+    return im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info)
+
+
 def lqip_data_uri(im):
     """A tiny blurred stand-in, small enough to inline. Around 300-600 bytes."""
     tiny = im.copy()
@@ -104,7 +114,11 @@ def lqip_data_uri(im):
 
 def build_one(rel, path, force):
     with Image.open(path) as im:
-        im = im.convert("RGB")
+        # Transparency survives the whole pipeline. Converting to RGB here is
+        # what baked a white rectangle behind every cut-out work — invisible on
+        # the white catalogue ground, glaring the moment a tile moves over
+        # another one.
+        im = im.convert("RGBA" if has_alpha(im) else "RGB")
         native_width, native_height = im.size
         stem = slug(rel)
         digest = fingerprint(path)

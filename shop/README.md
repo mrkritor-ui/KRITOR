@@ -16,6 +16,10 @@ Both go through the same image pipeline: `tools/build-images.py` reads
 to produce AVIF/WebP renditions and blur placeholders. You never generate
 thumbnails by hand, and there is nothing to commit.
 
+Transparency is carried through untouched — upload a PNG with a transparent
+background and every rendition keeps it, right down to the inline placeholder.
+Nothing crops, flattens, or guesses at what the background is.
+
 ---
 
 ## Adding a shop item

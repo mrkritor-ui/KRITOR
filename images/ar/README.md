@@ -28,13 +28,22 @@ image. Any of png / jpg / jpeg / webp.
 
 ## Transparent PNGs
 
-When a source has a real transparent background, the build makes the painting a
-flat cutout: alpha drives opacity, and the shallow canvas body behind it is
-omitted, so the shape of the work is what lands on the wall rather than a
-rectangle. An opaque source keeps the canvas body, which is what makes a
-rectangular painting read as an object rather than a sticker.
+Upload a good PNG and it comes out the other side intact. Whatever transparency
+it has is what appears on the wall.
 
-Nothing to configure — it's decided from the image.
+Nothing inspects the picture, guesses at a background, or crops anything. The
+only question asked is whether the alpha channel holds anything other than
+"fully opaque" — a channel that is uniformly opaque encodes nothing, so it is
+dropped and the texture ships as a much smaller JPEG. That is the same rule the
+web renditions follow.
+
+The work is always a single flat plane. There is no branch on what the picture
+looks like, and no box behind it that a cutout would reveal.
+
+One thing to expect: ARKit accepts only PNG or JPEG textures, and only PNG
+carries alpha — so a genuinely transparent work produces a noticeably larger
+`.usdz` than an opaque one (a few MB rather than a few hundred KB). If that
+becomes a problem, `MAX_TEXTURE` in `scripts/generate_usdz.py` is the dial.
 
 ## Rebuilding
 

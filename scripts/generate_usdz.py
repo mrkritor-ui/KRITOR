@@ -12,11 +12,13 @@ without the studio floor, say, or a straightened photograph.
 
 Transparency
 ------------
-Catalogue images are moving to PNG with a transparent background. When the
-source has a meaningful alpha channel the painting is built as a flat cutout,
-with alpha driving opacity, so the shape of the work is what appears on the
-wall. An opaque source keeps the shallow canvas body behind it, which is what
-makes a rectangular painting read as an object rather than a sticker.
+Whatever transparency the PNG has is what appears on the wall. Nothing here
+inspects the picture, guesses at a background, or crops anything — the only
+question asked is whether the alpha channel carries any information at all, and
+a channel that is uniformly opaque is dropped because it encodes nothing. That
+is the same rule the web renditions follow.
+
+Upload a good PNG and it comes out the other side intact.
 """
 
 import json
@@ -37,11 +39,6 @@ AR_OVERRIDE_ROOT = os.path.join(ROOT, "images", "ar")
 # and only costs the viewer time.
 MAX_TEXTURE = 2048
 
-# Below this fraction of non-opaque pixels, an alpha channel is assumed to be
-# incidental (a stray soft edge) rather than a deliberate cutout.
-ALPHA_CUTOUT_THRESHOLD = 0.005
-
-CANVAS_DEPTH = 0.03
 IMAGE_EXTENSIONS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG", ".webp", ".WEBP")
 
 
@@ -75,33 +72,32 @@ def resolve_source(artwork):
 
 
 def prepare_texture(source_path, destination_dir):
-    """Copy the texture in at a sane size. Returns (path, has_cutout)."""
-    with Image.open(source_path) as im:
-        has_alpha = im.mode in ("RGBA", "LA") or (
-            im.mode == "P" and "transparency" in im.info
-        )
+    """Copy the texture in at a sane size, keeping any real transparency.
 
-        if has_alpha:
+    Returns (path, transparent). `transparent` is simply whether the alpha
+    channel holds anything other than "fully opaque" — no thresholds, no
+    judgement about what the picture contains."""
+    with Image.open(source_path) as im:
+        transparent = False
+        if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
             im = im.convert("RGBA")
-            alpha = im.getchannel("A")
-            transparent = sum(count for value, count in
-                              enumerate(alpha.histogram()) if value < 250)
-            has_cutout = transparent / float(im.width * im.height) > ALPHA_CUTOUT_THRESHOLD
-        else:
+            # A uniformly opaque alpha channel encodes nothing, so it is dropped
+            # and the texture ships as a much smaller JPEG.
+            transparent = im.getchannel("A").getextrema() != (255, 255)
+        if not transparent:
             im = im.convert("RGB")
-            has_cutout = False
 
         if max(im.size) > MAX_TEXTURE:
             im.thumbnail((MAX_TEXTURE, MAX_TEXTURE), Image.Resampling.LANCZOS)
 
-        # USDZ textures must be PNG or JPEG; PNG keeps the alpha a cutout needs.
-        name = "texture.png" if has_cutout else "texture.jpg"
+        # USDZ textures must be PNG or JPEG; PNG is what carries alpha.
+        name = "texture.png" if transparent else "texture.jpg"
         out = os.path.join(destination_dir, name)
-        if has_cutout:
+        if transparent:
             im.save(out, "PNG", optimize=True)
         else:
-            im.convert("RGB").save(out, "JPEG", quality=88, optimize=True)
-        return out, has_cutout
+            im.save(out, "JPEG", quality=88, optimize=True)
+        return out, transparent
 
 
 def set_no_subdivision(mesh):
@@ -110,40 +106,11 @@ def set_no_subdivision(mesh):
     mesh.GetSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
 
 
-def add_canvas_body(stage, x, y, z):
-    """The shallow box behind an opaque painting, so it reads as an object."""
-    body = UsdGeom.Mesh.Define(stage, "/Painting/Body")
-    set_no_subdivision(body)
-    body.CreatePointsAttr([
-        Gf.Vec3f(-x, -y, z), Gf.Vec3f(x, -y, z),
-        Gf.Vec3f(x, y, z), Gf.Vec3f(-x, y, z),
-        Gf.Vec3f(-x, -y, -z), Gf.Vec3f(x, -y, -z),
-        Gf.Vec3f(x, y, -z), Gf.Vec3f(-x, y, -z),
-    ])
-    body.CreateFaceVertexCountsAttr([4, 4, 4, 4, 4, 4])
-    body.CreateFaceVertexIndicesAttr([
-        0, 1, 2, 3, 5, 4, 7, 6,
-        1, 5, 6, 2, 4, 0, 3, 7,
-        3, 2, 6, 7, 4, 5, 1, 0,
-    ])
-
-    material = UsdShade.Material.Define(stage, "/Painting/BodyMaterial")
-    shader = UsdShade.Shader.Define(stage, "/Painting/BodyMaterial/Shader")
-    shader.CreateIdAttr("UsdPreviewSurface")
-    shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(0.82, 0.82, 0.82))
-    shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.85)
-    shader.CreateOutput("surface", Sdf.ValueTypeNames.Token)
-    material.CreateSurfaceOutput().ConnectToSource(shader.GetOutput("surface"))
-    UsdShade.MaterialBindingAPI(body.GetPrim()).Bind(material)
-
-
-def create_usd(artwork, texture_path, usd_path, has_cutout):
+def create_usd(artwork, texture_path, usd_path, transparent):
     ar = artwork["ar"]
     width = float(ar["width"]) / 100.0
     height = float(ar["height"]) / 100.0
     x, y = width / 2.0, height / 2.0
-    z = CANVAS_DEPTH / 2.0
-    front_z = z + 0.0001
 
     stage = Usd.Stage.CreateNew(usd_path)
     stage.SetMetadata("metersPerUnit", 1.0)
@@ -152,19 +119,18 @@ def create_usd(artwork, texture_path, usd_path, has_cutout):
     root = UsdGeom.Xform.Define(stage, "/Painting")
     stage.SetDefaultPrim(root.GetPrim())
 
-    # A cutout has no rectangle to give depth to — a box behind it would show
-    # through wherever the source is transparent.
-    if not has_cutout:
-        add_canvas_body(stage, x, y, z)
-
+    # One flat plane, whatever the image. A box behind the work would show
+    # through wherever a cutout PNG is transparent, and branching on the picture
+    # is the guesswork this is meant to avoid.
     art = UsdGeom.Mesh.Define(stage, "/Painting/Artwork")
     set_no_subdivision(art)
     art.CreatePointsAttr([
-        Gf.Vec3f(-x, -y, front_z), Gf.Vec3f(x, -y, front_z),
-        Gf.Vec3f(x, y, front_z), Gf.Vec3f(-x, y, front_z),
+        Gf.Vec3f(-x, -y, 0.0), Gf.Vec3f(x, -y, 0.0),
+        Gf.Vec3f(x, y, 0.0), Gf.Vec3f(-x, y, 0.0),
     ])
     art.CreateFaceVertexCountsAttr([4])
     art.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
+    art.CreateDoubleSidedAttr(True)
 
     primvars = UsdGeom.PrimvarsAPI(art)
     uv = primvars.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
@@ -197,7 +163,7 @@ def create_usd(artwork, texture_path, usd_path, has_cutout):
         texture.GetOutput("rgb")
     )
 
-    if has_cutout:
+    if transparent:
         # Alpha drives opacity, and a threshold makes it a hard cutout — Quick
         # Look sorts blended surfaces unreliably, which shows up as flickering
         # edges when you walk around the work.
@@ -206,7 +172,6 @@ def create_usd(artwork, texture_path, usd_path, has_cutout):
             texture.GetOutput("a")
         )
         shader.CreateInput("opacityThreshold", Sdf.ValueTypeNames.Float).Set(0.5)
-        art.CreateDoubleSidedAttr(True)
 
     shader.CreateOutput("surface", Sdf.ValueTypeNames.Token)
     material.CreateSurfaceOutput().ConnectToSource(shader.GetOutput("surface"))
@@ -239,9 +204,9 @@ def create_usdz(artwork, problems):
     output_path = os.path.join(AR_ROOT, artwork_id + ".usdz")
 
     with tempfile.TemporaryDirectory() as temp:
-        texture_path, has_cutout = prepare_texture(source_path, temp)
+        texture_path, transparent = prepare_texture(source_path, temp)
         usd_path = os.path.join(temp, "Painting.usda")
-        create_usd(artwork, texture_path, usd_path, has_cutout)
+        create_usd(artwork, texture_path, usd_path, transparent)
 
         if not UsdUtils.CreateNewARKitUsdzPackage(
             Sdf.AssetPath(usd_path), output_path, "Painting.usda"
@@ -250,7 +215,7 @@ def create_usdz(artwork, problems):
 
     size = os.path.getsize(output_path) / 1024.0
     print(f"  {artwork_id:<9} {width:g}x{height:g}cm  "
-          f"{'cutout' if has_cutout else 'canvas'}  "
+          f"{'transparent' if transparent else 'opaque':<11}  "
           f"{'override' if is_override else 'catalogue image'}  ->  {size:.0f} KB")
     return True
 
