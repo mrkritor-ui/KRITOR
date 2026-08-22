@@ -1,14 +1,22 @@
 /* KRITOR — grid ↔ work zoom.
 
-   Loaded on the grids and on the work / product pages. The direction is set on
-   <html> by zoom-transition.js before first paint; without it the browser's
-   default cross-fade applies, which is the right thing for a plain reload.
+   Loaded on the grids and on the work / product pages. zoom-transition.js sets
+   the direction and the origin on <html> before first paint; without them the
+   browser's default cross-fade applies, which is right for a plain reload.
 
    In a cross-document view transition the arriving document styles BOTH
    snapshots, so these rules cover the page being left as well as the one being
    entered. */
 
 @view-transition { navigation: auto; }
+
+/* The point the zoom grows from — the centre of the tile that was clicked,
+   in viewport percentages. The fallback is the middle of the screen, slightly
+   high, which is where a grid reads from when nothing better is known. */
+html {
+  --kritor-zoom-x: 50%;
+  --kritor-zoom-y: 45%;
+}
 
 /* ---------- going in: tile -> work ---------- */
 
@@ -23,12 +31,12 @@
 }
 
 html[data-kritor-zoom="in"]::view-transition-old(root) {
-  animation: 520ms cubic-bezier(.4, 0, .2, 1) both kritor-zoom-in-old;
+  animation: 460ms cubic-bezier(.4, 0, .2, 1) both kritor-zoom-in-old;
 }
 
 html[data-kritor-zoom="in"]::view-transition-new(root) {
-  animation: 520ms cubic-bezier(.16, 1, .3, 1) both kritor-zoom-in-new;
-  animation-delay: 60ms;
+  animation: 480ms cubic-bezier(.16, 1, .3, 1) both kritor-zoom-in-new;
+  animation-delay: 40ms;
 }
 
 /* ---------- coming back: work -> grid ---------- */
@@ -44,24 +52,26 @@ html[data-kritor-zoom="in"]::view-transition-new(root) {
 }
 
 html[data-kritor-zoom="out"]::view-transition-old(root) {
-  animation: 460ms cubic-bezier(.4, 0, .2, 1) both kritor-zoom-out-old;
+  animation: 420ms cubic-bezier(.4, 0, .2, 1) both kritor-zoom-out-old;
 }
 
 html[data-kritor-zoom="out"]::view-transition-new(root) {
-  animation: 520ms cubic-bezier(.16, 1, .3, 1) both kritor-zoom-out-new;
-  animation-delay: 40ms;
+  animation: 480ms cubic-bezier(.16, 1, .3, 1) both kritor-zoom-out-new;
+  animation-delay: 30ms;
 }
 
-/* Both snapshots occupy the same space and scale about the centre, so the
-   zoom reads as one continuous move rather than two crossfading pictures. */
+/* Both snapshots scale about the clicked tile and sit in the same place, so
+   the movement reads as one push rather than two pictures crossfading. */
 html[data-kritor-zoom]::view-transition-old(root),
 html[data-kritor-zoom]::view-transition-new(root) {
-  transform-origin: 50% 45%;
+  transform-origin: var(--kritor-zoom-x) var(--kritor-zoom-y);
   mix-blend-mode: normal;
 }
 
+/* The group wrapper would otherwise run its own default animation underneath
+   and soften the whole thing. */
 html[data-kritor-zoom]::view-transition-group(root) {
-  animation-duration: 520ms;
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
