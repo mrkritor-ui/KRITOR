@@ -5,6 +5,8 @@ on:
     branches:
       - redesign/catalogue-v2
     paths:
+      # The AR texture now comes from the artwork's own catalogue image, so a
+      # new work in images/ is enough to produce its AR file.
       - "images/**"
       - "artworks.js"
       - "scripts/**"
@@ -40,7 +42,10 @@ jobs:
         run: |
           python scripts/generate_usdz.py
 
+      # Runs even when generation reported a problem, so the works that did
+      # build are not lost — the job still fails, so the problem is visible.
       - name: Commit generated AR assets
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

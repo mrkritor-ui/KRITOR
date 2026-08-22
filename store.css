@@ -7,11 +7,9 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
 body{font-family:var(--sans);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 /* Three tracks: controls | logo | nav. The outer tracks are both 1fr so they are always equal, which puts the centre track — and the logo in it — on the true centre of the page. The centre track is minmax(0,auto) so the logo shrinks rather than pushing anything, and grid tracks cannot overlap, so no combination of nav width and viewport can make them collide. */
 .site-header{position:fixed;top:env(safe-area-inset-top);left:0;right:0;z-index:99999;display:grid;grid-template-columns:1fr minmax(0,auto) 1fr;align-items:center;column-gap:12px;padding:10px var(--page-pad);pointer-events:none}
-.catalog-controls{justify-self:start}
-.site-nav{justify-self:end}
 .site-header>*{pointer-events:auto}
-.catalog-controls{display:flex;align-items:center;gap:4px;position:relative;z-index:100000}
-.site-nav{display:flex;align-items:center;gap:14px}
+.catalog-controls{justify-self:start;display:flex;align-items:center;gap:4px;position:relative;z-index:100000}
+.site-nav{justify-self:end;display:flex;align-items:center;gap:14px}
 .nav-link,.about-link{font-family:var(--ui-font);font-weight:var(--ui-weight);color:var(--muted);text-decoration:none;font-size:10px;letter-spacing:.12em;text-transform:uppercase;transition:color .3s ease}
 .nav-link:active,.about-link:active{opacity:.45}
 .nav-link-inline{margin-left:10px;position:relative;z-index:100001}
@@ -25,9 +23,9 @@ body{font-family:var(--sans);padding-top:env(safe-area-inset-top);padding-bottom
 .grid.view-zoom{--catalog-cols:var(--cols-large);gap:clamp(8px,1vw,14px)}
 .grid.view-normal{--catalog-cols:var(--cols-normal);gap:clamp(6px,.75vw,12px)}
 .grid.view-overview{--catalog-cols:var(--cols-small);gap:clamp(4px,.55vw,9px)}
-.page-transition-panel{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:200000;background:var(--bg);overflow:hidden;transform:translateX(105vw);will-change:transform;transition:transform .72s cubic-bezier(.22,1,.36,1)}
-.page-transition-panel.is-visible{transform:translateX(0)}
-.is-navigating{overflow:hidden}
+
+
+
 @media(max-width:699px){:root{--page-pad:8px}.grid.view-zoom{--catalog-cols:1}.grid.view-normal{--catalog-cols:2}.grid.view-overview{--catalog-cols:3}}
 @media(min-width:700px) and (max-width:1199px){.grid.view-zoom{--catalog-cols:2}.grid.view-normal{--catalog-cols:3}.grid.view-overview{--catalog-cols:4}}
 @media(min-width:1200px) and (max-width:1599px){.grid.view-zoom{--catalog-cols:3}.grid.view-normal{--catalog-cols:4}.grid.view-overview{--catalog-cols:6}}

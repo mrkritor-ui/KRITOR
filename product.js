@@ -37,7 +37,6 @@
   const rendition = (path, width) =>
     window.KritorTileImage ? window.KritorTileImage.pick(path, width) : assetPath(path);
   const sources = item.images || [];
-  const images = sources.map(assetPath);
   const hero = sources.length ? rendition(sources[0], 1440) : "";
 
   function esc(value) {
