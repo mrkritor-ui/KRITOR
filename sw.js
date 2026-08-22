@@ -6,6 +6,10 @@ const APP_FILES = [
   "./style.css",
   "./script.js",
   "./artworks.js",
+  "./store/",
+  "./store.css",
+  "./store.js",
+  "./products.js",
   "./icon.png"
 ];
 
@@ -118,6 +122,9 @@ self.addEventListener(
     if (
       url.pathname.endsWith(
         "/artworks.js"
+      ) ||
+      url.pathname.endsWith(
+        "/products.js"
       )
     ) {
 

@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>KRITOR</title>
-  <link rel="canonical" href="/">
-  <link rel="manifest" href="manifest.json">
+  <title>Store — KRITOR</title>
+  <link rel="canonical" href="/store/">
+  <link rel="manifest" href="../manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-title" content="KRITOR">
-  <meta name="theme-color" content="#ffffff">
-  <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=12" data-kritor-page-style>
-  <link rel="stylesheet" href="transitions.css?v=11">
-  <script src="spa-transition.js?v=5"></script>
+  <meta name="theme-color" content="#f1f0ee">
+  <link rel="apple-touch-icon" href="../icon.png">
+  <link rel="stylesheet" href="../store.css?v=1" data-kritor-page-style>
+  <link rel="stylesheet" href="../transitions.css?v=11">
+  <script src="../spa-transition.js?v=5"></script>
   <script>window.__kritorReturnWork=new URLSearchParams(location.search).get('work');if(window.__kritorReturnWork)document.documentElement.classList.add('returning-artwork');</script>
   <style>
     #kritor-top-logo{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:100000;width:min(120px,22vw);height:auto;display:block;opacity:0;pointer-events:none;transition:opacity .8s cubic-bezier(.22,.61,.36,1);will-change:opacity}
@@ -24,19 +24,18 @@
 <body>
   <header class="site-header" aria-label="KRITOR navigation">
     <div class="catalog-controls">
-      <button id="zoom-control" class="zoom-control" type="button" aria-label="Catalogue view: normal. Tap to change view">+</button>
-      <button id="shuffle-control" class="shuffle-control" type="button" aria-label="Shuffle artwork order" title="Shuffle artwork order">↻</button>
+      <button id="zoom-control" class="zoom-control" type="button" aria-label="Store view: normal. Tap to change view">+</button>
     </div>
     <nav class="site-nav">
-      <a class="about-link" href="/store/">Store</a>
+      <a class="about-link" href="/" aria-label="Catalogue">Catalogue</a>
       <a class="about-link" href="/about/">About</a>
     </nav>
   </header>
   <img id="kritor-top-logo" src="/images/kritor%20top%20text.png" alt="KRITOR">
-  <main id="grid" class="grid" aria-label="Artwork catalogue"></main>
-  <script src="artworks.js"></script>
-  <script src="script.js?v=7"></script>
-  <script src="clean-work-links.js?v=1"></script>
+  <main id="grid" class="grid" aria-label="Works for sale"></main>
+  <script src="../artworks.js"></script>
+  <script src="../products.js"></script>
+  <script src="../store.js?v=1"></script>
   <script>
     if(window.__kritorReturnWork){const tile=document.querySelector('.tile[data-work-id="'+CSS.escape(window.__kritorReturnWork)+'"]');if(tile)tile.style.viewTransitionName='returning-artwork';}
   </script>
@@ -54,6 +53,6 @@
       ['scroll','pointerdown','pointermove','keydown','wheel','touchstart'].forEach(type=>window.addEventListener(type,reveal,{passive:true}));
     })();
   </script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
+  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("../sw.js").catch(function(){})})}</script>
 </body>
 </html>

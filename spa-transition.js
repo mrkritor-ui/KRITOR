@@ -1,9 +1,15 @@
 (function () {
   "use strict";
 
-  const PAGE_STYLES = { catalogue: "style.css", about: "about.css" };
-  const CATALOG_SCROLL_KEY = "kritorCatalogScroll";
+  const PAGE_STYLES = { catalogue: "style.css", about: "about.css", store: "store.css" };
+  /* Horizontal position of each page. Navigating to a higher index slides the
+     new page in from the right (About); to a lower index, in from the left (Store). */
+  const PAGE_AXIS = { store: -1, catalogue: 0, about: 1 };
+  const SCROLL_KEY = "kritorPageScroll";
   let navigating = false;
+  /* Tracked separately from location.href: on popstate the URL has already
+     changed, and the direction of the swipe depends on where we came from. */
+  let currentPage = "catalogue";
 
   function siteRoot(path) {
     return new URL(path.replace(/^\//, ""), location.origin + "/").href;
@@ -11,7 +17,9 @@
 
   function pageFor(url) {
     const path = new URL(url, location.href).pathname.replace(/\/$/, "");
-    return path.endsWith("/about") || path.endsWith("/about.html") ? "about" : "catalogue";
+    if (path.endsWith("/about") || path.endsWith("/about.html")) return "about";
+    if (path.endsWith("/store") || path.endsWith("/store.html")) return "store";
+    return "catalogue";
   }
 
   function cleanUrlFor(url) {
@@ -19,6 +27,7 @@
     const path = u.pathname;
     if (path.endsWith("/index.html")) u.pathname = path.slice(0, -"index.html".length);
     else if (path.endsWith("/about.html")) u.pathname = path.slice(0, -"about.html".length) + "about/";
+    else if (path.endsWith("/store.html")) u.pathname = path.slice(0, -"store.html".length) + "store/";
     return u.href;
   }
 
@@ -26,7 +35,9 @@
     const u = new URL(url, location.href);
     if (u.origin !== location.origin) return false;
     const path = u.pathname.replace(/\/$/, "");
-    return path.endsWith("/about") || path.endsWith("/about.html") || path.endsWith("/index.html") || path === "";
+    return path.endsWith("/about") || path.endsWith("/about.html") ||
+      path.endsWith("/store") || path.endsWith("/store.html") ||
+      path.endsWith("/index.html") || path === "";
   }
 
   function loadStylesheet(href) {
@@ -58,7 +69,7 @@
     });
   }
 
-  function initCatalogueLogo() {
+  function initGridLogo() {
     const logo = document.getElementById("kritor-top-logo");
     if (!logo || logo.dataset.kritorLogoReady === "true") return;
     logo.dataset.kritorLogoReady = "true";
@@ -72,16 +83,22 @@
     ["scroll", "pointerdown", "pointermove", "keydown", "wheel", "touchstart"].forEach(type => window.addEventListener(type, reveal, {passive: true}));
   }
 
-  function saveCataloguePosition() {
-    try { sessionStorage.setItem(CATALOG_SCROLL_KEY, JSON.stringify({x: window.scrollX || 0, y: window.scrollY || 0})); } catch (_) {}
+  function readScrollMemory() {
+    try { return JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "{}") || {}; } catch (_) { return {}; }
   }
 
-  function restoreCataloguePosition() {
+  function savePosition(page) {
     try {
-      const saved = JSON.parse(sessionStorage.getItem(CATALOG_SCROLL_KEY) || "null");
-      if (!saved || typeof saved.y !== "number") return;
-      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({left: saved.x || 0, top: saved.y, behavior: "instant"})));
+      const memory = readScrollMemory();
+      memory[page] = {x: window.scrollX || 0, y: window.scrollY || 0};
+      sessionStorage.setItem(SCROLL_KEY, JSON.stringify(memory));
     } catch (_) {}
+  }
+
+  function restorePosition(page) {
+    const saved = readScrollMemory()[page];
+    if (!saved || typeof saved.y !== "number") return;
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({left: saved.x || 0, top: saved.y, behavior: "instant"})));
   }
 
   async function renderDocument(html, page, suppressOverlay) {
@@ -99,7 +116,12 @@
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
       await loadScript("script.js");
       await loadScript("clean-work-links.js");
-      initCatalogueLogo();
+      initGridLogo();
+    } else if (page === "store") {
+      if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
+      if (typeof PRODUCTS === "undefined") await loadScript("products.js");
+      await loadScript("store.js");
+      initGridLogo();
     }
   }
 
@@ -112,23 +134,21 @@
       if (!response.ok) throw new Error(`Navigation failed: ${response.status}`);
       const html = await response.text();
       const targetPage = pageFor(requestedUrl.href);
-      const currentPage = pageFor(location.href);
       const returningToCatalogue = targetPage === "catalogue" && currentPage !== "catalogue";
-      const returningFromAbout = returningToCatalogue && currentPage === "about" && !requestedUrl.searchParams.has("work");
-      const direction = targetPage === "about" ? "forward" : "backward";
+      const restoreTarget = !requestedUrl.searchParams.has("work");
+      const direction = PAGE_AXIS[targetPage] > PAGE_AXIS[currentPage] ? "forward" : "backward";
       const historyUrl = cleanUrlFor(requestedUrl.href);
 
-      if (currentPage === "catalogue" && targetPage !== "catalogue") {
-        saveCataloguePosition();
-        window.dispatchEvent(new Event("kritor:cleanup-static-burst"));
-      }
+      savePosition(currentPage);
+      if (currentPage === "catalogue") window.dispatchEvent(new Event("kritor:cleanup-static-burst"));
 
       const update = async () => {
         document.documentElement.dataset.kritorTransition = direction;
         await renderDocument(html, targetPage, returningToCatalogue);
         if (replace) history.replaceState({page: targetPage}, "", historyUrl);
         else history.pushState({page: targetPage}, "", historyUrl);
-        if (returningFromAbout) restoreCataloguePosition();
+        currentPage = targetPage;
+        if (restoreTarget) restorePosition(targetPage);
       };
 
       if (document.startViewTransition) {
@@ -149,14 +169,13 @@
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (link.target && link.target !== "_self") return;
     if (!isKritorPage(link.href)) return;
-    const target = pageFor(link.href), current = pageFor(location.href);
-    if (target === current) return;
+    if (pageFor(link.href) === currentPage) return;
     event.preventDefault();
     navigate(link.href, false);
   }, true);
 
   window.addEventListener("popstate", () => navigate(location.href, true));
   const initialCleanUrl = cleanUrlFor(location.href);
-  if (initialCleanUrl !== location.href) history.replaceState({page: pageFor(initialCleanUrl)}, "", initialCleanUrl);
-  else history.replaceState({page: pageFor(location.href)}, "", location.href);
+  currentPage = pageFor(initialCleanUrl);
+  history.replaceState({page: currentPage}, "", initialCleanUrl);
 })();
