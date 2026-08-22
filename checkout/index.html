@@ -7,7 +7,8 @@
 <link rel="canonical" href="/checkout/">
 <meta name="theme-color" content="#f1f0ee">
 <link rel="apple-touch-icon" href="/icon.png">
-<link rel="stylesheet" href="/checkout.css">
+<link rel="stylesheet" href="/type.css?v=1">
+<link rel="stylesheet" href="/checkout.css?v=2">
 <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
@@ -17,58 +18,56 @@
 </header>
 
 <main class="checkout" id="checkout">
-  <section class="checkout-pane checkout-form-pane">
-    <h1 class="checkout-title">Checkout</h1>
 
-    <div class="checkout-notice" id="checkout-notice" hidden></div>
-
-    <div id="checkout-body" hidden>
-      <!-- Apple Pay / Google Pay sit above the fold; this is the whole point
-           of the embedded flow for phone users. -->
-      <div class="express-block" id="express-block" hidden>
-        <div id="express-element"></div>
-        <div class="express-divider"><span>or pay by card</span></div>
-      </div>
-
-      <form id="payment-form" novalidate>
-        <fieldset class="field-block">
-          <legend>Contact</legend>
-          <label class="field">
-            <span class="field-label">Email</span>
-            <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
-          </label>
-        </fieldset>
-
-        <fieldset class="field-block">
-          <legend>Shipping</legend>
-          <div id="address-element"></div>
-        </fieldset>
-
-        <fieldset class="field-block">
-          <legend>Payment</legend>
-          <div id="payment-element"></div>
-        </fieldset>
-
-        <p class="form-error" id="form-error" role="alert" hidden></p>
-
-        <button class="pay-button" id="pay-button" type="submit" disabled>
-          <span id="pay-label">Pay</span>
-        </button>
-
-        <p class="checkout-fineprint">
-          By placing this order you agree to the terms of sale. Payment is
-          processed by Stripe — KRITOR never sees your card details.
-        </p>
-      </form>
-    </div>
+  <!-- 1. The bag itself, editable in place. This page IS the bag — there is no
+          separate bag step to pass through. -->
+  <section class="order">
+    <h1 class="section-head">Order Summary</h1>
+    <div class="order-lines" id="summary-lines"></div>
+    <dl class="order-totals" id="summary-totals"></dl>
   </section>
 
-  <aside class="checkout-pane checkout-summary-pane">
-    <h2 class="summary-title">Order</h2>
-    <div class="summary-lines" id="summary-lines"></div>
-    <dl class="summary-totals" id="summary-totals"></dl>
-    <a class="summary-edit" href="/store/">Continue shopping</a>
-  </aside>
+  <div class="checkout-notice" id="checkout-notice" hidden></div>
+
+  <div id="checkout-body" hidden>
+
+    <!-- 2. One tap and done, for anyone with a wallet. -->
+    <section class="express" id="express-block" hidden>
+      <div id="express-element"></div>
+      <p class="express-hint">Or continue below</p>
+    </section>
+
+    <!-- 3. Everything else, on the same scroll. -->
+    <form id="payment-form" novalidate>
+      <section class="block">
+        <h2 class="section-head">Contact</h2>
+        <label class="field">
+          <span class="field-label">Email</span>
+          <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
+        </label>
+      </section>
+
+      <section class="block">
+        <h2 class="section-head">Shipping</h2>
+        <div id="address-element"></div>
+      </section>
+
+      <section class="block">
+        <h2 class="section-head">Payment</h2>
+        <div id="payment-element"></div>
+      </section>
+
+      <p class="form-error" id="form-error" role="alert" hidden></p>
+
+      <button class="pay-button" id="pay-button" type="submit" disabled>
+        <span id="pay-label">Submit Order</span>
+      </button>
+
+      <p class="fineprint">
+        Payment is processed by Stripe. KRITOR never sees your card details.
+      </p>
+    </form>
+  </div>
 </main>
 
 <section class="checkout-done" id="checkout-done" hidden>
@@ -80,8 +79,8 @@
 </section>
 
 <script src="/products.js"></script>
-<script src="/cart.js"></script>
+<script src="/cart.js?v=2"></script>
 <script src="/store-config.js"></script>
-<script src="/checkout.js"></script>
+<script src="/checkout.js?v=2"></script>
 </body>
 </html>

@@ -9,10 +9,10 @@ body{font-family:var(--sans);padding-top:env(safe-area-inset-top);padding-bottom
 .site-header>*{pointer-events:auto}
 .catalog-controls{display:flex;align-items:center;gap:4px;position:relative;z-index:100000}
 .site-nav{display:flex;align-items:center;gap:14px}
-.nav-link,.about-link{color:var(--muted);text-decoration:none;font-size:10px;letter-spacing:.14em;text-transform:uppercase;transition:color .3s ease}
+.nav-link,.about-link{font-family:var(--ui-font);font-weight:var(--ui-weight);color:var(--muted);text-decoration:none;font-size:10px;letter-spacing:.12em;text-transform:uppercase;transition:color .3s ease}
 .nav-link:active,.about-link:active{opacity:.45}
 .nav-link-inline{margin-left:10px;position:relative;z-index:100001}
-.store-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:80px 0}
+.store-empty{grid-column:1/-1;text-align:center;font-family:var(--ui-font);color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:80px 0}
 .tile.is-sold-out img{opacity:.42;transition:opacity .3s ease}
 .zoom-control{appearance:none;border:0;background:transparent;color:var(--ink);width:28px;height:28px;padding:0;font:300 22px/28px var(--sans);cursor:pointer;position:relative;z-index:100001}
 .zoom-control:active{opacity:.45}

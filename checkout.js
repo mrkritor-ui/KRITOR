@@ -28,6 +28,14 @@
     body.hidden = true;
   }
 
+  /* An empty bag has no summary to show either — the order section lives
+     outside #checkout-body, so hide it explicitly. */
+  function showEmpty() {
+    const order = document.querySelector(".order");
+    if (order) order.hidden = true;
+    showNotice(`<p>Your bag is empty.</p><p><a href="/store/">Return to store</a></p>`);
+  }
+
   function fail(message) {
     formError.textContent = message;
     formError.hidden = false;
@@ -52,35 +60,79 @@
   }
 
   let shippingCountry = "AU";
+  /* What the worker says the order costs. Null until it has answered. */
+  let serverTotal = null;
 
+  function esc(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, c => (
+      {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]
+    ));
+  }
+
+  /* The summary is the bag — quantities are editable here, so there is no
+     separate bag step between the store and paying. */
   function renderSummary() {
     const lines = cart ? cart.lines() : [];
     const host = document.getElementById("summary-lines");
     const totals = document.getElementById("summary-totals");
 
-    host.innerHTML = lines.map(({item, qty}) => `
-      <div class="summary-line">
-        <div class="summary-line-image">
-          <img src="${cart.thumbFor(item)}" alt=""
-               onerror="this.onerror=null;this.src='${cart.assetPath((item.images || [])[0])}'">
-          <span class="summary-line-qty">${qty}</span>
+    host.innerHTML = lines.map(({item, qty}) => {
+      const max = cart.maxFor(item);
+      return `
+      <div class="order-line">
+        <div class="order-line-image">
+          <img src="${esc(cart.thumbFor(item))}" alt="${esc(item.title)}"
+               onerror="this.onerror=null;this.src='${esc(cart.assetPath((item.images || [])[0]))}'">
         </div>
-        <div class="summary-line-body">
-          <span class="summary-line-title">${item.title}</span>
-          <span class="summary-line-meta">${item.edition || ""}${item.size ? " · " + item.size : ""}</span>
+        <div class="order-line-body">
+          <div class="order-row">
+            <a class="order-row-label order-line-title" href="/shop/${encodeURIComponent(item.id)}/">${esc(item.title)}</a>
+            <span>${esc(money(item.price * qty, item.currency))}</span>
+          </div>
+          ${item.size ? `<div class="order-row order-row-muted"><span class="order-row-label">Size</span><span>${esc(item.size)}</span></div>` : ""}
+          <div class="order-row order-row-muted">
+            <span class="order-row-label">Qty</span>
+            <span class="order-qty" role="group" aria-label="Quantity for ${esc(item.title)}">
+              <button type="button" data-order-action="dec" data-order-id="${esc(item.id)}" aria-label="Decrease quantity">−</button>
+              <span aria-live="polite">${qty}</span>
+              <button type="button" data-order-action="inc" data-order-id="${esc(item.id)}" aria-label="Increase quantity" ${qty >= max ? "disabled" : ""}>+</button>
+            </span>
+          </div>
+          <button class="order-remove" type="button" data-order-action="remove" data-order-id="${esc(item.id)}">Remove</button>
         </div>
-        <span class="summary-line-price">${money(item.price * qty, item.currency)}</span>
-      </div>`).join("");
+      </div>`;
+    }).join("");
 
     const subtotal = cart ? cart.subtotal() : 0;
     const shipping = shippingFor(shippingCountry);
     totals.innerHTML = `
-      <div><dt>Subtotal</dt><dd>${money(subtotal)}</dd></div>
-      <div><dt>Shipping</dt><dd>${shipping ? money(shipping) : "—"}</dd></div>
-      <div class="summary-grand"><dt>Total</dt><dd>${money(subtotal + shipping)}</dd></div>`;
+      <div><dt>Subtotal</dt><dd>${esc(money(subtotal))}</dd></div>
+      <div><dt>Shipping</dt><dd>${shipping ? esc(money(shipping)) : "Calculated at next step"}</dd></div>
+      <div class="order-grand"><dt>Total</dt><dd>${esc(serverTotal ? money(serverTotal.amount, serverTotal.currency) : money(subtotal + shipping))}</dd></div>`;
 
-    if (payLabel) payLabel.textContent = `Pay ${money(subtotal + shipping)}`;
+    if (payLabel) payLabel.textContent = "Submit Order";
   }
+
+  /* Editing the bag changes the price, so the intent has to be re-priced and
+     the page re-rendered. An empty bag sends you back to the store. */
+  document.getElementById("summary-lines").addEventListener("click", event => {
+    const button = event.target.closest("button[data-order-action]");
+    if (!button || !cart) return;
+    const id = button.dataset.orderId;
+    const line = cart.lines().find(l => l.item.id === id);
+    if (!line) return;
+    const action = button.dataset.orderAction;
+    if (action === "inc") cart.setQty(id, line.qty + 1);
+    else if (action === "dec") cart.setQty(id, line.qty - 1);
+    else if (action === "remove") cart.remove(id);
+
+    if (!cart.lines().length) {
+      showEmpty();
+      return;
+    }
+    renderSummary();
+    repriceIntent();
+  });
 
   /* ---------- guards ---------- */
 
@@ -90,7 +142,7 @@
   }
 
   if (!cart.lines().length) {
-    showNotice(`<p>Your bag is empty.</p><p><a href="/store/">Return to store</a></p>`);
+    showEmpty();
     return;
   }
 
@@ -149,7 +201,8 @@
     /* Server-side totals win — if the worker priced the order differently to
        what the page showed, the customer sees the real figure before paying. */
     if (Number.isFinite(intent.amount)) {
-      payLabel.textContent = `Pay ${money(intent.amount, intent.currency)}`;
+      serverTotal = {amount: intent.amount, currency: intent.currency};
+      renderSummary();
     }
 
     elements = stripe.elements({
@@ -234,7 +287,9 @@
      total and show it on the button. */
   let repricing = null;
   async function repriceIntent() {
-    if (repricing) return;
+    /* Nothing to reprice until the intent exists — editing the bag before
+       Stripe has booted is fine, boot() will price it correctly. */
+    if (repricing || !clientSecret) return;
     repricing = fetch(`${apiBase}/update-payment-intent`, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
@@ -247,7 +302,8 @@
       if (!response.ok) return;
       const detail = await response.json().catch(() => null);
       if (detail && Number.isFinite(detail.amount)) {
-        payLabel.textContent = `Pay ${money(detail.amount, detail.currency)}`;
+        serverTotal = {amount: detail.amount, currency: detail.currency};
+        renderSummary();
       }
     }).catch(() => {}).finally(() => { repricing = null; });
   }

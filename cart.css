@@ -1,11 +1,12 @@
-/* KRITOR BAG — bag button + drawer. Loaded on every store-side page and
-   deliberately NOT marked as a page style, so the SPA swap leaves it alone. */
+/* KRITOR BAG — bag button + drawer.
+   No dividing rules anywhere: separation comes from space alone. Loaded on
+   every store-side page and deliberately NOT marked as a page style, so the
+   SPA swap leaves it alone. */
 
 .bag-root {
   --bag-ink: #171716;
-  --bag-muted: #77746d;
-  --bag-line: rgba(23, 23, 22, .14);
-  --bag-ground: #f7f6f4;
+  --bag-muted: #8a877f;
+  --bag-ground: #f1f0ee;
 }
 
 /* ---------- button ---------- */
@@ -20,14 +21,15 @@
   background: transparent;
   color: var(--bag-muted);
   padding: 4px 0 4px 10px;
-  font: inherit;
+  font-family: var(--ui-font);
+  font-weight: var(--ui-weight);
   font-size: 10px;
-  letter-spacing: .14em;
+  letter-spacing: .12em;
   text-transform: uppercase;
   cursor: pointer;
   display: flex;
   align-items: baseline;
-  gap: 5px;
+  gap: 6px;
   transition: color .3s ease;
 }
 
@@ -41,13 +43,8 @@
 .bag-button.has-items { color: var(--bag-ink); }
 .bag-button:active { opacity: .45; }
 
-.bag-count {
-  font-size: 9px;
-  letter-spacing: .08em;
-  min-width: 1em;
-}
-
-.bag-button:not(.has-items) .bag-count { opacity: .5; }
+.bag-count { font-size: 10px; letter-spacing: .04em; min-width: 1em; }
+.bag-button:not(.has-items) .bag-count { opacity: .45; }
 
 /* ---------- scrim + drawer ---------- */
 
@@ -55,7 +52,7 @@
   position: fixed;
   inset: 0;
   z-index: 100010;
-  background: rgba(23, 23, 22, .28);
+  background: rgba(23, 23, 22, .25);
   opacity: 0;
   transition: opacity .42s cubic-bezier(.22, 1, .36, 1);
 }
@@ -68,9 +65,10 @@
   right: 0;
   bottom: 0;
   z-index: 100011;
-  width: min(420px, 100vw);
+  width: min(560px, 100vw);
   background: var(--bag-ground);
   color: var(--bag-ink);
+  font-family: var(--ui-font);
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
@@ -87,12 +85,11 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
 .bag-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 18px 20px 14px;
-  font-size: 10px;
-  letter-spacing: .14em;
+  align-items: baseline;
+  padding: 26px 24px 22px;
+  font-size: 12px;
+  letter-spacing: .16em;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--bag-line);
 }
 
 .bag-close {
@@ -100,7 +97,8 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   border: 0;
   background: transparent;
   color: var(--bag-muted);
-  font: inherit;
+  font-family: inherit;
+  font-size: 11px;
   letter-spacing: .14em;
   text-transform: uppercase;
   cursor: pointer;
@@ -113,33 +111,30 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 4px 20px;
+  padding: 8px 24px 24px;
 }
 
 .bag-empty {
   color: var(--bag-muted);
-  font-size: 11px;
-  letter-spacing: .1em;
+  font-size: 12px;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  padding: 40px 0;
+  padding: 56px 0;
   margin: 0;
   text-align: center;
 }
 
 .bag-line {
   display: grid;
-  grid-template-columns: 64px 1fr auto;
-  gap: 14px;
-  padding: 18px 0;
-  border-bottom: 1px solid var(--bag-line);
+  grid-template-columns: 96px 1fr auto;
+  gap: 20px;
+  padding: 22px 0;
   align-items: start;
 }
 
-.bag-line:last-child { border-bottom: 0; }
-
 .bag-line-image {
   display: block;
-  width: 64px;
+  width: 96px;
   aspect-ratio: 1 / 1;
   overflow: hidden;
 }
@@ -155,31 +150,30 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .bag-line-title {
   color: inherit;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 15px;
   letter-spacing: .06em;
   text-transform: uppercase;
 }
 
 .bag-line-meta {
   color: var(--bag-muted);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
+/* Borderless stepper — the yeezy "+ 1 −" row. */
 .bag-qty {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 4px;
-  border: 1px solid var(--bag-line);
-  padding: 3px 9px;
+  gap: 16px;
+  margin-top: 6px;
   align-self: flex-start;
 }
 
@@ -188,62 +182,57 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   border: 0;
   background: transparent;
   color: inherit;
-  font: inherit;
-  font-size: 13px;
+  font-family: inherit;
+  font-size: 16px;
   line-height: 1;
-  padding: 2px;
+  padding: 4px;
   cursor: pointer;
 }
 
-.bag-qty button:disabled { opacity: .25; cursor: default; }
-.bag-qty span { font-size: 11px; min-width: 1.2em; text-align: center; }
+.bag-qty button:disabled { opacity: .2; cursor: default; }
+.bag-qty span { font-size: 14px; min-width: 1.2em; text-align: center; }
 
 .bag-line-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 10px;
   white-space: nowrap;
 }
 
-.bag-line-price { font-size: 11px; letter-spacing: .06em; }
+.bag-line-price { font-size: 15px; letter-spacing: .04em; }
 
 .bag-line-remove {
   appearance: none;
   border: 0;
   background: transparent;
   color: var(--bag-muted);
-  font: inherit;
-  font-size: 9px;
+  font-family: inherit;
+  font-size: 10px;
   letter-spacing: .1em;
   text-transform: uppercase;
-  text-decoration: underline;
-  text-underline-offset: 3px;
   cursor: pointer;
   padding: 0;
 }
 
 /* ---------- footer ---------- */
 
-.bag-foot {
-  border-top: 1px solid var(--bag-line);
-  padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
-}
+.bag-foot { padding: 8px 24px calc(24px + env(safe-area-inset-bottom)); }
 
 .bag-subtotal {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
-  letter-spacing: .1em;
+  font-size: 15px;
+  letter-spacing: .12em;
   text-transform: uppercase;
 }
 
 .bag-note {
   color: var(--bag-muted);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: .08em;
   text-transform: uppercase;
-  margin: 8px 0 14px;
+  margin: 10px 0 20px;
 }
 
 .bag-checkout {
@@ -252,18 +241,39 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   background: var(--bag-ink);
   color: var(--bag-ground);
   text-decoration: none;
-  padding: 15px;
-  font-size: 11px;
-  letter-spacing: .16em;
+  padding: 19px;
+  font-size: 12px;
+  letter-spacing: .18em;
   text-transform: uppercase;
 }
 
-.bag-checkout.is-disabled { opacity: .3; pointer-events: none; }
+.bag-checkout.is-disabled { opacity: .25; pointer-events: none; }
+
+/* ---------- phone: the bag takes the screen ---------- */
 
 @media (max-width: 699px) {
   .bag-drawer { width: 100vw; }
-  .bag-line { grid-template-columns: 56px 1fr auto; }
-  .bag-line-image { width: 56px; }
+  .bag-head { padding: 22px 20px 20px; font-size: 13px; }
+  .bag-lines { padding: 8px 20px 20px; }
+  .bag-line { grid-template-columns: 104px 1fr; gap: 18px; row-gap: 12px; }
+  .bag-line-image { width: 104px; }
+  .bag-line-title { font-size: 16px; }
+
+  /* Price and remove drop under the details rather than squeezing a third
+     column into a phone's width. */
+  .bag-line-right {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .bag-line-price { font-size: 16px; }
+  .bag-foot { padding: 8px 20px calc(20px + env(safe-area-inset-bottom)); }
+  .bag-subtotal { font-size: 16px; }
+  .bag-checkout { padding: 20px; font-size: 13px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

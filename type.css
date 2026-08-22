@@ -1,0 +1,35 @@
+/* KRITOR — typography.
+
+   One typeface across every store surface: nav, bag, product meta, checkout.
+   Loaded on every page and deliberately NOT tagged as a page style, so the SPA
+   swap leaves it in place.
+
+   TO CHANGE THE TYPEFACE, change it here and nowhere else. Every other
+   stylesheet reads --ui-font.
+
+   Currently IBM Plex Mono — a monospace, chosen to match the stark
+   order-summary look the store is modelled on. Alternates worth trying, all on
+   Google Fonts (swap the @import and the stack together):
+
+     Mono, same register
+       DM Mono             lighter, more elegant
+       Space Mono          more distinctive, quirkier
+       Courier Prime       closest to a typewriter
+
+     Grotesque, if you'd rather it read gallery than technical
+       Jost                geometric, Futura-like — classic gallery signage
+       Archivo             neutral grotesque, wide tracking
+       Inter               the safest neutral
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --ui-font: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Display weight for the few large moments — a product title, a total.
+     Kept separate so the UI stays light while headlines can carry weight. */
+  --ui-display-weight: 500;
+  --ui-weight: 400;
+  --ui-light: 300;
+}
