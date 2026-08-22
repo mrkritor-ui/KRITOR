@@ -5,7 +5,7 @@
 
 .bag-root {
   --bag-ink: #171716;
-  --bag-muted: #8a877f;
+  --bag-muted: #66635c;
   --bag-ground: #f1f0ee;
 }
 
@@ -23,7 +23,7 @@
   padding: 4px 0 4px 10px;
   font-family: var(--ui-font, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-weight: var(--ui-weight);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: .12em;
   text-transform: uppercase;
   cursor: pointer;
@@ -57,18 +57,30 @@
 .bag-button.has-items { color: var(--bag-ink); }
 .bag-button:active { opacity: .45; }
 
-.bag-count { font-size: 10px; letter-spacing: .04em; min-width: .8em; line-height: 1; }
+.bag-count { font-size: 11px; letter-spacing: .04em; min-width: .8em; line-height: 1; }
 .bag-button:not(.has-items) .bag-count { opacity: .45; }
 
 /* ---------- scrim + drawer ---------- */
 
+/* The page behind goes soft rather than simply dark — enough to separate the
+   drawer, not so much that you lose the work you were looking at. The tint is
+   light because the blur is doing the separating; without one the backdrop
+   filter has nothing to composite against. */
 .bag-scrim {
   position: fixed;
   inset: 0;
   z-index: 100010;
-  background: rgba(23, 23, 22, .25);
+  background: rgba(23, 23, 22, .07);
+  -webkit-backdrop-filter: blur(7px) saturate(112%);
+  backdrop-filter: blur(7px) saturate(112%);
   opacity: 0;
   transition: opacity .42s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* Without backdrop-filter the tint alone has to do the work, so it goes back
+   up to where it was legible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bag-scrim { background: rgba(23, 23, 22, .25); }
 }
 
 .bag-root.is-open .bag-scrim { opacity: 1; }
@@ -101,7 +113,7 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   justify-content: space-between;
   align-items: baseline;
   padding: 26px 24px 22px;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: .16em;
   text-transform: uppercase;
 }
@@ -112,7 +124,7 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   background: transparent;
   color: var(--bag-muted);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .14em;
   text-transform: uppercase;
   cursor: pointer;
@@ -130,7 +142,7 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
 
 .bag-empty {
   color: var(--bag-muted);
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: .12em;
   text-transform: uppercase;
   padding: 56px 0;
@@ -170,14 +182,14 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
 .bag-line-title {
   color: inherit;
   text-decoration: none;
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: .06em;
   text-transform: uppercase;
 }
 
 .bag-line-meta {
   color: var(--bag-muted);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -204,7 +216,7 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
 }
 
 .bag-qty button:disabled { opacity: .2; cursor: default; }
-.bag-qty span { font-size: 14px; min-width: 1.2em; text-align: center; }
+.bag-qty span { font-size: 15px; min-width: 1.2em; text-align: center; }
 
 .bag-line-right {
   display: flex;
@@ -214,7 +226,7 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   white-space: nowrap;
 }
 
-.bag-line-price { font-size: 15px; letter-spacing: .04em; }
+.bag-line-price { font-size: 17px; letter-spacing: .04em; }
 
 .bag-line-remove {
   appearance: none;
@@ -222,7 +234,7 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   background: transparent;
   color: var(--bag-muted);
   font-family: inherit;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: .1em;
   text-transform: uppercase;
   cursor: pointer;
@@ -236,14 +248,14 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
 .bag-subtotal {
   display: flex;
   justify-content: space-between;
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
 
 .bag-note {
   color: var(--bag-muted);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: .08em;
   text-transform: uppercase;
   margin: 10px 0 20px;
@@ -256,7 +268,7 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
   color: var(--bag-ground);
   text-decoration: none;
   padding: 19px;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: .18em;
   text-transform: uppercase;
 }
@@ -267,11 +279,16 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
 
 @media (max-width: 699px) {
   .bag-drawer { width: 100vw; }
-  .bag-head { padding: 22px 20px 20px; font-size: 13px; }
+  .bag-head { padding: 22px 20px 20px; font-size: 15px; }
   .bag-lines { padding: 8px 20px 20px; }
   .bag-line { grid-template-columns: 104px 1fr; gap: 18px; row-gap: 12px; }
   .bag-line-image { width: 104px; }
-  .bag-line-title { font-size: 16px; }
+  .bag-line-title { font-size: 19px; }
+  .bag-line-meta { font-size: 13px; }
+  .bag-close { font-size: 13px; }
+  .bag-note { font-size: 12px; }
+  .bag-qty span { font-size: 17px; }
+  .bag-qty button { font-size: 19px; }
 
   /* Price and remove drop under the details rather than squeezing a third
      column into a phone's width. */
@@ -284,10 +301,10 @@ html.bag-locked, html.bag-locked body { overflow: hidden; }
     width: 100%;
   }
 
-  .bag-line-price { font-size: 16px; }
+  .bag-line-price { font-size: 19px; }
   .bag-foot { padding: 8px 20px calc(20px + env(safe-area-inset-bottom)); }
-  .bag-subtotal { font-size: 16px; }
-  .bag-checkout { padding: 20px; font-size: 13px; }
+  .bag-subtotal { font-size: 19px; }
+  .bag-checkout { padding: 21px; font-size: 15px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

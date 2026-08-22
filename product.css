@@ -114,7 +114,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font, ui-monospace, SFMo
   font-size: 11px;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: #8a877f;
+  color: #66635c;
 }
 
 .product-soldout {
@@ -123,7 +123,7 @@ html, body { background: #f1f0ee; font-family: var(--ui-font, ui-monospace, SFMo
   font-size: 12px;
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: #8a877f;
+  color: #66635c;
 }
 
 .product-missing {
