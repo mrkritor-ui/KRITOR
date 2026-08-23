@@ -21,3 +21,12 @@ ALLOWED_ORIGINS = "https://kritor.au,https://www.kritor.au"
 name = "CHECKOUT_RATE_LIMIT"
 namespace_id = "1001"
 simple = { limit = 20, period = 60 }
+
+# The sold_items ledger (backend/schema.sql). Create it with
+#   npx wrangler d1 create kritor-store
+# and paste the database_id it prints below. Until this binding exists the
+# worker runs exactly as before and nothing is ever recorded as sold.
+[[d1_databases]]
+binding = "DB"
+database_name = "kritor-store"
+database_id = "PASTE_DATABASE_ID_HERE"

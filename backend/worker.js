@@ -11,11 +11,18 @@
    Routes
      POST /create-payment-intent   {items, country}                -> {clientSecret, amount, currency}
      POST /update-payment-intent   {clientSecret, items, country}   -> {amount, currency}
+     POST /stripe-webhook          Stripe event, signature verified   -> {received}
 
    Environment (wrangler secret put / dashboard):
      STRIPE_SECRET_KEY   sk_test_... or sk_live_...
      SITE_ORIGIN         https://kritor.example  — where products.json lives
      ALLOWED_ORIGINS     comma-separated origins allowed to call this worker
+     STRIPE_WEBHOOK_SECRET  whsec_... from the endpoint's signing secret
+
+   Bindings
+     DB                  D1, holding the sold_items ledger (see schema.sql).
+                         Optional: without it the worker behaves as before and
+                         nothing is ever marked sold.
 */
 
 const CATALOGUE_TTL_MS = 60_000;
@@ -120,7 +127,49 @@ function priceOrder(items, catalogue, country) {
 
   if (!Number.isFinite(amount) || amount < 100) throw new Error("Order total is invalid.");
 
-  return {amount, currency: currency || "aud", shipping, summary: detail.join(", ")};
+  return {
+    amount,
+    currency: currency || "aud",
+    shipping,
+    summary: detail.join(", "),
+    ids: [...wanted.keys()]
+  };
+}
+
+/* Ids that have already been paid for. The catalogue cannot know this — it is
+   rebuilt from products.js on deploy and has no idea what sold since.
+
+   Fails open deliberately. If D1 is unreachable this returns nothing sold and
+   the sale proceeds: a rare double-sale can be refunded, but a store that
+   refuses every order because a database hiccuped cannot be. */
+async function soldItems(env) {
+  if (!env.DB) return new Set();
+  try {
+    const {results} = await env.DB.prepare("SELECT item_id FROM sold_items").all();
+    return new Set((results || []).map(row => row.item_id));
+  } catch (error) {
+    console.error("stock ledger unavailable:", error && error.message);
+    return new Set();
+  }
+}
+
+/* Record a completed sale. Called only from a verified webhook.
+
+   OR IGNORE because Stripe retries an event until it gets a 2xx, so the same
+   payment can arrive several times and the second must not be an error. */
+async function recordSale(env, intent) {
+  if (!env.DB || !intent) return;
+
+  const ids = String((intent.metadata && intent.metadata.item_ids) || "")
+    .split(",").map(part => part.trim()).filter(Boolean);
+  if (!ids.length) return;
+
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB.batch(ids.map(id => env.DB
+    .prepare("INSERT OR IGNORE INTO sold_items (item_id, pi_id, sold_at) VALUES (?, ?, ?)")
+    .bind(id, String(intent.id || ""), now)));
+
+  console.log("recorded sale:", ids.join(", "), "from", intent.id);
 }
 
 async function stripeRequest(env, path, form) {
@@ -140,10 +189,102 @@ async function stripeRequest(env, path, form) {
   return payload;
 }
 
+/* Compare without leaking, through timing, how much of the digest matched. */
+function constantTimeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let i = 0; i < a.length; i++) difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return difference === 0;
+}
+
+/* Stripe signs each event with the endpoint's secret, over "timestamp.body".
+
+   This is the only thing standing between the ledger and anyone on the
+   internet: the URL is public, and a forged payment_intent.succeeded would
+   mark a painting sold that nobody bought. The timestamp check is what stops
+   a genuine event being captured and replayed later. */
+async function signatureIsValid(payload, header, secret, toleranceSeconds = 300) {
+  const parts = {};
+  for (const piece of String(header || "").split(",")) {
+    const at = piece.indexOf("=");
+    if (at < 0) continue;
+    const key = piece.slice(0, at).trim();
+    (parts[key] = parts[key] || []).push(piece.slice(at + 1).trim());
+  }
+
+  const timestamp = (parts.t || [])[0];
+  const signatures = parts.v1 || [];
+  if (!timestamp || !signatures.length) return false;
+
+  const age = Math.abs(Math.floor(Date.now() / 1000) - Number(timestamp));
+  if (!Number.isFinite(age) || age > toleranceSeconds) return false;
+
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(secret), {name: "HMAC", hash: "SHA-256"}, false, ["sign"]
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(`${timestamp}.${payload}`));
+  const expected = [...new Uint8Array(mac)]
+    .map(byte => byte.toString(16).padStart(2, "0")).join("");
+
+  return signatures.some(candidate => constantTimeEqual(expected, candidate));
+}
+
+/* Stripe telling us what actually happened, which the browser cannot be
+   trusted to report: the tab can be closed the instant the card clears. */
+async function handleWebhook(request, env) {
+  if (!env.STRIPE_WEBHOOK_SECRET) return json({error: "Webhook is not configured."}, 500, {});
+
+  /* The raw body, byte for byte — the signature is over exactly these bytes,
+     so it must not be parsed and re-serialised first. */
+  const payload = await request.text();
+  const signature = request.headers.get("Stripe-Signature");
+
+  if (!(await signatureIsValid(payload, signature, env.STRIPE_WEBHOOK_SECRET))) {
+    console.error("rejected a webhook with a bad or missing signature");
+    return json({error: "Invalid signature."}, 400, {});
+  }
+
+  let event;
+  try {
+    event = JSON.parse(payload);
+  } catch (_) {
+    return json({error: "Malformed event."}, 400, {});
+  }
+
+  if (event.type === "payment_intent.succeeded") {
+    try {
+      await recordSale(env, event.data && event.data.object);
+    } catch (error) {
+      /* 500 so Stripe retries. Losing this event silently would leave a sold
+         painting on sale, which is the whole reason the endpoint exists. */
+      console.error("could not record sale:", error && error.message);
+      return json({error: "Could not record sale."}, 500, {});
+    }
+  }
+
+  /* Everything else is acknowledged and ignored — a non-2xx would make Stripe
+     retry an event we were never going to act on. */
+  return json({received: true}, 200, {});
+}
+
 async function createPaymentIntent(request, env, cors) {
   const {items, country} = await request.json();
   const catalogue = await loadCatalogue(env);
-  const {amount, currency, shipping, summary} = priceOrder(items, catalogue, country);
+  const {amount, currency, shipping, summary, ids} = priceOrder(items, catalogue, country);
+
+  /* Refused before Stripe is involved, so nobody is charged for a painting
+     that is already gone. The catalogue still lists it as in stock — these are
+     one-offs, and products.js only changes on a deploy. */
+  const sold = await soldItems(env);
+  const gone = ids.filter(id => sold.has(id));
+  if (gone.length) {
+    const titles = gone.map(id => {
+      const item = catalogue.find(entry => entry.id === id);
+      return (item && item.title) || id;
+    });
+    throw new Error(`${titles.join(", ")} has sold. Please remove it from your bag.`);
+  }
 
   const intent = await stripeRequest(env, "payment_intents", {
     amount: String(amount),
@@ -160,6 +301,9 @@ async function createPaymentIntent(request, env, cors) {
     "automatic_payment_methods[enabled]": "true",
     description: `KRITOR — ${summary}`,
     "metadata[items]": JSON.stringify(items).slice(0, 480),
+    /* What the server priced, not what the browser asked for. The webhook
+       marks these sold, so it must never read back attacker-supplied ids. */
+    "metadata[item_ids]": ids.join(","),
     "metadata[shipping_cents]": String(shipping)
   });
 
@@ -207,13 +351,16 @@ export default {
 
     if (!env.STRIPE_SECRET_KEY) return json({error: "Payments are not configured."}, 500, cors);
 
+    const {pathname} = new URL(request.url);
+    const isWebhook = pathname.endsWith("/stripe-webhook");
+
     /* ALLOWED_ORIGINS is a browser control, not a lock. CORS is enforced by
        the browser, so a script calling this worker directly never consults it
        — without a limit, anyone with the URL can mint PaymentIntents in a
        loop. Cloudflare counts per location rather than globally, so treat
        this as a flood stop, not an exact quota. A real customer creates one
        intent plus a reprice or two. */
-    if (env.CHECKOUT_RATE_LIMIT) {
+    if (!isWebhook && env.CHECKOUT_RATE_LIMIT) {
       const key = request.headers.get("CF-Connecting-IP") || "unknown";
       const {success} = await env.CHECKOUT_RATE_LIMIT.limit({key});
       if (!success) {
@@ -221,9 +368,13 @@ export default {
       }
     }
 
-    const {pathname} = new URL(request.url);
-
     try {
+      /* Exempted from the rate limit above, because this caller is Stripe
+         rather than a browser: events arrive from a small pool of addresses
+         and retry in bursts, so a per-IP cap meant for shoppers would throttle
+         exactly the events the ledger depends on. The signature check is what
+         authenticates it instead. */
+      if (isWebhook) return await handleWebhook(request, env);
       if (pathname.endsWith("/create-payment-intent")) return await createPaymentIntent(request, env, cors);
       if (pathname.endsWith("/update-payment-intent")) return await updatePaymentIntent(request, env, cors);
       return json({error: "Not found."}, 404, cors);
