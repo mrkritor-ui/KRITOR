@@ -15,7 +15,7 @@
    Until both are set the checkout page shows a configuration notice instead of
    the payment form, so a half-configured store can never take a real order. */
 window.KRITOR_STORE_CONFIG = {
-  stripePublishableKey: "pk_test_51U76xFAPx4zaqXo0Yc1YmLraDC8i5z48vS0CiHlhoBiKXE5xgkitSm3HqzCH9VzMkpSPk5m2my2Rj39fHJ2woWTP0036EWHqOQ",
+  stripePublishableKey: "pk_live_51U76xFAPx4zaqXo08c5suFtkxPzUz7zbsggGxciD25dT31YLxg3SKDZFJCexeace0w6c6eW3tJLgH0Ot559NCBOG00af69YLlz",
   paymentApiBase: "https://kritor-payments.kritor.workers.dev",
 
   /* Countries offered in the shipping address field. */
