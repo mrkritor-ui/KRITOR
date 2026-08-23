@@ -109,6 +109,27 @@ self.addEventListener(
 
 
     /* -----------------------------------------------------
+       Only http(s) can go in the cache.
+
+       Browser extensions issue chrome-extension:// requests
+       through the pages they run on, and those arrive here
+       like any other fetch. Cache.put rejects every scheme
+       the Cache API does not support, so each one became an
+       unhandled rejection in the console — noise that buries
+       real errors on a page where the real errors matter.
+    ----------------------------------------------------- */
+
+    if (
+      url.protocol !== "http:" &&
+      url.protocol !== "https:"
+    ) {
+
+      return;
+
+    }
+
+
+    /* -----------------------------------------------------
        Never intercept GitHub API
     ----------------------------------------------------- */
 
@@ -250,12 +271,15 @@ self.addEventListener(
                 .then(
                   cache => {
 
-                    cache.put(
+                    return cache.put(
                       request,
                       copy
                     );
 
                   }
+                )
+                .catch(
+                  () => {}
                 );
 
             }
