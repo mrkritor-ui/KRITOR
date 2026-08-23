@@ -200,6 +200,17 @@
     root.querySelector(".bag-close").addEventListener("click", close);
     root.querySelector(".bag-scrim").addEventListener("click", close);
 
+    /* Same rendition fallback as the checkout summary, for the same reason:
+       the checkout page carries a Content-Security-Policy and this file loads
+       there too, so the inline onerror this replaces would not run. */
+    root.querySelector(".bag-lines").addEventListener("error", event => {
+      const img = event.target;
+      if (!img || img.tagName !== "IMG" || !img.dataset.fallback) return;
+      const fallback = img.dataset.fallback;
+      delete img.dataset.fallback;
+      img.src = fallback;
+    }, true);
+
     root.querySelector(".bag-lines").addEventListener("click", event => {
       const button = event.target.closest("button[data-bag-action]");
       if (!button) return;
@@ -265,7 +276,7 @@
           <div class="bag-line">
             <a class="bag-line-image" href="/shop/${encodeURIComponent(item.id)}/">
               <img src="${escapeHtml(thumbFor(item))}" alt="${escapeHtml(item.title)}" loading="lazy"
-                   onerror="this.onerror=null;this.src='${escapeHtml(assetPath((item.images || [])[0]))}'">
+                   data-fallback="${escapeHtml(assetPath((item.images || [])[0]))}">
             </a>
             <div class="bag-line-body">
               <a class="bag-line-title" href="/shop/${encodeURIComponent(item.id)}/">${escapeHtml(item.title)}</a>

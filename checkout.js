@@ -12,6 +12,14 @@
 (function () {
   "use strict";
 
+  /* The font stylesheet is parked on media="print" so a slow or blocked font
+     host cannot hold up rendering. Switching it back to "all" once it has
+     arrived used to be an inline onload attribute on the tag itself, which the
+     page's Content-Security-Policy now refuses to run. The swap happens here
+     instead, above the guards below, so an empty bag still gets the typeface. */
+  const fontSheet = document.getElementById("font-css");
+  if (fontSheet) fontSheet.media = "all";
+
   const config = window.KRITOR_STORE_CONFIG || {};
   const cart = window.KritorCart;
 
@@ -82,7 +90,7 @@
       <div class="order-line">
         <div class="order-line-image">
           <img src="${esc(cart.thumbFor(item))}" alt="${esc(item.title)}"
-               onerror="this.onerror=null;this.src='${esc(cart.assetPath((item.images || [])[0]))}'">
+               data-fallback="${esc(cart.assetPath((item.images || [])[0]))}">
         </div>
         <div class="order-line-body">
           <div class="order-row">
@@ -112,6 +120,19 @@
 
     if (payLabel) payLabel.textContent = "Submit Order";
   }
+
+  /* A rendition that 404s falls back to the original image. This was an inline
+     onerror attribute; CSP blocks those, so one listener does the whole list
+     instead. It has to capture: error events fire on the image and do not
+     bubble, but they do pass through ancestors on the way down. The attribute
+     is dropped as it is used, so a missing fallback cannot loop. */
+  document.getElementById("summary-lines").addEventListener("error", event => {
+    const img = event.target;
+    if (!img || img.tagName !== "IMG" || !img.dataset.fallback) return;
+    const fallback = img.dataset.fallback;
+    delete img.dataset.fallback;
+    img.src = fallback;
+  }, true);
 
   /* Editing the bag changes the price, so the intent has to be re-priced and
      the page re-rendered. An empty bag sends you back to the store. */
