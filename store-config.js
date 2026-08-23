@@ -16,7 +16,7 @@
    the payment form, so a half-configured store can never take a real order. */
 window.KRITOR_STORE_CONFIG = {
   stripePublishableKey: "",
-  paymentApiBase: "",
+  paymentApiBase: "https://kritor-payments.kritor.workers.dev",
 
   /* Countries offered in the shipping address field. */
   shippingCountries: ["AU", "NZ", "GB", "US", "CA", "SG", "JP", "DE", "FR", "IT", "ES", "NL"],
