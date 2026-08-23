@@ -138,7 +138,17 @@ async function createPaymentIntent(request, env, cors) {
   const intent = await stripeRequest(env, "payment_intents", {
     amount: String(amount),
     currency,
-    "automatic_payment_methods[enabled]": "true",
+    /* Card is named explicitly rather than left to automatic_payment_methods.
+       Automatic hands the method list to the Stripe dashboard, and on this
+       account it resolved to a list with no card in it — the checkout rendered
+       with no way to type a card number, whether or not card was switched on
+       in the dashboard. Naming the type takes that negotiation out of the
+       path. Apple Pay and Google Pay are card-backed and still work through
+       the Express Checkout Element.
+
+       To offer more methods later, add them here alongside card — each must
+       also be enabled in the dashboard, or Stripe rejects the whole request. */
+    "payment_method_types[0]": "card",
     description: `KRITOR — ${summary}`,
     "metadata[items]": JSON.stringify(items).slice(0, 480),
     "metadata[shipping_cents]": String(shipping)
