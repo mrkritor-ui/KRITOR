@@ -163,7 +163,14 @@ async function recordSale(env, intent) {
 
   const ids = String((intent.metadata && intent.metadata.item_ids) || "")
     .split(",").map(part => part.trim()).filter(Boolean);
-  if (!ids.length) return;
+
+  /* No ids means the intent predates item_ids being stamped on, or was made
+     somewhere other than create-payment-intent. Nothing to record, but say so:
+     silence here looks exactly like a webhook that never arrived. */
+  if (!ids.length) {
+    console.log("webhook: intent", intent.id, "carries no item_ids, nothing recorded");
+    return;
+  }
 
   const now = Math.floor(Date.now() / 1000);
   await env.DB.batch(ids.map(id => env.DB
@@ -269,6 +276,8 @@ async function handleWebhook(request, env) {
   } catch (_) {
     return json({error: "Malformed event."}, 400, {});
   }
+
+  console.log("webhook: verified", event.type, "id", event.id || "(none)");
 
   if (event.type === "payment_intent.succeeded") {
     try {
