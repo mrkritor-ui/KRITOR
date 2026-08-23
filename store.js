@@ -47,9 +47,13 @@
 
   function soldOut(item){return !(Number.isFinite(item.stock)?item.stock:1)}
 
+  /* unlisted items stay out of the shopfront but keep working everywhere else.
+     The deploy still builds /shop/<id>/ for them, so one can be reached by its
+     direct URL and bought — which is what makes a real end-to-end payment test
+     possible without putting a $1 line item in front of customers. */
   function storeItems(){
     if(typeof SHOP_ITEMS==="undefined"||!Array.isArray(SHOP_ITEMS))return[];
-    return SHOP_ITEMS.slice();
+    return SHOP_ITEMS.filter(item=>!item.unlisted);
   }
 
   function render(){
