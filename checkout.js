@@ -62,9 +62,22 @@
     return cart ? cart.money(cents, code) : `$${((cents || 0) / 100).toFixed(2)}`;
   }
 
-  function shippingFor(country) {
+  /* Mirrors the worker's postageFor: an item's own rate when it names one, the
+     flat table otherwise, counted once per item rather than per unit. This is
+     only the estimate shown before the worker has answered — its figure
+     replaces this one the moment it arrives, and its figure is what is
+     charged. */
+  function postageFor(item, country) {
+    const own = item && item.shippingCents;
+    if (own && Number.isFinite(own[country])) return own[country];
+    if (own && Number.isFinite(own.default)) return own.default;
     const table = config.shipping || {};
     return Number.isFinite(table[country]) ? table[country] : (table.default || 0);
+  }
+
+  function shippingFor(country) {
+    const lines = cart ? cart.lines() : [];
+    return lines.reduce((total, {item}) => total + postageFor(item, country), 0);
   }
 
   let shippingCountry = "AU";

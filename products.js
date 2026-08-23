@@ -24,6 +24,13 @@
      maxPerOrder optional cap on the quantity selector (defaults to stock)
      unlisted    true hides it from /store/ while leaving /shop/<id>/ working
      shipping    display string shown on the product page
+     shippingCents  postage in cents by destination, e.g.
+                    {AU: 3500, NZ: 6500, default: 9500}. Charged once per item,
+                    not per unit. Omit and the worker's flat table applies.
+                    THESE ARE PLACEHOLDERS — they repeat the old flat rate for
+                    every item so nothing changed when per-item postage landed.
+                    Replace each with a real quote: a 15x10cm board and a
+                    70x90cm canvas do not cost the same to send.
      description optional long text, revealed by the Text toggle
 */
 const SHOP_ITEMS = [
@@ -42,6 +49,7 @@ const SHOP_ITEMS = [
     materials: "Not a real item",
     edition: "Internal test",
     stock: 1,
+    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
     unlisted: true,
     shipping: "Not shipped. This listing exists to verify the checkout.",
     description: "A placeholder used to confirm live card payments. Not for sale."
@@ -57,6 +65,7 @@ const SHOP_ITEMS = [
     materials: "Mixed media on canvas",
     edition: "Original",
     stock: 1,
+    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
     shipping: "Rolled and shipped from Melbourne. 2–3 weeks.",
     description: ""
   },
@@ -71,6 +80,7 @@ const SHOP_ITEMS = [
     materials: "Mixed media on canvas",
     edition: "Original",
     stock: 1,
+    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
     shipping: "Rolled and shipped from Melbourne. 2–3 weeks.",
     description: ""
   },
@@ -85,6 +95,7 @@ const SHOP_ITEMS = [
     materials: "Mixed media on canvas",
     edition: "Original",
     stock: 1,
+    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
     shipping: "Rolled and shipped from Melbourne. 2–3 weeks.",
     description: ""
   },
@@ -99,6 +110,7 @@ const SHOP_ITEMS = [
     materials: "Mixed media on board",
     edition: "Original",
     stock: 1,
+    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
     shipping: "Rolled and shipped from Melbourne. 2–3 weeks.",
     description: ""
   }

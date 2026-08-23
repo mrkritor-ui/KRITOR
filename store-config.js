@@ -21,9 +21,10 @@ window.KRITOR_STORE_CONFIG = {
   /* Countries offered in the shipping address field. */
   shippingCountries: ["AU", "NZ", "GB", "US", "CA", "SG", "JP", "DE", "FR", "IT", "ES", "NL"],
 
-  /* Flat shipping in cents, applied per order and charged on top of the bag
-     subtotal. The worker recalculates this server-side — changing it here
-     alone does not change what a customer is charged. */
+  /* Fallback postage in cents, for an item with no shippingCents of its own.
+     Per-item rates in products.js take precedence, and the worker recalculates
+     all of it server-side — changing anything here alone does not change what
+     a customer is charged. */
   shipping: {
     AU: 3500,
     NZ: 6500,

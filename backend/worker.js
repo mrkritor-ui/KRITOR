@@ -12,6 +12,8 @@
      POST /create-payment-intent   {items, country}                -> {clientSecret, amount, currency}
      POST /update-payment-intent   {clientSecret, items, country}   -> {amount, currency}
      POST /stripe-webhook          Stripe event, signature verified   -> {received}
+                                   payment_intent.succeeded marks sold,
+                                   charge.refunded puts it back on sale
 
    Environment (wrangler secret put / dashboard):
      STRIPE_SECRET_KEY   sk_test_... or sk_live_...
@@ -28,13 +30,33 @@
 
 const CATALOGUE_TTL_MS = 60_000;
 
-/* Shipping in cents by destination. Mirrors store-config.js, but THIS table is
-   the one that decides what is charged. */
+/* Fallback postage in cents by destination, for an item that names none of its
+   own. Mirrors store-config.js, but THIS table is the one that decides what is
+   charged.
+
+   One flat rate per order is the wrong shape for original work: a 15x10cm
+   study on board and a 70x90cm canvas do not cost the same to send, and a rate
+   that suits one overcharges or underprices the other. Items carry their own
+   shippingCents and this is only what they fall back to. */
 const SHIPPING = {
   AU: 3500,
   NZ: 6500,
   default: 9500
 };
+
+/* What it costs to send this one item to this country.
+
+   Charged once per item rather than per unit: two prints of an edition go in
+   one tube, so multiplying by quantity would invent postage that is not spent.
+   Several different items sum, which can overcharge slightly when two would
+   travel together — it never underprices, which is the error worth avoiding
+   when the alternative comes out of a sale. */
+function postageFor(item, country) {
+  const own = item && item.shippingCents;
+  if (own && Number.isFinite(own[country])) return own[country];
+  if (own && Number.isFinite(own.default)) return own.default;
+  return Number.isFinite(SHIPPING[country]) ? SHIPPING[country] : SHIPPING.default;
+}
 
 let catalogueCache = {at: 0, items: null};
 
@@ -89,6 +111,7 @@ function priceOrder(items, catalogue, country) {
 
   const byId = new Map(catalogue.map(i => [i.id, i]));
   let amount = 0;
+  let shipping = 0;
   let currency = null;
   const detail = [];
 
@@ -120,10 +143,10 @@ function priceOrder(items, catalogue, country) {
     currency = itemCurrency;
 
     amount += item.price * qty;
+    shipping += postageFor(item, country);
     detail.push(`${item.title} x${qty}`);
   }
 
-  const shipping = Number.isFinite(SHIPPING[country]) ? SHIPPING[country] : SHIPPING.default;
   amount += shipping;
 
   if (!Number.isFinite(amount) || amount < 100) throw new Error("Order total is invalid.");
@@ -195,6 +218,32 @@ async function stripeRequest(env, path, form) {
     throw new Error((payload.error && payload.error.message) || "Payment provider error.");
   }
   return payload;
+}
+
+/* A refund puts the work back on sale. Without this the ledger only ever grows:
+   money goes back to the customer and the painting stays marked sold until
+   somebody remembers to delete the row by hand.
+
+   Full refunds only. A partial refund is a price adjustment — the customer
+   keeps the work — and unselling there would offer a painting that is gone. */
+async function releaseSale(env, charge) {
+  if (!env.DB || !charge) return;
+
+  if (Number(charge.amount_refunded) < Number(charge.amount)) {
+    console.log("webhook: partial refund on", charge.id, "- ledger left alone");
+    return;
+  }
+
+  const intentId = String(charge.payment_intent || "");
+  if (!intentId) {
+    console.log("webhook: refunded charge", charge.id, "names no intent, nothing to release");
+    return;
+  }
+
+  const {meta} = await env.DB
+    .prepare("DELETE FROM sold_items WHERE pi_id = ?").bind(intentId).run();
+
+  console.log("released", (meta && meta.changes) || 0, "item(s) back on sale from", intentId);
 }
 
 /* Compare without leaking, through timing, how much of the digest matched. */
@@ -279,14 +328,24 @@ async function handleWebhook(request, env) {
 
   console.log("webhook: verified", event.type, "id", event.id || "(none)");
 
+  const object = event.data && event.data.object;
+
+  /* 500 on failure so Stripe retries. Losing either of these silently is the
+     whole reason the endpoint exists: one leaves a sold painting on sale, the
+     other leaves a refunded one off it. */
   if (event.type === "payment_intent.succeeded") {
     try {
-      await recordSale(env, event.data && event.data.object);
+      await recordSale(env, object);
     } catch (error) {
-      /* 500 so Stripe retries. Losing this event silently would leave a sold
-         painting on sale, which is the whole reason the endpoint exists. */
       console.error("could not record sale:", error && error.message);
       return json({error: "Could not record sale."}, 500, {});
+    }
+  } else if (event.type === "charge.refunded") {
+    try {
+      await releaseSale(env, object);
+    } catch (error) {
+      console.error("could not release sale:", error && error.message);
+      return json({error: "Could not release sale."}, 500, {});
     }
   }
 
