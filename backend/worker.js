@@ -84,12 +84,22 @@ function priceOrder(items, catalogue, country) {
   let currency = null;
   const detail = [];
 
+  /* Collapse repeated ids before pricing. Checking stock per line lets two
+     lines naming the same id each pass a stock-of-1 check on their own, so an
+     order for two of a one-of-one painting would be accepted and charged
+     twice. The bag cannot produce that, but this endpoint is public and a
+     hand-made request can. */
+  const wanted = new Map();
   for (const line of items) {
-    const item = byId.get(String(line && line.id));
-    if (!item) throw new Error("An item in your bag is no longer available.");
-
-    const qty = Math.floor(Number(line.qty));
+    const qty = Math.floor(Number(line && line.qty));
     if (!Number.isFinite(qty) || qty < 1) throw new Error("Invalid quantity.");
+    const id = String(line && line.id);
+    wanted.set(id, (wanted.get(id) || 0) + qty);
+  }
+
+  for (const [id, qty] of wanted) {
+    const item = byId.get(id);
+    if (!item) throw new Error("An item in your bag is no longer available.");
 
     const stock = Number.isFinite(item.stock) ? item.stock : 1;
     if (stock < 1) throw new Error(`${item.title} is sold out.`);
@@ -138,17 +148,16 @@ async function createPaymentIntent(request, env, cors) {
   const intent = await stripeRequest(env, "payment_intents", {
     amount: String(amount),
     currency,
-    /* Card is named explicitly rather than left to automatic_payment_methods.
-       Automatic hands the method list to the Stripe dashboard, and on this
-       account it resolved to a list with no card in it — the checkout rendered
-       with no way to type a card number, whether or not card was switched on
-       in the dashboard. Naming the type takes that negotiation out of the
-       path. Apple Pay and Google Pay are card-backed and still work through
-       the Express Checkout Element.
+/* Left to the dashboard deliberately. An earlier commit named card
+       explicitly here, on the theory that automatic was resolving to a method
+       list with no card in it. That diagnosis was wrong: the form was empty
+       because checkout.js asked for layout "tab" instead of "tabs", which made
+       Stripe throw before the Payment Element ever mounted. Naming the type
+       masked that, and cost Link and one-line Apple Pay support to do it.
 
-       To offer more methods later, add them here alongside card — each must
-       also be enabled in the dashboard, or Stripe rejects the whole request. */
-    "payment_method_types[0]": "card",
+       Automatic means the dashboard toggles decide what is offered, with no
+       deploy needed to change the mix. */
+    "automatic_payment_methods[enabled]": "true",
     description: `KRITOR — ${summary}`,
     "metadata[items]": JSON.stringify(items).slice(0, 480),
     "metadata[shipping_cents]": String(shipping)
@@ -197,6 +206,20 @@ export default {
     if (request.method !== "POST") return json({error: "Method not allowed."}, 405, cors);
 
     if (!env.STRIPE_SECRET_KEY) return json({error: "Payments are not configured."}, 500, cors);
+
+    /* ALLOWED_ORIGINS is a browser control, not a lock. CORS is enforced by
+       the browser, so a script calling this worker directly never consults it
+       — without a limit, anyone with the URL can mint PaymentIntents in a
+       loop. Cloudflare counts per location rather than globally, so treat
+       this as a flood stop, not an exact quota. A real customer creates one
+       intent plus a reprice or two. */
+    if (env.CHECKOUT_RATE_LIMIT) {
+      const key = request.headers.get("CF-Connecting-IP") || "unknown";
+      const {success} = await env.CHECKOUT_RATE_LIMIT.limit({key});
+      if (!success) {
+        return json({error: "Too many attempts. Please wait a moment and try again."}, 429, cors);
+      }
+    }
 
     const {pathname} = new URL(request.url);
 
