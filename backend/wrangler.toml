@@ -4,11 +4,12 @@ compatibility_date = "2024-11-01"
 
 [vars]
 # The origin serving products.json — your live KRITOR site.
-SITE_ORIGIN = "https://mrkritor-ui.github.io"
+SITE_ORIGIN = "https://kritor.au"
 
 # Origins allowed to call this worker. Include every host the store is served
-# from, comma separated, no trailing slashes.
-ALLOWED_ORIGINS = "https://mrkritor-ui.github.io"
+# from, comma separated, no trailing slashes. www is listed because GitHub
+# Pages answers on both names, and CORS matches the origin exactly.
+ALLOWED_ORIGINS = "https://kritor.au,https://www.kritor.au"
 
 # STRIPE_SECRET_KEY is NOT set here — it is a secret:
 #   npx wrangler secret put STRIPE_SECRET_KEY

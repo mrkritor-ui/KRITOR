@@ -26,6 +26,7 @@ window.KRITOR_STORE_CONFIG = {
      alone does not change what a customer is charged. */
   shipping: {
     AU: 3500,
+    NZ: 6500,
     default: 9500
   }
 };

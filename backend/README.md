@@ -39,10 +39,10 @@ npx wrangler deploy
 Wrangler prints the deployed URL, e.g.
 `https://kritor-payments.<your-subdomain>.workers.dev`.
 
-Edit `wrangler.toml` first if your site is not on
-`https://mrkritor-ui.github.io` — both `SITE_ORIGIN` and `ALLOWED_ORIGINS` must
-match your real origin, or the browser will be blocked by CORS and the worker
-won't find the catalogue.
+`wrangler.toml` is set for `https://kritor.au`. Edit it first if your site is
+served from anywhere else — both `SITE_ORIGIN` and `ALLOWED_ORIGINS` must match
+your real origin, or the browser will be blocked by CORS and the worker won't
+find the catalogue.
 
 ### 2. Point the store at it
 
