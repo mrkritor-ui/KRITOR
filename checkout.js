@@ -278,7 +278,7 @@
 
     address.mount("#address-element");
 
-    const payment = elements.create("payment", {layout: "tab"});
+    const payment = elements.create("payment", {layout: "tabs"});
     payment.on("ready", () => { payButton.disabled = false; });
     payment.mount("#payment-element");
   }
