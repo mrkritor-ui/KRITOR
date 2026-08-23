@@ -34,26 +34,6 @@
      description optional long text, revealed by the Text toggle
 */
 const SHOP_ITEMS = [
-  /* TEMPORARY — remove once the live payment path is confirmed.
-     Priced at the $1 floor so a real card can be put through the live keys for
-     the smallest amount the checkout allows. Shipping is added server-side, so
-     the order comes to $36.00 and a refund leaves Stripe's fee behind, around
-     90c. unlisted keeps it off /store/; reach it at /shop/live-payment-test/. */
-  {
-    id: "live-payment-test",
-    title: "Live Payment Test",
-    price: 100,
-    currency: "AUD",
-    images: ["images/work-07.png"],
-    size: "—",
-    materials: "Not a real item",
-    edition: "Internal test",
-    stock: 1,
-    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
-    unlisted: true,
-    shipping: "Not shipped. This listing exists to verify the checkout.",
-    description: "A placeholder used to confirm live card payments. Not for sale."
-  },
   {
     id: "artshed-original",
     title: "ArtShed",
