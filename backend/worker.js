@@ -17,7 +17,8 @@
      STRIPE_SECRET_KEY   sk_test_... or sk_live_...
      SITE_ORIGIN         https://kritor.example  — where products.json lives
      ALLOWED_ORIGINS     comma-separated origins allowed to call this worker
-     STRIPE_WEBHOOK_SECRET  whsec_... from the endpoint's signing secret
+     STRIPE_WEBHOOK_SECRET  whsec_... signing secret. Comma-separate several
+                         to accept test and live endpoints at the same time.
 
    Bindings
      DB                  D1, holding the sold_items ledger (see schema.sql).
@@ -233,14 +234,31 @@ async function signatureIsValid(payload, header, secret, toleranceSeconds = 300)
 /* Stripe telling us what actually happened, which the browser cannot be
    trusted to report: the tab can be closed the instant the card clears. */
 async function handleWebhook(request, env) {
-  if (!env.STRIPE_WEBHOOK_SECRET) return json({error: "Webhook is not configured."}, 500, {});
+  /* A comma-separated list, not one secret.
+
+     Test and live are separate endpoints with separate signing secrets, so a
+     worker that holds one can only ever listen to one mode. Holding both means
+     test orders keep working after the store goes live, and going live stops
+     being a step that has to be remembered. Rotating a secret works the same
+     way: add the new one, deploy, remove the old one. */
+  const secrets = String(env.STRIPE_WEBHOOK_SECRET || "")
+    .split(",").map(part => part.trim()).filter(Boolean);
+  if (!secrets.length) return json({error: "Webhook is not configured."}, 500, {});
 
   /* The raw body, byte for byte — the signature is over exactly these bytes,
      so it must not be parsed and re-serialised first. */
   const payload = await request.text();
   const signature = request.headers.get("Stripe-Signature");
 
-  if (!(await signatureIsValid(payload, signature, env.STRIPE_WEBHOOK_SECRET))) {
+  let verified = false;
+  for (const secret of secrets) {
+    if (await signatureIsValid(payload, signature, secret)) {
+      verified = true;
+      break;
+    }
+  }
+
+  if (!verified) {
     console.error("rejected a webhook with a bad or missing signature");
     return json({error: "Invalid signature."}, 400, {});
   }
