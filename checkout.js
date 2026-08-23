@@ -247,14 +247,17 @@
 
     express.on("confirm", async () => {
       clearError();
-      const {error} = await stripe.confirmPayment({
-        elements,
-        clientSecret,
-        confirmParams: {return_url: `${location.origin}/checkout/`},
-        redirect: "if_required"
-      });
-      if (error) fail(error.message || "That payment could not be completed.");
-      else succeed();
+      try {
+        const {error} = await stripe.confirmPayment({
+          elements,
+          confirmParams: {return_url: `${location.origin}/checkout/`},
+          redirect: "if_required"
+        });
+        if (error) fail(error.message || "That payment could not be completed.");
+        else succeed();
+      } catch (thrown) {
+        fail(thrown && thrown.message ? thrown.message : "That payment could not be completed.");
+      }
     });
 
     express.mount("#express-element");
@@ -333,18 +336,26 @@
     payButton.disabled = true;
     payButton.classList.add("is-busy");
 
-    const {error} = await stripe.confirmPayment({
-      elements,
-      clientSecret,
-      confirmParams: {
-        return_url: `${location.origin}/checkout/`,
-        receipt_email: emailInput.value.trim()
-      },
-      redirect: "if_required"
-    });
-
-    if (error) fail(error.message || "That payment could not be completed.");
-    else succeed();
+    /* elements already carries the client secret it was created with. Passing
+       clientSecret alongside it is an integration error, and Stripe throws it
+       rather than returning it — so the catch is not decoration. Without it
+       the rejection is silent: the button sits on "busy" forever and the
+       intent is left at requires_payment_method, which reads in the dashboard
+       as the customer never having entered a card. */
+    try {
+      const {error} = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${location.origin}/checkout/`,
+          receipt_email: emailInput.value.trim()
+        },
+        redirect: "if_required"
+      });
+      if (error) fail(error.message || "That payment could not be completed.");
+      else succeed();
+    } catch (thrown) {
+      fail(thrown && thrown.message ? thrown.message : "That payment could not be completed.");
+    }
   });
 
   /* Returning from a 3-D Secure hand-off: the intent is already resolved, so
