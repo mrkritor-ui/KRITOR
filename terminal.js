@@ -26,6 +26,7 @@
   /* Format and materials are not in artworks.js yet. Defaulting in one place
      each means filling them in later is a data change and nothing more. */
   const formatOf = w => (w.format || "PAINTING").toUpperCase();
+  const seriesOf = w => (w.collection || "UNCOLLECTED").toUpperCase();
   const materialOf = w => (w.materials || "—").toUpperCase();
   const titleOf = w => (w.title || "UNTITLED").toUpperCase();
 
@@ -103,7 +104,7 @@
       String(index + 1).padStart(3, "0"),
       titleOf(work),
       String(work.year || "—"),
-      (work.collection || "UNCOLLECTED").toUpperCase(),
+      seriesOf(work),
       formatOf(work),
       materialOf(work),
       (work.size || "—").toUpperCase(),
@@ -298,6 +299,33 @@
   const panel = document.getElementById("panel");
   const panelMeta = document.getElementById("panel-meta");
   const panelArt = document.getElementById("panel-art");
+  const panelFoot = document.getElementById("panel-foot");
+  let current = null;
+
+  /* The order the panel walks, which is not the grid's. Works are grouped by
+     series so stepping through takes you along a body of work before moving
+     on — the grid is sorted by year, and walking that would scatter a series
+     across the whole archive. Within a series it stays newest first. */
+  function sequence() {
+    const groups = new Map();
+    visibleWorks().forEach(w => {
+      const key = seriesOf(w);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(w);
+    });
+    /* Uncollected works have no body to belong to, so they go last rather
+       than forming a fake series at the front. */
+    const keys = [...groups.keys()].sort((a, b) =>
+      (a === "UNCOLLECTED") - (b === "UNCOLLECTED") || a.localeCompare(b));
+    return keys.flatMap(k => groups.get(k).sort(byYear));
+  }
+
+  function step(delta) {
+    const list = sequence();
+    if (!list.length || !current) return;
+    const at = list.findIndex(w => w.id === current.id);
+    openPanel(list[((at < 0 ? 0 : at) + delta + list.length) % list.length], true);
+  }
 
   function openPanel(work, push) {
     panelArt.textContent = "";
@@ -311,12 +339,35 @@
     const lines = [
       titleOf(work),
       String(work.year || ""),
-      "SERIES: " + (work.collection || "UNCOLLECTED").toUpperCase(),
+      "SERIES: " + seriesOf(work),
       "FORMAT: " + formatOf(work),
       "MATERIAL: " + materialOf(work),
       "SIZE: " + (work.size || "—"),
     ];
     if (work.text) lines.push("", work.text.toUpperCase());
+
+    /* Where this work sits in the walk, and the AR model when the work has
+       one — artworks.js has carried ar.enabled all along and nothing was
+       offering it. */
+    current = work;
+    const list = sequence();
+    const at = list.findIndex(w => w.id === work.id);
+    panelFoot.textContent = "";
+    if (work.ar && work.ar.enabled && work.ar.file) {
+      const ar = document.createElement("a");
+      ar.className = "panel-ar";
+      ar.href = "/" + String(work.ar.file).replace(/^\//, "");
+      ar.rel = "ar";
+      ar.textContent = "VIEW IN AR";
+      /* Quick Look needs an <img> child to take over the link on iOS. */
+      ar.appendChild(document.createElement("img"));
+      panelFoot.appendChild(ar);
+    }
+    const index = document.createElement("span");
+    index.className = "panel-index";
+    index.textContent = String(at + 1).padStart(3, "0") + " / " +
+                        String(list.length).padStart(3, "0") + "  > NEXT";
+    panelFoot.appendChild(index);
 
     hidePreview();
     panel.classList.add("is-open");
@@ -328,6 +379,7 @@
   }
 
   function closePanel(pop) {
+    current = null;
     T.stopTyping();
     panel.classList.remove("is-open");
     bar.classList.remove("is-hidden");
@@ -378,6 +430,27 @@
 
   document.getElementById("panel-esc").addEventListener("click", () => closePanel(false));
   document.getElementById("shuffle-btn").addEventListener("click", randomise);
+  /* Left-click the work to move to the next one in the sequence. */
+  panelArt.addEventListener("click", () => step(1));
+
+  /* The eye drops the bitmap and shows every work in its real colours, and
+     clears the filters so "all" means all. */
+  const eyeBtn = document.getElementById("eye-btn");
+  eyeBtn.addEventListener("click", () => {
+    const on = root.dataset.colour !== "on";
+    root.dataset.colour = on ? "on" : "off";
+    eyeBtn.setAttribute("aria-pressed", String(on));
+    eyeBtn.querySelectorAll("[data-eye]").forEach(ico => {
+      ico.hidden = (ico.dataset.eye === "open") !== on;
+    });
+    if (on) {
+      filters.format = null;
+      filters.year = null;
+      filtersPane.querySelectorAll('[aria-pressed="true"]').forEach(b =>
+        b.setAttribute("aria-pressed", "false"));
+      render();
+    }
+  });
   /* Clicking the backdrop closes it: the panel is a box on the catalogue, so
      the catalogue around it should still be a way out. */
   panel.addEventListener("click", e => { if (e.target === panel) closePanel(false); });
@@ -387,9 +460,14 @@
     b.addEventListener("click", () => setView(b.dataset.view)));
 
   document.addEventListener("keydown", e => {
-    if (e.key !== "Escape") return;
-    if (panel.classList.contains("is-open")) closePanel(false);
-    else closeDrawer();
+    if (e.key === "Escape") {
+      if (panel.classList.contains("is-open")) closePanel(false);
+      else closeDrawer();
+      return;
+    }
+    if (!panel.classList.contains("is-open")) return;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); step(1); }
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); step(-1); }
   });
 
   /* Deep links still work: /work-01/ opens with the panel already up, so the

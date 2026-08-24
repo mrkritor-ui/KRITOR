@@ -21,8 +21,17 @@
   const IDLE_MS = 20000;         // idle before the screensaver takes over
   const TYPE_MS = 22;            // ms per character
   const TYPE_LINE_MS = 110;      // extra pause at the end of each line
+  const TYPE_MS_REDUCED = 6;     // still types, just briskly
+  const WELCOME_HOLD_MS = 1000;  // how long the welcome message stands alone
 
   const root = document.documentElement;
+
+  /* prefers-reduced-motion is about large, vestibular movement — not about
+     text arriving. Gating the typing and the screensaver on it turned them off
+     entirely for anyone with the OS setting on, which is most desktops in a
+     studio. So it is honoured where it means something (the FLIP that throws
+     works across the grid, the boot's staggered deal) and ignored where it
+     only removed the thing the page is for. Typing simply runs faster. */
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ── Theme ─────────────────────────────────────────────────────────────── */
@@ -50,11 +59,8 @@
     clearTimeout(typeTimer);
     const caret = document.createElement("span");
     caret.className = "caret";
-    if (reduceMotion) {
-      el.textContent = text;
-      el.appendChild(caret);
-      return;
-    }
+    const perChar = reduceMotion ? TYPE_MS_REDUCED : TYPE_MS;
+    const perLine = reduceMotion ? TYPE_MS_REDUCED : TYPE_LINE_MS;
     el.textContent = "";
     el.appendChild(caret);
     let i = 0;
@@ -67,9 +73,9 @@
          Typing at a flat rate reads as an effect; pausing at the newline reads
          as something actually coming down the wire. */
       const justEndedLine = text[i - 1] === "\n";
-      typeTimer = setTimeout(tick, justEndedLine ? TYPE_LINE_MS : TYPE_MS);
+      typeTimer = setTimeout(tick, justEndedLine ? perLine : perChar);
     };
-    typeTimer = setTimeout(tick, TYPE_MS);
+    typeTimer = setTimeout(tick, perChar);
   }
 
   function stopTyping() { clearTimeout(typeTimer); }
@@ -100,7 +106,6 @@
     });
 
     const started = performance.now();
-    let barShown = false;
     let ended = false;
 
     const frame = now => {
@@ -108,32 +113,33 @@
       /* Quantised so the bar advances in visible increments rather than
          sliding — a terminal fills a bar in characters, not pixels. */
       const scripted = Math.min(1, elapsed / BOOT_MS);
-      const shown = Math.round(scripted * 32) / 32;
-      loadingFill.style.width = (shown * 100) + "%";
-
-      /* The INFO row appears above the loading row once loading is visibly
-         under way: the loading row turns out to have been part of the bar. */
-      if (!barShown && scripted > 0.2) {
-        barShown = true;
-        infoRow.hidden = false;
-      }
+      loadingFill.style.width = (Math.round(scripted * 32) / 32 * 100) + "%";
       if (scripted >= 1 && (loadsDone() || elapsed > 8000)) return end();
       requestAnimationFrame(frame);
     };
 
+    /* Four beats, in order, because a machine coming up does one thing at a
+       time: the bar fills, it says WELCOME, the bar assembles itself around
+       the loading row, and only then are the works dealt in. Showing the INFO
+       row while the bar was still filling gave the sequence away. */
     function end() {
       if (ended) return;
       ended = true;
-      infoRow.hidden = false;
       loadingFill.style.width = "100%";
       loadingLabel.textContent = "WELCOME";
 
+      const welcome = document.getElementById("boot-welcome");
+      if (welcome) welcome.hidden = false;
+
       setTimeout(() => {
-        loadingRow.classList.add("is-gone");
-        boot.classList.add("is-done");
-        if (options.onParams) options.onParams();
-        deal();
-      }, reduceMotion ? 0 : WELCOME_MS);
+        infoRow.hidden = false;                    // the bar arrives
+        setTimeout(() => {
+          loadingRow.classList.add("is-gone");     // and the loading row goes
+          boot.classList.add("is-done");
+          if (options.onParams) options.onParams();
+          deal();
+        }, WELCOME_MS);
+      }, WELCOME_HOLD_MS);
     }
 
     /* Works arrive one at a time, in order, the way rows come back from a
@@ -200,7 +206,7 @@
   /* The corner-bouncer, with one rule of its own: every time it touches an
      edge it becomes a different work. */
   function startScreensaver(frames) {
-    if (!frames.length || reduceMotion) return;
+    if (!frames.length) return;
 
     const saver = document.createElement("div");
     saver.className = "screensaver";

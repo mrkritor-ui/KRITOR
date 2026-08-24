@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Store — KRITOR</title>
   <link rel="canonical" href="/store/">
-  <link rel="manifest" href="../manifest.json">
+  <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-title" content="KRITOR">
   <meta name="theme-color" content="#ffffff">
-  <link rel="apple-touch-icon" href="../icon.png">
+  <link rel="apple-touch-icon" href="/icon.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
         href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap"></noscript>
 
-  <link rel="stylesheet" href="../terminal.css?v=2">
+  <link rel="stylesheet" href="/terminal.css?v=2">
   <script>
     /* Applied before first paint: booting light and repainting dark is a white
        flash on every load for anyone who chose the terminal. */
@@ -37,6 +37,7 @@
     <div class="boot-statement">
       <p>KRITOR STORE.<br>ORIGINAL WORK AND EDITIONS,<br>SHIPPED FROM MELBOURNE.</p>
       <p class="boot-legal">ALL RIGHTS RESERVED.<br>&copy; 2026 KRITOR. V1.0</p>
+      <p class="boot-welcome" id="boot-welcome" hidden>WELCOME.</p>
     </div>
   </div>
 
@@ -70,12 +71,12 @@
 
   <main class="grid view-grid" id="grid" aria-label="Works for sale"></main>
 
-  <script src="../products.js?v=1"></script>
-  <script src="../image-manifest.js"></script>
-  <script src="../terminal-manifest.js"></script>
-  <script src="../tile-image.js?v=1"></script>
-  <script src="../terminal-shell.js?v=1"></script>
-  <script src="../terminal-store.js?v=1"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("../sw.js").catch(function(){})})}</script>
+  <script src="/products.js?v=1"></script>
+  <script src="/image-manifest.js"></script>
+  <script src="/terminal-manifest.js"></script>
+  <script src="/tile-image.js?v=1"></script>
+  <script src="/terminal-shell.js?v=1"></script>
+  <script src="/terminal-store.js?v=1"></script>
+  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
 </body>
 </html>

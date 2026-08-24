@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>KRITOR</title>
   <link rel="canonical" href="/">
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-title" content="KRITOR">
   <meta name="theme-color" content="#ffffff">
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="apple-touch-icon" href="/icon.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
         href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap"></noscript>
 
-  <link rel="stylesheet" href="terminal.css?v=1">
+  <link rel="stylesheet" href="/terminal.css?v=1">
   <script>
     /* Applied before first paint: booting light and repainting dark is a white
        flash on every load for anyone who chose the terminal. */
@@ -38,6 +38,7 @@
     <div class="boot-statement">
       <p>KRITOR MAKES THINGS.<br>A CHOICE MADE AT 17<br>TO NOT TAKE TIME FOR GRANTED.</p>
       <p class="boot-legal">ALL RIGHTS RESERVED.<br>&copy; 2026 KRITOR. V1.0</p>
+      <p class="boot-welcome" id="boot-welcome" hidden>WELCOME.</p>
     </div>
   </div>
 
@@ -57,6 +58,7 @@
         </div>
       </div>
       <button class="bar-btn" id="shuffle-btn" type="button" aria-label="Randomise the order"><svg class="ico" viewBox="0 0 9 9" width="18" height="18" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/></svg></button>
+        <button class="bar-btn" id="eye-btn" type="button" aria-pressed="false" aria-label="Reveal every work in colour"><svg class="ico" data-eye="shut" viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/></svg><svg class="ico" data-eye="open" hidden viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/></svg></button>
         <div class="bar-modes">
         <button class="bar-btn" data-theme-btn="dark" type="button" aria-pressed="false" aria-label="Terminal mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/></svg></button>
         <button class="bar-btn" data-theme-btn="light" type="button" aria-pressed="true" aria-label="Paper mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/></svg></button>
@@ -91,15 +93,16 @@
       <button class="panel-esc" id="panel-esc" type="button"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg> ESC</button>
       <div class="panel-meta" id="panel-meta"></div>
       <div class="panel-art" id="panel-art"></div>
+      <div class="panel-foot" id="panel-foot"></div>
     </div>
   </div>
 
-  <script src="artworks.js"></script>
-  <script src="image-manifest.js"></script>
-  <script src="terminal-manifest.js"></script>
-  <script src="tile-image.js?v=1"></script>
-  <script src="terminal-shell.js?v=1"></script>
-  <script src="terminal.js?v=2"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
+  <script src="/artworks.js"></script>
+  <script src="/image-manifest.js"></script>
+  <script src="/terminal-manifest.js"></script>
+  <script src="/tile-image.js?v=1"></script>
+  <script src="/terminal-shell.js?v=1"></script>
+  <script src="/terminal.js?v=2"></script>
+  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
 </body>
 </html>
