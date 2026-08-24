@@ -329,6 +329,7 @@
   T.initTheme();
 
   T.runBoot({
+    page: "store",
     preload: items.map(item => bitsUrl(firstImage(item))),
     items: items,
     onParams: () => { if (!T.isTouch) barUI.set("filters"); },

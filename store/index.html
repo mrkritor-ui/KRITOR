@@ -28,11 +28,26 @@
 </head>
 <body>
 
+  <!-- Boot. Covers the page while it loads; the bar sits above it. The mode
+       attribute is written by boot-scene.js on the first frame and decides
+       everything below: the fire and its gate, or the starfield. The official
+       line and the fine print are at the top because the fire owns the floor. -->
   <div class="boot" id="boot">
+    <pre class="boot-fx" id="boot-fx" aria-hidden="true"></pre>
     <div class="boot-statement">
-      <p>KRITOR STORE.<br>ORIGINAL WORK AND EDITIONS,<br>SHIPPED FROM MELBOURNE.</p>
-      <p class="boot-legal">ALL RIGHTS RESERVED.<br>&copy; 2026 KRITOR. V1.0</p>
-      <p class="boot-welcome" id="boot-welcome" hidden>WELCOME.</p>
+      <div class="boot-head">
+        <p class="boot-official">KRITOR STORE. ORIGINAL WORK AND EDITIONS, SHIPPED FROM MELBOURNE.</p>
+        <p class="boot-fine">KRITOR TRADED FROM MELBOURNE &middot; ALL RIGHTS RESERVED &middot; &copy; 2026 KRITOR &middot; V1.0</p>
+      </div>
+      <div class="boot-core">
+        <p class="boot-lead" id="boot-lead">YOU HAVE STUMBLED UPON</p>
+        <p class="boot-mark">KRITOR</p>
+        <p class="boot-sub" id="boot-sub"></p>
+        <p class="boot-voice" id="boot-voice"></p>
+        <p class="boot-ask">DO YOU WISH TO ENTER?</p>
+        <p class="boot-enter"><button class="boot-enter-btn" id="boot-enter-btn" type="button">ENTER</button></p>
+        <p class="boot-welcome" id="boot-welcome" hidden>WELCOME.</p>
+      </div>
     </div>
   </div>
 
@@ -100,6 +115,8 @@
   <script src="/terminal-manifest.js?v=__ASSET_VERSION__"></script>
   <script src="/tile-image.js?v=__ASSET_VERSION__"></script>
   <script src="/cart.js?v=__ASSET_VERSION__"></script>
+  <script src="/ascii-fx.js?v=__ASSET_VERSION__"></script>
+  <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-store.js?v=__ASSET_VERSION__"></script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>

@@ -424,6 +424,7 @@
     w.id === location.pathname.replace(/\/+$/, "").split("/").pop());
 
   T.runBoot({
+    page: "catalogue",
     preload: works.map(w => bitsUrl(w.image)),
     items: visibleWorks(),
     /* The bar's parameters are part of the sequence, not chrome that was

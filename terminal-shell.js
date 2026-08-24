@@ -15,14 +15,15 @@
 (function () {
   "use strict";
 
-  const BOOT_MS = 2400;          // how long the bar takes to fill
-  const WELCOME_MS = 700;        // how long WELCOME holds before the row goes
+  const BOOT_MS = 2400;          // how long the bar takes to fill on the gate
+  const WELCOME_MS = 450;        // how long WELCOME holds before the row goes
   const DEAL_MS = 45;            // gap between works arriving
   const IDLE_MS = 20000;         // idle before the screensaver takes over
   const TYPE_MS = 22;            // ms per character
   const TYPE_LINE_MS = 110;      // extra pause at the end of each line
   const TYPE_MS_REDUCED = 6;     // still types, just briskly
-  const WELCOME_HOLD_MS = 1000;  // how long the welcome message stands alone
+  const WELCOME_HOLD_MS = 650;   // how long the welcome message stands alone
+  const RUSH_MS = 320;           // what is left of the bar once the gate opens
 
   const root = document.documentElement;
   const touch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
@@ -83,11 +84,30 @@
 
   /* ── Boot ──────────────────────────────────────────────────────────────── */
 
-  /* preload  urls whose arrival gates the sequence
+  /* page     which screen this is, so the boot scene knows whether to burn or fly
+     preload  urls whose arrival gates the sequence
      onParams called once the bar should show its parameter rows
      onDeal    called per item, in order, as the works arrive */
   function runBoot(options) {
     const boot = document.getElementById("boot");
+    /* The scene is the loading screen's face: the fire and its ENTER gate, or
+       the starfield between the catalogue and the store. It runs alongside the
+       bar filling, and on the gate it is also what the sequence waits for —
+       the machine will not finish coming up until somebody has answered the
+       door. */
+    const scene = window.KritorBoot
+      ? window.KritorBoot.mount(options.page || "catalogue")
+      : { ready: Promise.resolve(), stop: function () {} };
+    let sceneReady = false;
+
+    /* The bar is paced to the scene in front of it. On the gate it fills while
+       you read, so by the time the door is answered it is already done and the
+       click costs nothing. On a warp there is nothing to read, so the bar
+       finishes exactly as the flight lands and the two are one beat rather
+       than one after the other. */
+    let fillMs = scene.mode && scene.mode !== "gate"
+      ? (window.KritorBoot ? window.KritorBoot.WARP_MS : BOOT_MS)
+      : BOOT_MS;
     const loadingRow = document.getElementById("loading-row");
     const loadingLabel = document.getElementById("loading-label");
     const loadingFill = document.getElementById("loading-fill");
@@ -109,13 +129,26 @@
     const started = performance.now();
     let ended = false;
 
+    scene.ready.then(() => {
+      sceneReady = true;
+      /* Answered before the bar had filled. Somebody who knocks early is not
+         asking to watch out the rest of a schedule they have already opted
+         out of, so the remaining fill is compressed into one short run rather
+         than held to its original pace. */
+      const elapsed = performance.now() - started;
+      if (elapsed < fillMs) fillMs = elapsed + RUSH_MS;
+    });
+
     const frame = now => {
       const elapsed = now - started;
       /* Quantised so the bar advances in visible increments rather than
          sliding — a terminal fills a bar in characters, not pixels. */
-      const scripted = Math.min(1, elapsed / BOOT_MS);
+      const scripted = Math.min(1, elapsed / fillMs);
       loadingFill.style.width = (Math.round(scripted * 32) / 32 * 100) + "%";
-      if (scripted >= 1 && (loadsDone() || elapsed > 8000)) return end();
+      /* Real loading and the scripted fill both have to be done, and so does
+         the scene — on the fire that is a click, and there is deliberately no
+         timeout on it. */
+      if (scripted >= 1 && sceneReady && (loadsDone() || elapsed > 8000)) return end();
       requestAnimationFrame(frame);
     };
 
@@ -137,6 +170,8 @@
         setTimeout(() => {
           loadingRow.classList.add("is-gone");     // and the loading row goes
           boot.classList.add("is-done");
+          scene.stop();                            // nothing animates underneath
+
           if (options.onParams) options.onParams();
           deal();
         }, WELCOME_MS);
@@ -343,6 +378,15 @@
 
     function start() {
       if (running) return;
+      /* Never over the boot screen. The gate waits for a click and will happily
+         wait longer than the idle timer, and the bouncer arriving on top of the
+         door is the one place this can never appear. */
+      const boot = document.getElementById("boot");
+      if (boot && !boot.classList.contains("is-done")) {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(start, IDLE_MS);
+        return;
+      }
       running = true;
       pick();
       x = Math.random() * Math.max(1, window.innerWidth - w);

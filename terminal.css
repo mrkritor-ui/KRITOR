@@ -85,19 +85,102 @@ html, body, .bar, .panel, .tile-figure {
 
 /* ── Boot screen ─────────────────────────────────────────────────────────── */
 
+/* Not a splash and not a progress bar — a door. At kritor.au a fire burns up
+   from the floor and nothing proceeds until it is answered; between the
+   catalogue and the store a starfield carries you across, forwards on the way
+   out and backwards on the way home. boot-scene.js writes data-mode on the
+   first frame and everything below hangs off it.
+
+   Two voices, two faces. The machine speaks in the terminal face, in capitals:
+   where you are, what is being asked. KRITOR speaks in the blackletter, in
+   sentence case, and is the only thing on the screen not in the system's own
+   handwriting — which is the whole reason the hierarchy reads at all. */
+
 .boot {
   position: fixed;
   inset: 0;
   z-index: 400;
-  display: grid;
-  place-items: center;
   background: var(--bg);
-  padding: var(--page-pad);
+  /* The art is sized to the box and would otherwise push a scrollbar out of
+     the page on the frame where it is measured. */
+  overflow: hidden;
 }
 
 .boot.is-done { display: none; }
 
+/* The animation. Under the type, and never able to intercept the click — on
+   the gate the entire screen is the button. */
+.boot-fx {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+  white-space: pre;
+  /* Its own face rather than the site's: the ramp needs a dozen distinguishable
+     densities, and this is on screen while Press Start 2P is still arriving —
+     a swap mid-boot would re-rule the whole grid. */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(7px, 1.05vw, 12px);
+  line-height: 1;
+  color: var(--ink);
+}
+
+/* The fire owns the floor and dissolves before it reaches the type. The
+   starfield owns the whole screen and falls away at the edges instead, so the
+   field reads as round rather than as a rectangle of characters. */
+.boot[data-mode="gate"] .boot-fx {
+  bottom: 0;
+  height: 64vh;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 46%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 46%);
+}
+
+/* A hole, not a vignette: the field is cleared where the type is and thickens
+   away from it, so the stars stream past the wordmark instead of through it,
+   and it softens again at the very edge of the screen. */
+.boot:not([data-mode="gate"]) .boot-fx {
+  top: 0;
+  bottom: 0;
+  -webkit-mask-image: radial-gradient(ellipse at center, transparent 13%, #000 52%, #000 88%, rgba(0, 0, 0, .5) 100%);
+  mask-image: radial-gradient(ellipse at center, transparent 13%, #000 52%, #000 88%, rgba(0, 0, 0, .5) 100%);
+}
+
+/* One ramp, shared by both animations: the page's own ink, thinned. No colour
+   is introduced anywhere — in paper mode the fire is soot on white, in terminal
+   mode it is phosphor, and neither needed a palette of its own.
+   font: inherit matters: <b> would otherwise come up bold and a bold cell is a
+   different width, which shears every row it appears in. */
+.boot-fx b { font: inherit; }
+
+.fx1  { opacity: .09 }
+.fx2  { opacity: .15 }
+.fx3  { opacity: .22 }
+.fx4  { opacity: .30 }
+.fx5  { opacity: .38 }
+.fx6  { opacity: .47 }
+.fx7  { opacity: .56 }
+.fx8  { opacity: .66 }
+.fx9  { opacity: .76 }
+.fx10 { opacity: .86 }
+.fx11 { opacity: .94 }
+.fx12 { opacity: 1 }
+
+/* ── The two layers of type ──────────────────────────────────────────────── */
+
 .boot-statement {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  /* The masthead is lifted out of the flow and pinned to the top so that what
+     is left centres on the screen rather than in the space under it — on a
+     phone, where the masthead is three lines deep, centring in the remainder
+     dropped the whole door into the fire. */
+  display: grid;
+  place-items: center;
+  padding: var(--page-pad);
   text-align: center;
   /* Clamped rather than fixed: Press Start 2P has no narrow forms, so a size
      that carries on a desktop would run off the side of a phone. */
@@ -105,17 +188,152 @@ html, body, .bar, .panel, .tile-figure {
   line-height: 2.2;
   letter-spacing: .02em;
   text-transform: uppercase;
+  pointer-events: none;
 }
 
+.boot-statement p { margin: 0; }
+
+/* The masthead. It sits at the top because the fire has the bottom, and the
+   two lines are the only things on the screen that are not theatre. */
+.boot-head {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + var(--u) * 2);
+  left: var(--page-pad);
+  right: var(--page-pad);
+  display: grid;
+  gap: calc(var(--u) * 1.5);
+}
+
+.boot-official {
+  font-size: clamp(8px, .95vw, 11px);
+  line-height: 1.9;
+  letter-spacing: .1em;
+}
+
+/* Fine print, and meant to be read as such: at this size it is one line on
+   anything wider than a phone, and it is allowed to wrap rather than to clip
+   where it is not. */
+.boot-fine {
+  color: var(--dim);
+  opacity: .72;
+  font-size: clamp(6px, .62vw, 8px);
+  line-height: 2;
+  letter-spacing: .08em;
+}
+
+.boot-core {
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--u) * 2);
+}
+
+/* Layer one: the machine. */
+.boot-lead {
+  font-size: clamp(8px, .95vw, 12px);
+  letter-spacing: .3em;
+  /* The letter-spacing is applied after every character including the last,
+     which walks a centred line off centre by half a space. */
+  text-indent: .3em;
+  color: var(--dim);
+  opacity: .8;
+}
+
+.boot-mark {
+  font-size: clamp(30px, 8vw, 88px);
+  line-height: 1;
+  letter-spacing: .1em;
+  text-indent: .1em;
+}
+
+.boot-sub {
+  font-size: clamp(9px, 1.2vw, 15px);
+  letter-spacing: .42em;
+  text-indent: .42em;
+}
+
+.boot-sub:empty { display: none; }
+
+/* Layer two: KRITOR. The blackletter, and the only sentence case on the
+   screen — the line about running for your life read as a status code when it
+   was set in the same face and the same capitals as everything else. */
+.boot-voice {
+  font-family: var(--title-font);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: clamp(19px, 3.6vw, 42px);
+  line-height: 1.35;
+  max-width: 24ch;
+  margin-top: calc(var(--u) * 2);
+}
+
+.boot-ask {
+  font-size: clamp(8px, 1.05vw, 13px);
+  letter-spacing: .22em;
+  text-indent: .22em;
+  color: var(--dim);
+  opacity: .8;
+  margin-top: calc(var(--u) * 2);
+}
+
+/* The one thing on the site that has to be pressed. It flashes on a hard step
+   rather than a fade, because a cursor blinks — it does not breathe. */
+.boot-enter { margin-top: calc(var(--u) * 2); pointer-events: auto; }
+
+.boot-enter-btn {
+  font: inherit;
+  font-size: clamp(10px, 1.3vw, 16px);
+  letter-spacing: .3em;
+  text-indent: .3em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--ink);
+  border: var(--border) solid var(--ink);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2.5);
+  animation: boot-flash 1.06s steps(1, end) infinite;
+}
+
+.boot-enter-btn::before { content: "> "; }
+.boot-enter-btn::after { content: " <"; }
+
+@keyframes boot-flash {
+  0%, 55% { color: var(--bg); background: var(--ink); }
+  56%, 100% { color: var(--ink); background: transparent; }
+}
+
+/* Everything the mode does not call for. The gate is the only screen that asks
+   a question, and once it has been answered it stops asking. */
+.boot:not([data-mode="gate"]) .boot-ask,
+.boot:not([data-mode="gate"]) .boot-enter,
+.boot[data-entered] .boot-ask,
+.boot[data-entered] .boot-enter { display: none; }
+
 .boot-welcome {
-  margin-top: calc(var(--u) * 6);
+  margin-top: calc(var(--u) * 4);
   font-size: clamp(13px, 1.9vw, 26px);
   letter-spacing: .08em;
 }
 
-.boot-statement p { margin: 0 0 calc(var(--u) * 5); }
-.boot-statement p:last-child { margin-bottom: 0; }
-.boot-legal { color: var(--dim); }
+@media (prefers-reduced-motion: reduce) {
+  /* Still the brightest thing on the screen, just not moving. */
+  .boot-enter-btn { animation: none; }
+}
+
+/* Above the phone breakpoint the bar hangs in the top-right corner, so the
+   masthead moves out from under it and takes the top-left: two lines of record
+   on one side, the machine's own panel on the other. */
+@media (min-width: 900px) {
+  .boot-head {
+    text-align: left;
+    max-width: calc(100% - min(576px, 46vw));
+  }
+}
+
+@media (max-width: 899px) {
+  /* The bar spans the width here instead, so the masthead starts under
+     whatever it is currently showing rather than behind it. */
+  .boot-head { top: calc(var(--bar-h, 56px) + var(--u) * 2); }
+  .boot-fine { font-size: 7px; line-height: 1.9; }
+}
 
 /* ── The bar ─────────────────────────────────────────────────────────────── */
 
