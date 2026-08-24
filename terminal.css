@@ -14,6 +14,11 @@
   --ink: #000000;
   --dim: #000000;               /* secondary text — in light it is still black */
   --face: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* The pair. Everything is the terminal face except a work's own name, set in
+     Jacquarda Bastarda 9 — a pixel blackletter, so it stays on the same grid
+     while reading as a title rather than as machine output. */
+  --title-font: "Jacquarda Bastarda 9", "Press Start 2P", serif;
   --border: 2px;
   --page-pad: calc(var(--u) * 2);
   --tile-gap: calc(var(--u) * 5);
@@ -307,9 +312,22 @@ html[data-theme="dark"] .panel-art img {
 
 .filter-col.is-open .filter-list { display: flex; }
 
+/* Hover opens a column, but a click has to be able to shut one you are still
+   pointing at — otherwise the second click appears to do nothing. `is-shut`
+   is what that click sets, and it lasts until the pointer leaves. */
 @media (hover: hover) and (pointer: fine) {
-  .filter-col:hover .filter-list,
-  .filter-col:focus-within .filter-list { display: flex; }
+  .filter-col:hover:not(.is-shut) .filter-list,
+  .filter-col:focus-within:not(.is-shut) .filter-list { display: flex; }
+}
+
+/* On touch the values sit in the flow instead of hanging over the bar. An
+   absolutely positioned list covers the other two headers, and on a phone
+   that leaves no way back to them. */
+@media (hover: none), (max-width: 899px) {
+  .filter-list {
+    position: static;
+    border-width: var(--border) 0 0 0;
+  }
 }
 
 .filter-list .bar-btn { text-align: left; width: 100%; }
@@ -401,6 +419,164 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
 }
 
 .tile.is-sold-out .tile-bits { opacity: .4; }
+
+/* ── Store tiles ─────────────────────────────────────────────────────────── */
+
+/* Picture, then the name centred under it in the title face, then the record
+   in small terminal type — the same order the work panel plays out in, so a
+   listing and a work read as the same object at different sizes. */
+.tile-caption { display: block; margin-top: calc(var(--u) * 2); text-align: center; }
+
+.tile-name {
+  display: block;
+  font-family: var(--title-font);
+  font-size: clamp(15px, 1.5vw, 22px);
+  line-height: 1.3;
+}
+
+.tile-detail {
+  display: block;
+  margin-top: var(--u);
+  font-size: 8px;
+  line-height: 2;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* The add control is never hidden behind a hover — it is a box attached to the
+   corner of the work, present whether or not anything is being pointed at. */
+.tile-figure { position: relative; }
+
+.tile-add {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  width: calc(var(--u) * 3.5);
+  height: calc(var(--u) * 3.5);
+  padding: 0;
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tile-add:hover, .tile-add:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+.tile-add[disabled] { opacity: .35; cursor: default; }
+.tile.is-sold-out .tile-name { text-decoration: line-through; }
+
+/* ── Bag ─────────────────────────────────────────────────────────────────── */
+
+.bag {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + var(--u));
+  right: var(--page-pad);
+  z-index: 460;
+  width: min(460px, calc(100vw - var(--page-pad) * 2));
+  max-height: 80vh;
+  display: none;
+  flex-direction: column;
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.bag.is-open { display: flex; }
+
+.bag-head {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 1.5);
+  border-bottom: var(--border) solid var(--ink);
+}
+
+.bag-lines { overflow-y: auto; padding: calc(var(--u) * 1.5); }
+
+.bag-line {
+  display: grid;
+  grid-template-columns: calc(var(--u) * 6) minmax(0, 1fr) auto;
+  gap: calc(var(--u) * 1.5);
+  align-items: center;
+  padding: calc(var(--u) * 1.5) 0;
+}
+
+.bag-line + .bag-line { border-top: var(--border) solid var(--ink); }
+
+.bag-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: var(--ink);
+  -webkit-mask-image: var(--bits);
+  mask-image: var(--bits);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.bag-line-name { font-family: var(--title-font); font-size: 15px; text-transform: none; }
+.bag-line-price { display: block; margin-top: 2px; font-size: 8px; color: var(--dim); }
+
+.bag-foot { border-top: var(--border) solid var(--ink); padding: calc(var(--u) * 1.5); }
+.bag-total { display: flex; justify-content: space-between; margin-bottom: calc(var(--u) * 1.5); }
+.bag-empty { padding: calc(var(--u) * 3) calc(var(--u) * 1.5); color: var(--dim); text-align: center; }
+
+/* One control shape for every count on the site: minus, the number, plus. */
+.qty { display: flex; align-items: center; gap: 2px; }
+
+.qty button {
+  width: calc(var(--u) * 3);
+  height: calc(var(--u) * 3);
+  padding: 0;
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.qty button:hover:not([disabled]) { background: var(--ink); color: var(--bg); }
+.qty button[disabled] { opacity: .35; cursor: default; }
+.qty output { min-width: calc(var(--u) * 3); text-align: center; }
+
+.bag-go, .panel-add {
+  display: block;
+  width: 100%;
+  padding: calc(var(--u) * 1.5);
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bag-go:hover, .panel-add:hover:not([disabled]) { background: var(--ink); color: var(--bg); }
+.bag-go.is-disabled, .panel-add[disabled] { opacity: .35; pointer-events: none; }
+
+/* The buy controls under a store work, in the same panel the catalogue uses. */
+.panel-buy {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  max-width: 320px;
+  margin: calc(var(--u) * 3) auto 0;
+}
+
+.panel-buy .panel-add { flex: 1; }
 
 /* ── List view ───────────────────────────────────────────────────────────── */
 
@@ -503,12 +679,39 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   overflow-y: auto;
 }
 
+/* The panel plays out rather than appearing: the work fades up, its name is
+   set under it, and only then does the record type itself in beneath. Three
+   beats, largest to smallest, so the eye lands on the painting first. */
+.panel-art img {
+  opacity: 0;
+  transition: opacity .7s ease;
+}
+
+.panel-art img.is-in { opacity: 1; }
+
+/* The one place a second face is allowed. Everything else on the site is the
+   terminal; a work's name is the thing that is not machine output. */
+.panel-title {
+  margin-top: calc(var(--u) * 2);
+  margin-bottom: 0;
+  font-family: var(--title-font);
+  font-size: clamp(22px, 2.6vw, 38px);
+  line-height: 1.25;
+  text-align: center;
+  opacity: 0;
+  transition: opacity .5s ease;
+}
+
+.panel-title.is-in { opacity: 1; }
+
 .panel-meta {
-  font-size: 12px;
-  line-height: 2;
+  margin-top: calc(var(--u) * 2);
+  font-size: 10px;
+  line-height: 2.2;
+  text-align: center;
   text-transform: uppercase;
   white-space: pre-wrap;
-  min-height: calc(var(--u) * 14);
+  min-height: calc(var(--u) * 12);
 }
 
 /* The block cursor that trails the typing, and keeps blinking after it. */
@@ -537,7 +740,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 }
 
 .panel-art { display: grid; place-items: center; margin-top: calc(var(--u) * 4); }
-.panel-art img { max-width: 100%; max-height: 62vh; }
+.panel-art img { max-width: 100%; max-height: 46vh; }
 
 /* ── Panel footer ────────────────────────────────────────────────────────── */
 

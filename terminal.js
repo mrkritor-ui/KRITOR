@@ -299,8 +299,10 @@
   const panel = document.getElementById("panel");
   const panelMeta = document.getElementById("panel-meta");
   const panelArt = document.getElementById("panel-art");
+  const panelTitle = document.getElementById("panel-title");
   const panelFoot = document.getElementById("panel-foot");
   let current = null;
+  let cancelReveal = null;
 
   /* The order the panel walks, which is not the grid's. Works are grouped by
      series so stepping through takes you along a body of work before moving
@@ -328,6 +330,7 @@
   }
 
   function openPanel(work, push) {
+    if (cancelReveal) cancelReveal();
     panelArt.textContent = "";
     const img = document.createElement("img");
     /* The panel shows the real work. The bitmap is the catalogue's language,
@@ -336,8 +339,11 @@
     img.alt = titleOf(work);
     panelArt.appendChild(img);
 
+    /* The name is set apart from the record: it goes under the work in the
+       title face, and everything measurable about the piece goes below that. */
+    panelTitle.textContent = work.title || "Untitled";
+
     const lines = [
-      titleOf(work),
       String(work.year || ""),
       "SERIES: " + seriesOf(work),
       "FORMAT: " + formatOf(work),
@@ -373,13 +379,16 @@
     panel.classList.add("is-open");
     bar.classList.add("is-hidden");          // only ever two things to click
     document.body.style.overflow = "hidden";
-    T.typeInto(panelMeta, lines.join("\n"));
+    cancelReveal = T.revealWork({
+      image: img, title: panelTitle, meta: panelMeta, text: lines.join("\n"),
+    });
 
     if (push) history.pushState({ workId: work.id }, "", "/" + encodeURIComponent(work.id) + "/");
   }
 
   function closePanel(pop) {
     current = null;
+    if (cancelReveal) { cancelReveal(); cancelReveal = null; }
     T.stopTyping();
     panel.classList.remove("is-open");
     bar.classList.remove("is-hidden");

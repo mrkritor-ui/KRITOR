@@ -1,0 +1,104 @@
+/* KRITOR — the checkout, in the terminal system.
+
+   Loaded after checkout.css and deliberately additive: this file changes only
+   how the page looks. Nothing here touches the markup checkout.js reads, the
+   ids it binds to, or the Stripe Elements mount — that is a live payment path,
+   and a restyle is not a reason to go near it.
+
+   The page keeps its own Content-Security-Policy, which already allows
+   fonts.googleapis.com and fonts.gstatic.com, so the pixel faces load here the
+   same way they do everywhere else. */
+
+:root {
+  --u: 8px;
+  --bg: #ffffff;
+  --ink: #000000;
+  --dim: #000000;
+  --face: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --title-font: "Jacquarda Bastarda 9", "Press Start 2P", serif;
+  --border: 2px;
+}
+
+html[data-theme="dark"] {
+  --bg: #0a1f12;
+  --ink: #4ff08a;
+  --dim: #2c8c52;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--face);
+  -webkit-font-smoothing: none;
+}
+
+.checkout { max-width: 1040px; margin: 0 auto; padding: calc(var(--u) * 4) calc(var(--u) * 2); }
+
+.checkout-header,
+.section-head,
+.field-label,
+.express-hint,
+.fineprint,
+.order-totals,
+.checkout-notice { text-transform: uppercase; letter-spacing: .02em; }
+
+/* The title face is for a work's name, not for the studio's. The mark stays
+   in the terminal face like every other piece of chrome. */
+.checkout-mark { font-family: var(--face); font-size: clamp(11px, 1.4vw, 16px); letter-spacing: .12em; }
+.checkout-back { color: var(--ink); text-decoration: none; font-size: 10px; }
+.checkout-back:hover { background: var(--ink); color: var(--bg); }
+
+.section-head { font-size: 10px; color: var(--dim); margin-bottom: var(--u); }
+.block { border: var(--border) solid var(--ink); padding: calc(var(--u) * 2); margin-bottom: calc(var(--u) * 2); }
+
+.field { margin-bottom: calc(var(--u) * 2); }
+.field-label { display: block; font-size: 9px; margin-bottom: var(--u); }
+
+/* Inputs are boxes with square corners like everything else, and they inherit
+   the pixel face so a typed address matches the page it is typed into. */
+.checkout input,
+.checkout select,
+.checkout textarea {
+  width: 100%;
+  padding: calc(var(--u) * 1.5);
+  border: var(--border) solid var(--ink);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--face);
+  font-size: 11px;
+  appearance: none;
+}
+
+.checkout input:focus,
+.checkout select:focus { outline: var(--border) solid var(--ink); outline-offset: 2px; }
+
+.pay-button {
+  width: 100%;
+  padding: calc(var(--u) * 2);
+  border: var(--border) solid var(--ink);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--face);
+  font-size: 11px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pay-button:hover:not([disabled]) { background: var(--ink); color: var(--bg); }
+.pay-button[disabled] { opacity: .35; cursor: default; }
+
+.order { border: var(--border) solid var(--ink); padding: calc(var(--u) * 2); }
+.order-lines > * + * { border-top: var(--border) solid var(--ink); }
+.order-totals { font-size: 10px; }
+.fineprint, .express-hint { font-size: 8px; color: var(--dim); line-height: 2; }
+
+.form-error, .checkout-notice { border: var(--border) solid var(--ink); padding: calc(var(--u) * 1.5); font-size: 10px; }
+
+.checkout-done { display: grid; place-items: center; min-height: 70vh; text-align: center; }
+.done-inner { border: var(--border) solid var(--ink); padding: calc(var(--u) * 4); }
+.done-link { color: var(--ink); font-size: 10px; }
+
+/* Nothing rounded anywhere, including whatever checkout.css softened. */
+.checkout *, .checkout-done * { border-radius: 0 !important; }

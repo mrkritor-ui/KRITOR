@@ -188,8 +188,18 @@
     col.appendChild(body);
 
     head.addEventListener("click", () => {
-      const open = col.classList.toggle("is-open");
-      head.setAttribute("aria-expanded", String(open));
+      /* On a pointer that hovers, the column is already showing before the
+         first click — so "open" means: was it showing at all? Otherwise the
+         first click would only latch what hover had already opened, and the
+         second would be the one that appeared to work. */
+      const showing = col.classList.contains("is-open") ||
+                      (!col.classList.contains("is-shut") && col.matches(":hover"));
+      col.classList.toggle("is-open", !showing);
+      /* is-shut suppresses the hover reveal until the pointer leaves, which is
+         what lets a second click shut a column you are still pointing at. */
+      col.classList.toggle("is-shut", showing);
+      head.setAttribute("aria-expanded", String(!showing));
+
       [...(col.parentNode ? col.parentNode.children : [])].forEach(other => {
         if (other === col) return;
         other.classList.remove("is-open");
@@ -197,6 +207,8 @@
         if (h) h.setAttribute("aria-expanded", "false");
       });
     });
+
+    col.addEventListener("pointerleave", () => col.classList.remove("is-shut"));
 
     return col;
   }
@@ -285,8 +297,29 @@
     poke();
   }
 
+  /* Reveal a panel as a sequence: the work fades up, its name follows, and the
+     record types itself in under both. Returns a canceller, because opening
+     another work mid-sequence must not leave the previous one's timers running
+     into the new panel. */
+  function revealWork(parts) {
+    const timers = [];
+    const at = (ms, fn) => timers.push(setTimeout(fn, reduceMotion ? Math.min(ms, 60) : ms));
+
+    parts.image.classList.remove("is-in");
+    parts.title.classList.remove("is-in");
+    parts.meta.textContent = "";
+
+    /* Next frame, so the browser has painted opacity:0 and the transition
+       actually runs instead of the element simply being there. */
+    requestAnimationFrame(() => parts.image.classList.add("is-in"));
+    at(reduceMotion ? 0 : 620, () => parts.title.classList.add("is-in"));
+    at(reduceMotion ? 0 : 1040, () => typeInto(parts.meta, parts.text));
+
+    return () => { timers.forEach(clearTimeout); stopTyping(); };
+  }
+
   window.KritorTerminal = {
     reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot,
-    filterColumn, startScreensaver,
+    filterColumn, revealWork, startScreensaver,
   };
 })();

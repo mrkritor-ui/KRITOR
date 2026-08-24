@@ -31,6 +31,12 @@
 :root {
   --ui-font: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
+  /* The terminal redesign's pair: everything is Press Start 2P except a work's
+     own name, which is set in Jacquarda Bastarda 9 — a pixel blackletter, so
+     it stays on the same grid while reading as a title rather than output. */
+  --face: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --title-font: "Jacquarda Bastarda 9", var(--face);
+
   /* The display face for the few large moments — a work's title. Deliberately
      a grotesque against the mono, so the title carries weight and the data
      around it stays technical. */
