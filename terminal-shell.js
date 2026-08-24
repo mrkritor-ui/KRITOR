@@ -161,6 +161,80 @@
     requestAnimationFrame(frame);
   }
 
+  /* ── The bar ───────────────────────────────────────────────────────────── */
+
+  /* One state machine for the whole bar, because two pages were each keeping
+     their own idea of what was open and neither agreed with the icons. The
+     drawer is exactly one of: nothing, the filters, the info pane. Every entry
+     point goes through set(), so the classes, the aria and the INFO icon can
+     never drift apart from each other.
+
+     It also measures itself. Where the bar spans the page it must not overlay
+     the catalogue, so --bar-h is published on every change and the grid's top
+     padding follows it — the works get pushed down rather than buried. */
+  function mountBar() {
+    const bar = document.getElementById("bar");
+    const drawer = document.getElementById("drawer");
+    const filtersPane = document.getElementById("filters-pane");
+    const infoPane = document.getElementById("info-pane");
+    const infoBtn = document.getElementById("info-btn");
+    const tab = document.getElementById("bar-tab");
+    if (!bar || !drawer) return null;
+
+    let state = null;
+
+    function measure() {
+      /* Next frame, so the drawer's new height is real before it is read. A
+         hidden bar is skipped: its height is zero, and letting that through
+         would snap the catalogue up behind an open work panel. */
+      requestAnimationFrame(() => {
+        if (bar.classList.contains("is-hidden")) return;
+        root.style.setProperty("--bar-h",
+          Math.ceil(bar.getBoundingClientRect().height) + "px");
+      });
+    }
+
+    function set(next) {
+      state = next;
+      const open = next !== null;
+      drawer.classList.toggle("is-open", open);
+      bar.classList.toggle("is-open", open);
+      filtersPane.hidden = next !== "filters";
+      infoPane.hidden = next !== "info";
+
+      if (infoBtn) {
+        infoBtn.setAttribute("aria-pressed", String(next === "info"));
+      /* toggleAttribute, not .hidden: these icons are <svg>, and `hidden` is an
+         HTMLElement property. Assigning it to an SVGElement sets a stray JS
+         property and never touches the attribute, so the icon never changed. */
+        infoBtn.querySelectorAll("[data-info]").forEach(ico => {
+          ico.toggleAttribute("hidden", (ico.dataset.info === "on") !== (next === "info"));
+        });
+      }
+      if (tab) tab.setAttribute("aria-expanded", String(open));
+
+      /* Leaving a pane also leaves whichever column was expanded inside it,
+         so coming back does not reopen someone's last filter. */
+      drawer.querySelectorAll(".filter-col.is-open").forEach(col => {
+        col.classList.remove("is-open");
+        const head = col.querySelector(".filter-head");
+        if (head) head.setAttribute("aria-expanded", "false");
+      });
+      measure();
+    }
+
+    const toggle = which => set(state === which ? null : which);
+
+    if (tab) tab.addEventListener("click", () => toggle("filters"));
+    if (infoBtn) infoBtn.addEventListener("click", () => toggle("info"));
+
+    if (window.ResizeObserver) new ResizeObserver(measure).observe(bar);
+    window.addEventListener("resize", measure, { passive: true });
+    set(null);
+
+    return { set, toggle, measure, isOpen: () => state !== null, state: () => state };
+  }
+
   /* ── Bar columns ───────────────────────────────────────────────────────── */
 
   /* A column in the bar's drawer: a header that is always visible, and a body
@@ -192,8 +266,12 @@
          first click — so "open" means: was it showing at all? Otherwise the
          first click would only latch what hover had already opened, and the
          second would be the one that appeared to work. */
+      /* :hover is only meaningful on a pointer that can hover. On touch it
+         latches after a tap, so consulting it made every tap read as "already
+         showing" and shut the column instead of opening it. */
+      const hoverOpens = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
       const showing = col.classList.contains("is-open") ||
-                      (!col.classList.contains("is-shut") && col.matches(":hover"));
+                      (hoverOpens && !col.classList.contains("is-shut") && col.matches(":hover"));
       col.classList.toggle("is-open", !showing);
       /* is-shut suppresses the hover reveal until the pointer leaves, which is
          what lets a second click shut a column you are still pointing at. */
@@ -320,6 +398,8 @@
 
   window.KritorTerminal = {
     reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot,
-    filterColumn, revealWork, startScreensaver,
+    mountBar, filterColumn, revealWork, startScreensaver,
+    /* Touch has no hover and needs the bar left closed until asked for. */
+    isTouch: window.matchMedia("(hover: none), (pointer: coarse)").matches,
   };
 })();

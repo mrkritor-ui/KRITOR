@@ -176,6 +176,7 @@ html[data-theme="dark"] .panel-art img {
    a handle at the top pointed away from where the panel was going. */
 .bar-tab {
   position: absolute;
+  z-index: 5;
   bottom: calc(var(--border) * -1);
   left: 50%;
   transform: translateX(-50%);
@@ -193,9 +194,10 @@ html[data-theme="dark"] .panel-art img {
 
 .bar-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--u);
-  padding: calc(var(--u) * 1.5) calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.5);
 }
 
 .bar-row + .bar-row { border-top: var(--border) solid var(--ink); }
@@ -227,7 +229,7 @@ html[data-theme="dark"] .panel-art img {
   outline: 0;
 }
 
-.bar-views { display: flex; gap: calc(var(--u) * 2); margin: 0 auto; }
+.bar-views { display: flex; gap: calc(var(--u) * 2); margin: 0 auto; min-width: 0; }
 
 /* The tick scale under ZOOM/GRID/LIST. Purely indicative, like a printed
    rule — the buttons above it are what you press. */
@@ -241,6 +243,7 @@ html[data-theme="dark"] .panel-art img {
 }
 
 .bar-modes { display: flex; gap: calc(var(--u) * .5); margin-left: auto; }
+.bar-btn { min-width: 0; }
 
 /* Scroll position, as a segmented bar. */
 .bar-scroll { height: calc(var(--u) * .75); border-top: var(--border) solid var(--ink); background: var(--bg); }
@@ -777,15 +780,51 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 @media (max-width: 899px) {
   .bar { left: var(--page-pad); right: var(--page-pad); width: auto; }
+
+  /* Where the bar spans the width it cannot overlay the catalogue — opening
+     the drawer would bury the first rows. --bar-h is measured from the bar
+     itself, so the grid starts under whatever it is currently showing, and
+     the works move down instead of disappearing behind it. */
+  .grid { padding-top: calc(var(--bar-h, 96px) + var(--u) * 3); }
+
+  /* The views get their own line rather than being squeezed alongside the
+     icons; at 390px the single row overflowed its own box. */
+  .bar-views { flex-basis: 100%; order: 3; margin: 0; justify-content: space-between; }
+  .bar-modes { margin-left: auto; }
   .grid.view-grid { --cols: 3; }
   .grid.view-zoom { --cols: 2; }
   .grid.view-list { overflow-x: auto; }
   .row { min-width: 900px; }
   .filters { grid-template-columns: 1fr; }
   .filters > * + * { border-left: 0; border-top: var(--border) solid var(--ink); }
-  .grid { padding-top: calc(var(--u) * 18); }
   .panel { padding: 0; }
   .panel-inner { border: 0; width: 100%; max-height: 100vh; height: 100%; }
+}
+
+/* Touch targets. Everything in the bar was drawn at type size — 18 to 26px
+   tall — which is fine to look at and near impossible to hit. On a coarse
+   pointer each control gets a real 44px box without changing how it looks:
+   the icon and label stay the same size, the hit area grows around them. */
+@media (hover: none), (pointer: coarse) {
+  .bar-btn {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--u);
+    padding: 0 var(--u);
+  }
+
+  .bar-tab { width: calc(var(--u) * 9); height: calc(var(--u) * 3.5); }
+  .filter-head { min-height: 52px; }
+  .filter-list { gap: 0; padding: 0; }
+  .filter-list .bar-btn { width: 100%; justify-content: flex-start; padding: 0 calc(var(--u) * 2); }
+  .filter-list .bar-btn + .bar-btn { border-top: var(--border) solid var(--ink); }
+  .tile-add { width: calc(var(--u) * 5.5); height: calc(var(--u) * 5.5); font-size: 12px; }
+  .qty button { width: 44px; height: 44px; }
+  .panel-esc { min-height: 44px; }
+  .info-pane a { display: inline-block; padding: calc(var(--u) * 1.5) 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -200,6 +200,7 @@
     panelItem = null;
     panel.classList.remove("is-open");
     document.getElementById("bar").classList.remove("is-hidden");
+    barUI.measure();
     document.body.style.overflow = "";
   }
 
@@ -216,9 +217,7 @@
      currently showing. Two panels fighting for the same corner is worse than
      either. */
   function openBag() {
-    drawer.classList.remove("is-open");
-    bar.classList.remove("is-open");
-    infoBtn.setAttribute("aria-pressed", "false");
+    barUI.set(null);
     bag.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
     bag.classList.add("is-open");
   }
@@ -301,27 +300,9 @@
   /* ── Bar ───────────────────────────────────────────────────────────────── */
 
   const filtersPane = document.getElementById("filters-pane");
-  const infoPane = document.getElementById("info-pane");
-  const infoBtn = document.getElementById("info-btn");
-  const drawer = document.getElementById("drawer");
   const bar = document.getElementById("bar");
   const scrollFill = document.getElementById("scroll-fill");
-
-  function openDrawer(which) {
-    closeBag();
-    const showingInfo = which === "info";
-    if (drawer.classList.contains("is-open") && infoPane.hidden !== showingInfo) {
-      drawer.classList.remove("is-open");
-      bar.classList.remove("is-open");
-      infoBtn.setAttribute("aria-pressed", "false");
-      return;
-    }
-    drawer.classList.add("is-open");
-    bar.classList.add("is-open");
-    infoPane.hidden = !showingInfo;
-    filtersPane.hidden = showingInfo;
-    infoBtn.setAttribute("aria-pressed", String(showingInfo));
-  }
+  const barUI = T.mountBar();
 
   function line(list, text, href) {
     const el = document.createElement(href ? "a" : "span");
@@ -350,7 +331,7 @@
   T.runBoot({
     preload: items.map(item => bitsUrl(firstImage(item))),
     items: items,
-    onParams: () => openDrawer("filters"),
+    onParams: () => { if (!T.isTouch) barUI.set("filters"); },
     onDeal: item => grid.appendChild(tileFor(item)),
   });
 
@@ -365,8 +346,6 @@
 
   document.getElementById("panel-esc").addEventListener("click", closePanel);
   panel.addEventListener("click", e => { if (e.target === panel) closePanel(); });
-  document.getElementById("bar-tab").addEventListener("click", () => openDrawer("filters"));
-  infoBtn.addEventListener("click", () => openDrawer("info"));
   bagBtn.addEventListener("click", () =>
     bag.classList.contains("is-open") ? closeBag() : openBag());
   document.getElementById("bag-close").addEventListener("click", closeBag);
@@ -376,8 +355,10 @@
     const on = root.dataset.colour !== "on";
     root.dataset.colour = on ? "on" : "off";
     eyeBtn.setAttribute("aria-pressed", String(on));
+    /* toggleAttribute, not .hidden — see the note in terminal-shell.js: these
+       are <svg>, which has no `hidden` property to assign to. */
     eyeBtn.querySelectorAll("[data-eye]").forEach(ico => {
-      ico.hidden = (ico.dataset.eye === "open") !== on;
+      ico.toggleAttribute("hidden", (ico.dataset.eye === "open") !== on);
     });
   });
 

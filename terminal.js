@@ -199,28 +199,9 @@
 
   /* ── Bar ───────────────────────────────────────────────────────────────── */
 
-  const drawer = document.getElementById("drawer");
   const filtersPane = document.getElementById("filters-pane");
-  const infoPane = document.getElementById("info-pane");
-  const infoBtn = document.getElementById("info-btn");
   const scrollFill = document.getElementById("scroll-fill");
-
-  function openDrawer(which) {
-    const showingInfo = which === "info";
-    if (drawer.classList.contains("is-open") && infoPane.hidden !== showingInfo) return closeDrawer();
-
-    drawer.classList.add("is-open");
-    bar.classList.add("is-open");
-    infoPane.hidden = !showingInfo;
-    filtersPane.hidden = showingInfo;
-    infoBtn.setAttribute("aria-pressed", String(showingInfo));
-  }
-
-  function closeDrawer() {
-    drawer.classList.remove("is-open");
-    bar.classList.remove("is-open");
-    infoBtn.setAttribute("aria-pressed", "false");
-  }
+  const barUI = T.mountBar();
 
   function valueColumn(label, key, values, format) {
     return T.filterColumn(label, list => {
@@ -392,6 +373,7 @@
     T.stopTyping();
     panel.classList.remove("is-open");
     bar.classList.remove("is-hidden");
+    barUI.measure();
     document.body.style.overflow = "";
     if (!pop) history.pushState({}, "", "/");
   }
@@ -418,7 +400,9 @@
     /* The bar's parameters are part of the sequence, not chrome that was
        always there: they arrive once the machine says WELCOME. */
     onParams: () => {
-      openDrawer("filters");
+      /* Left closed on touch: the bar spans the width there, and opening it
+         unasked pushes the works most of the way off the first screen. */
+      if (!T.isTouch) barUI.set("filters");
       if (opening) openPanel(opening, false);
     },
     onDeal: (work, i) => {
@@ -433,7 +417,7 @@
     const work = works.find(w => w.id === hit.dataset.workId);
     if (!work) return;
     e.preventDefault();
-    closeDrawer();
+    barUI.set(null);
     openPanel(work, true);
   });
 
@@ -449,8 +433,10 @@
     const on = root.dataset.colour !== "on";
     root.dataset.colour = on ? "on" : "off";
     eyeBtn.setAttribute("aria-pressed", String(on));
+    /* toggleAttribute, not .hidden — see the note in terminal-shell.js: these
+       are <svg>, which has no `hidden` property to assign to. */
     eyeBtn.querySelectorAll("[data-eye]").forEach(ico => {
-      ico.hidden = (ico.dataset.eye === "open") !== on;
+      ico.toggleAttribute("hidden", (ico.dataset.eye === "open") !== on);
     });
     if (on) {
       filters.format = null;
@@ -463,15 +449,13 @@
   /* Clicking the backdrop closes it: the panel is a box on the catalogue, so
      the catalogue around it should still be a way out. */
   panel.addEventListener("click", e => { if (e.target === panel) closePanel(false); });
-  document.getElementById("bar-tab").addEventListener("click", () => openDrawer("filters"));
-  infoBtn.addEventListener("click", () => openDrawer("info"));
   document.querySelectorAll("[data-view]").forEach(b =>
     b.addEventListener("click", () => setView(b.dataset.view)));
 
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       if (panel.classList.contains("is-open")) closePanel(false);
-      else closeDrawer();
+      else barUI.set(null);
       return;
     }
     if (!panel.classList.contains("is-open")) return;
