@@ -27,6 +27,10 @@ jobs:
         run: |
           VERSION="$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
           sed -i "s/__BUILD_VERSION__/$VERSION/g" sw.js
+          # Same stamp on every asset URL. Hand-numbered ?v=1 strings meant a
+          # deploy could change a file and nobody would ever be served it.
+          grep -rl __ASSET_VERSION__ --include='*.html' . \
+            | xargs -r sed -i "s/__ASSET_VERSION__/$VERSION/g"
           echo "$VERSION" > version.txt
 
       # Every work and every shop item gets a real page at its clean URL.

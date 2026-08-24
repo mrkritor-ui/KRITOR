@@ -162,7 +162,9 @@ html, body, .bar, .panel, .tile-figure {
   height: calc(var(--u) * 2);
   border: 0;
   padding: 0;
-  background: var(--bg);
+  /* Transparent: a filled background cut a white notch out of the bar's own
+     edge, which is the only thing anyone was seeing there. */
+  background: transparent;
   color: var(--ink);
   font: inherit;
   font-size: 10px;
@@ -267,11 +269,14 @@ html, body, .bar, .panel, .tile-figure {
 .filter-col { position: relative; }
 .filter-col + .filter-col { border-left: var(--border) solid var(--ink); }
 
-.filter-head {
+.filter-head { display: flex; align-items: stretch; }
+
+.filter-title {
   display: flex;
   align-items: center;
   gap: var(--u);
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: calc(var(--u) * 1.5);
   border: 0;
   background: transparent;
@@ -282,6 +287,21 @@ html, body, .bar, .panel, .tile-figure {
   text-transform: uppercase;
   cursor: var(--cur-arrow);
 }
+
+/* Present only while the column has a value behind it. Bordered on its left
+   so it reads as a control on the end of the title, not a letter in it. */
+.filter-clear {
+  padding: 0 calc(var(--u) * 1.5);
+  border: 0;
+  border-left: var(--border) solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  cursor: var(--cur-arrow);
+}
+
+.filter-clear:hover, .filter-clear:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
 
 /* The values hang out of the header rather than sitting under it: opening one
    must not resize the bar or move the other two columns. */
@@ -832,7 +852,8 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   }
 
   .bar-tab { width: calc(var(--u) * 9); height: calc(var(--u) * 3.5); }
-  .filter-head { min-height: 52px; }
+  .filter-title { min-height: 52px; }
+  .filter-clear { min-width: 52px; }
   .filter-list { gap: 0; padding: 0; }
   .filter-list .bar-btn { align-self: stretch; justify-content: flex-start; padding: 0 calc(var(--u) * 2); }
   .tile-add { width: calc(var(--u) * 5.5); height: calc(var(--u) * 5.5); font-size: 12px; }

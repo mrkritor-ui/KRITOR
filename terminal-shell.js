@@ -218,8 +218,8 @@
          so coming back does not reopen someone's last filter. */
       drawer.querySelectorAll(".filter-col.is-open").forEach(col => {
         col.classList.remove("is-open");
-        const head = col.querySelector(".filter-head");
-        if (head) head.setAttribute("aria-expanded", "false");
+        const title = col.querySelector(".filter-title");
+        if (title) title.setAttribute("aria-expanded", "false");
       });
       measure();
     }
@@ -255,11 +255,27 @@
     const col = document.createElement("div");
     col.className = "filter-col";
 
-    const head = document.createElement("button");
-    head.type = "button";
+    const head = document.createElement("div");
     head.className = "filter-head";
-    head.setAttribute("aria-expanded", "false");
-    head.innerHTML = "<span>" + label + '</span><span class="hatch"></span>';
+
+    const title = document.createElement("button");
+    title.type = "button";
+    title.className = "filter-title";
+    title.setAttribute("aria-expanded", "false");
+    title.innerHTML = "<span>" + label + '</span><span class="hatch"></span>';
+    head.appendChild(title);
+
+    /* The clear control only exists while the column has something to clear —
+       it is the column's own state made visible, not a permanent button that
+       does nothing most of the time. */
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "filter-clear";
+    clear.hidden = true;
+    clear.setAttribute("aria-label", "Clear " + label);
+    clear.textContent = "X";
+    head.appendChild(clear);
+
     col.appendChild(head);
 
     const body = document.createElement("div");
@@ -271,22 +287,25 @@
        stay when the pointer leaves. Clicking again unpins. Touch has no hover,
        so there a tap is the only thing that opens it — same class, same code
        path, no separate branch to keep in step. */
-    head.addEventListener("click", event => {
+    title.addEventListener("click", event => {
       const pinned = col.classList.toggle("is-open");
-      head.setAttribute("aria-expanded", String(pinned));
+      title.setAttribute("aria-expanded", String(pinned));
       /* The column is also held open by :focus-within, which a mouse click
          leaves behind — so unpinning with the mouse appeared to do nothing.
          detail > 0 means a real pointer click; a keyboard Enter reports 0 and
          keeps its focus, which is the whole point of focus-within. */
-      if (!pinned && event.detail > 0) head.blur();
+      if (!pinned && event.detail > 0) title.blur();
       [...(col.parentNode ? col.parentNode.children : [])].forEach(other => {
         if (other === col) return;
         other.classList.remove("is-open");
-        const h = other.querySelector(".filter-head");
+        const h = other.querySelector(".filter-title");
         if (h) h.setAttribute("aria-expanded", "false");
       });
     });
 
+    /* Handed back so the page can wire what clearing means and show the X
+       only when there is a value behind it. */
+    col.clearButton = clear;
     return col;
   }
 

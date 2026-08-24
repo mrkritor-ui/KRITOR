@@ -204,7 +204,8 @@
   const barUI = T.mountBar();
 
   function valueColumn(label, key, values, format) {
-    return T.filterColumn(label, list => {
+    let buttons = [];
+    const col = T.filterColumn(label, list => {
       values.forEach(value => {
         const btn = document.createElement("button");
         btn.type = "button";
@@ -215,14 +216,28 @@
           T.flash(btn);
           /* Pressing the active value clears it: the column doubles as its own
              "all", so no row has to be spent on one. */
-          filters[key] = filters[key] === value ? null : value;
-          [...list.children].forEach(b =>
-            b.setAttribute("aria-pressed", String(b === btn && filters[key] === value)));
-          render();
+          select(filters[key] === value ? null : value);
         });
         list.appendChild(btn);
       });
+      buttons = [...list.children];
     });
+
+    /* One place that knows what "chosen" means for this column: the filter,
+       the pressed states and whether the X is there all move together. */
+    function select(value) {
+      filters[key] = value;
+      buttons.forEach(b =>
+        b.setAttribute("aria-pressed", String(value !== null && b.textContent === (format ? format(value) : value))));
+      col.clearButton.hidden = value === null;
+      render();
+    }
+
+    col.clearButton.addEventListener("click", () => {
+      T.flash(col.clearButton);
+      select(null);
+    });
+    return col;
   }
 
   function buildFilters() {
