@@ -2,11 +2,12 @@ name: Deploy Website
 
 on:
   push:
+    # The terminal redesign is the live site. redesign/catalogue-v2 is the old
+    # catalogue, kept as an archive and no longer deployed — it was publishing
+    # to the same Pages site, so a push to it would have replaced this one.
+    # Nothing is lost by retiring it: its head (419c1bc) is an ancestor of this
+    # branch, so the old catalogue is still in this history.
     branches:
-      - redesign/catalogue-v2
-      # The terminal redesign publishes too. Both branches deploy to the same
-      # Pages site, so whichever is pushed last is what kritor.au serves; the
-      # concurrency group below cancels an in-flight run rather than racing it.
       - claude/terminal-redesign-sar634
   workflow_dispatch:
 

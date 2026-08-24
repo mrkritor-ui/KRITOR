@@ -1,70 +1,93 @@
-# Works — minimal art catalog
+# KRITOR
 
-A static, no-build site: a 2-column grid of your paintings, tap to view fullscreen.
-Hosted free on GitHub Pages, added to your iPad homescreen so it opens like an app.
+The catalogue and store at **kritor.au**. A static site — no build step to run
+locally, no dependencies to install to look at it.
 
-## 1. Put it on GitHub
+## Branches
 
-1. Create a new repository on GitHub (public — GitHub Pages on the free plan needs
-   a public repo, unless you have GitHub Pro/Team).
-2. Upload every file in this folder to the repo, keeping the folder structure
-   (drag-and-drop works fine on github.com — "Add file" → "Upload files").
-3. Go to the repo's **Settings → Pages**, set **Source** to your default branch
-   (usually `main`) and **/ (root)**, then save.
-4. GitHub gives you a URL like `https://yourname.github.io/repo-name/` —
-   that's your site.
+| Branch | What it is |
+|---|---|
+| `claude/terminal-redesign-sar634` | **The live site.** Every push deploys. |
+| `redesign/catalogue-v2` | The old catalogue, kept as an archive. Not deployed. |
 
-## 2. Add your paintings
+The archive branch's head (`419c1bc`) is an ancestor of the live branch, so the
+old catalogue is still in this history — `git show 419c1bc` reaches it. It no
+longer publishes, because both branches deployed to the same Pages site and a
+push to the old one would have replaced the new.
 
-1. Drop your image files into the `images` folder (jpg or png, whatever size —
-   just try to keep them reasonably web-sized, under ~2–3MB each, so the grid
-   scrolls smoothly).
-2. Open `artworks.js` and add one entry per piece:
+## Looking at it locally
 
-```js
-const ARTWORKS = [
-  {
-    title: "Untitled I",
-    year: 2024,
-    price: 1200,          // AUD, plain number — ignored if status isn't "available"
-    status: "available",  // "available" | "sold" | "na"
-    collection: "Studio Series",  // leave "" for a standalone piece
-    size: "60 × 90 cm",
-    image: "images/work-01.jpg"
-  },
-];
+```sh
+python3 -m http.server 8899          # then open http://127.0.0.1:8899/
 ```
 
-Commit the change (or re-upload the edited file) and the live site updates
-automatically, usually within a minute.
+Two things the deploy builds that a fresh clone does not have:
 
-## Sorting, collections, and status
+```sh
+pip install Pillow pillow-avif-plugin numpy
+python3 tools/build-images.py        # responsive renditions + image-manifest.js
+python3 tools/terminal-images.py     # 1-bit renditions + terminal-manifest.js
+```
 
-- **Collections**: give two or more works the same `collection` name and
-  they're grouped under a heading when a client views "All". The chip bar at
-  the top lets them jump straight to one collection.
-- **Sort**: the dropdown reorders by year or price, newest/highest first by
-  default. It applies within each collection group.
-- **Status ticker**: a small dot on each thumbnail — green for available, red
-  for sold, amber for not-for-sale — with the full word and price shown once
-  a work is opened. Sold and NA pieces hide the price automatically.
-- **Pinch to zoom**: once a work is open fullscreen, pinch with two fingers
-  to zoom in (double-tap also toggles zoom). Tap the × to close — while
-  zoomed in, tapping the image pans instead of closing, so nothing closes by
-  accident mid-zoom.
+Without them the pages still work — tiles fall back to the original images —
+but the catalogue downloads megabytes instead of kilobytes.
 
-## 3. Add it to your iPad homescreen
+Deep links (`/work-01/`) need their directories, which the deploy also writes:
 
-1. Open the GitHub Pages URL in Safari on your iPad Air 2.
-2. Tap the **Share** icon (square with an arrow).
-3. Tap **Add to Home Screen**.
-4. It'll launch full-screen with no browser bar, using the "Works" icon.
+```sh
+node -e 'const fs=require("fs"),p=require("path");const s=fs.readFileSync("artworks.js","utf8");
+JSON.parse(s.slice(s.indexOf("["),s.lastIndexOf("]")+1)).forEach(w=>{fs.mkdirSync(w.id,{recursive:true});
+fs.writeFileSync(p.join(w.id,"index.html"),fs.readFileSync("index.html"))});'
+```
 
-## Notes
+## How it fits together
 
-- No build tools, no dependencies — just HTML/CSS/JS, so it'll keep working
-  indefinitely and loads instantly even on an older iPad.
-- Images aren't cropped to a fixed shape — portraits and landscapes keep their
-  real proportions in the grid, which felt right for a painting catalog.
-- Want a different icon? Replace `icon.png` (180×180px) with your own.
-- To reorder or remove a piece, just edit or delete its entry in `artworks.js`.
+```
+index.html          the catalogue
+store/index.html    the shopfront
+checkout/index.html the checkout — Stripe, its own CSP
+
+terminal-shell.js   the chrome both pages share: theme, bar, boot
+                    sequence, typing, screensaver
+terminal.js         the catalogue: views, filters, the work panel
+terminal-store.js   the store: tiles, the bag, add to bag
+terminal.css        the whole visual system
+cursor.css          the drawn cursor, shared by every page including checkout
+
+cart.js             cart state and Stripe plumbing. Untouched by the
+                    redesign; the terminal pages use it as state only
+                    (it injects its own drawer only for pages that
+                    provide [data-bag-slot], and they do not)
+```
+
+### Two rules worth knowing before editing
+
+**Asset URLs carry `?v=__ASSET_VERSION__`.** The deploy replaces the token, the
+same way it stamps `sw.js`. Hand-numbered versions are how a change ships and
+nobody is served it — that happened for seven deploys.
+
+**Type is Press Start 2P, except a work's own name**, which is Jacquarda
+Bastarda 9. Anything outside those faces' character sets silently falls back
+and breaks the pixel grid, so check a glyph exists before using it.
+
+## Adding work
+
+Edit `artworks.js`. `format` and `materials` are optional and default in one
+place each, so filling them in later is a data change and nothing else.
+
+```js
+{
+  id: "work-18",              // becomes /work-18/
+  title: "Untitled",
+  year: 2026,
+  collection: "Studio Series", // the SERIES filter, "" for uncollected
+  size: "60 × 90 cm",
+  materials: "Mixed media on canvas",
+  format: "Painting",
+  image: "images/work-18.png",
+  ar: { enabled: false, file: "ar/work-18.usdz", width: 0, height: 0 }
+}
+```
+
+Items for sale are separate — see `products.js` and `shop/README.md`. The
+catalogue is the whole archive; the store is only what is for sale.
