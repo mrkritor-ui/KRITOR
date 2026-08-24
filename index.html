@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -12,62 +12,92 @@
   <meta name="mobile-web-app-title" content="KRITOR">
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- Loaded async: media="print" keeps it out of the critical path, so a slow
        or blocked font host can never delay rendering or script execution. -->
   <link rel="stylesheet" media="print" onload="this.media='all'"
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap"></noscript>
-  <link rel="preload" as="script" href="artworks.js">
-  <link rel="preload" as="script" href="image-manifest.js">
-  <link rel="preload" as="script" href="tile-image.js?v=1">
-  <link rel="preload" as="script" href="script.js?v=8">
-  <link rel="stylesheet" href="type.css?v=3">
-  <link rel="stylesheet" href="style.css?v=16" data-kritor-page-style>
-  <link rel="stylesheet" href="zoom.css?v=4">
-  <link rel="stylesheet" href="transitions.css?v=11">
-  <script src="zoom-transition.js?v=3"></script>
-  <script src="spa-transition.js?v=5"></script>
-  <style>
-    /* Sits in the header's centre grid track — see .site-header in style.css.
-       Being a grid item is what stops it colliding: tracks cannot overlap. */
-    #kritor-top-logo{justify-self:center;width:min(120px,22vw);max-width:100%;height:auto;display:block;opacity:0;pointer-events:none;transition:opacity .8s cubic-bezier(.22,.61,.36,1);will-change:opacity}
-    #kritor-top-logo.is-visible{opacity:1}
-  </style>
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap"></noscript>
+
+  <link rel="stylesheet" href="terminal.css?v=1">
+  <script>
+    /* Applied before first paint: booting light and repainting dark is a white
+       flash on every load for anyone who chose the terminal. */
+    try {
+      var t = localStorage.getItem("kritor-theme");
+      if (t === "dark") document.documentElement.dataset.theme = "dark";
+    } catch (e) {}
+  </script>
 </head>
 <body>
-  <header class="site-header" aria-label="KRITOR navigation">
-    <div class="catalog-controls">
-      <button id="zoom-control" class="zoom-control" type="button" aria-label="Catalogue view: normal. Tap to change view">+</button>
-      <button id="shuffle-control" class="shuffle-control" type="button" aria-label="Shuffle artwork order" title="Shuffle artwork order">↻</button>
-      <a class="nav-link nav-link-inline" href="/store/">Store</a>
+
+  <!-- Boot. Covers the catalogue while the works load; the bar sits above it. -->
+  <div class="boot" id="boot">
+    <div class="boot-statement">
+      <p>KRITOR MAKES THINGS.<br>A CHOICE MADE AT 17<br>TO NOT TAKE TIME FOR GRANTED.</p>
+      <p class="boot-legal">ALL RIGHTS RESERVED.<br>&copy; 2026 KRITOR. V1.0</p>
     </div>
-    <img id="kritor-top-logo" src="/images/kritor%20top%20text.png" alt="KRITOR">
-    <nav class="site-nav">
-      <a class="nav-link" href="/about/">About</a>
-    </nav>
-  </header>
-  <main id="grid" class="grid" aria-label="Artwork catalogue"></main>
+  </div>
+
+  <!-- The bar. Not a header: the only chrome on the page, and one of the only
+       two things on the site that can be clicked. -->
+  <div class="bar" id="bar">
+    <button class="bar-tab" id="bar-tab" type="button" aria-label="Show filters"><svg class="ico" viewBox="0 0 7 4" width="14" height="8" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/></svg></button>
+
+    <div class="bar-row" id="info-row" hidden>
+      <button class="bar-btn" id="info-btn" type="button" aria-pressed="false"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg> INFO</button>
+      <div class="bar-views">
+        <div>
+          <button class="bar-btn" data-view="zoom" type="button">ZOOM</button>
+          <button class="bar-btn" data-view="grid" type="button">GRID</button>
+          <button class="bar-btn" data-view="list" type="button">LIST</button>
+          <span class="bar-scale">|........|........|</span>
+        </div>
+      </div>
+      <div class="bar-modes">
+        <button class="bar-btn" data-theme-btn="dark" type="button" aria-pressed="false" aria-label="Terminal mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/></svg></button>
+        <button class="bar-btn" data-theme-btn="light" type="button" aria-pressed="true" aria-label="Paper mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/></svg></button>
+      </div>
+    </div>
+
+    <!-- Already in the bar's slot: the loading row does not travel here, it
+         retracts from here once it has said WELCOME. -->
+    <div class="bar-loading" id="loading-row">
+      <span class="bar-loading-label" id="loading-label">LOADING</span>
+      <div class="bar-progress"><span id="loading-fill"></span></div>
+    </div>
+
+    <div class="bar-drawer" id="drawer">
+      <div class="filters" id="filters-pane"></div>
+      <div class="info-pane" id="info-pane" hidden>
+        <p>KRITOR IS AN ARTIST. THE WORK IS EXPRESSIONIST: MEDIUMS LAYERED UNTIL A PICTURE ARRIVES, THEN LIVED WITH FOR MONTHS, WATCHING IT DEVELOP AND ALLOWING THE PROCESS TO BECOME REFLECTIVE.</p>
+        <p>I OFTEN PLACE MYSELF WITHIN THE WORK, SURROUNDED BY AN EVENT, PLACE, OR MOMENT FROM MY LIFE.</p>
+        <p>CONTACT: <a href="mailto:info@kritor.au">INFO@KRITOR.AU</a></p>
+      </div>
+    </div>
+
+    <div class="bar-scroll"><span id="scroll-fill"></span></div>
+  </div>
+
+  <main class="grid view-grid" id="grid" aria-label="Artwork catalogue"></main>
+
+  <!-- The work panel. Opens over the catalogue rather than navigating, but
+       still pushes /work-xx/ so deep links and the built routes survive. -->
+  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Work">
+    <div class="panel-inner">
+      <button class="panel-esc" id="panel-esc" type="button"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg> ESC</button>
+      <div class="panel-meta" id="panel-meta"></div>
+      <div class="panel-art" id="panel-art"></div>
+    </div>
+  </div>
+
   <script src="artworks.js"></script>
   <script src="image-manifest.js"></script>
+  <script src="terminal-manifest.js"></script>
   <script src="tile-image.js?v=1"></script>
-  <script src="script.js?v=8"></script>
-  <script src="clean-work-links.js?v=1"></script>
-  <script>
-    (function(){
-      const logo=document.getElementById('kritor-top-logo');
-      if(!logo)return;
-      let revealed=false;
-      const reveal=()=>{
-        if(revealed)return;
-        revealed=true;
-        logo.classList.add('is-visible');
-        ['scroll','pointerdown','pointermove','keydown','wheel','touchstart'].forEach(type=>window.removeEventListener(type,reveal));
-      };
-      ['scroll','pointerdown','pointermove','keydown','wheel','touchstart'].forEach(type=>window.addEventListener(type,reveal,{passive:true}));
-    })();
-  </script>
+  <script src="terminal.js?v=1"></script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}</script>
 </body>
 </html>

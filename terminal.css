@@ -1,0 +1,368 @@
+/* KRITOR — terminal catalogue.
+
+   The whole surface is one bitmap system: Press Start 2P on an 8px grid, 2px
+   black boxes, no radii, no shadows, and every image reduced to 1 bit and
+   upscaled with nearest-neighbour so its pixels line up with the type's.
+
+   Two themes, and they are not a tint of each other. Light is black ink on
+   white paper. Dark is a phosphor terminal — bright green on near-black — so
+   the ink colour is a variable and "always black" holds only in light. */
+
+:root {
+  --u: 8px;                     /* the pixel unit everything is a multiple of */
+  --bg: #ffffff;
+  --ink: #000000;
+  --dim: #000000;               /* secondary text — in light it is still black */
+  --face: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --border: 2px;
+  --page-pad: calc(var(--u) * 2);
+  --tile-gap: calc(var(--u) * 5);
+  --cols: 4;
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --bg: #0a1f12;
+  --ink: #4ff08a;
+  --dim: #2c8c52;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* The panes below set their own display, and an explicit display beats the
+   hidden attribute's UA rule — without this the INFO pane stacks under the
+   filter table instead of replacing it. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--face);
+  /* Press Start 2P is drawn on an 8px em square; anti-aliasing it back into
+     greys is what makes a pixel face look muddy rather than plotted. */
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
+}
+
+/* Theme swap is a repaint, not a fade of every element — a 200ms colour
+   transition on ground and ink reads as the screen changing phosphor. */
+html, body, .bar, .panel, .tile-figure {
+  transition: background-color .18s steps(3, end), color .18s steps(3, end),
+              border-color .18s steps(3, end);
+}
+
+/* ── Shared bitmap furniture ─────────────────────────────────────────────── */
+
+/* The hatched fill that follows every label in the reference: a checkerboard
+   at the pixel unit, so it is literally made of the same pixels as the type. */
+.hatch {
+  flex: 1;
+  align-self: center;
+  height: calc(var(--u) * 1.25);
+  background: repeating-conic-gradient(var(--ink) 0 25%, transparent 0 50%) 0 0 / 4px 4px;
+  opacity: .85;
+}
+
+.box { border: var(--border) solid var(--ink); background: var(--bg); }
+
+/* Icons are drawn on the same pixel grid as the type, so they sit on the text
+   baseline rather than floating like glyphs from another font. */
+.ico { display: inline-block; vertical-align: -2px; }
+
+/* ── Boot screen ─────────────────────────────────────────────────────────── */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  padding: var(--page-pad);
+}
+
+.boot.is-done { display: none; }
+
+.boot-statement {
+  text-align: center;
+  font-size: 12px;
+  line-height: 2;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.boot-statement p { margin: 0 0 calc(var(--u) * 5); }
+.boot-statement p:last-child { margin-bottom: 0; }
+.boot-legal { color: var(--dim); }
+
+/* ── The bar ─────────────────────────────────────────────────────────────── */
+
+/* Not a header — a panel of information that happens to sit on top. It is the
+   only chrome on the page, so everything clickable that is not a work lives
+   here. On web it hangs top-right; on a phone it spans the width. */
+.bar {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + var(--u));
+  right: var(--page-pad);
+  /* Above the boot screen, below the work panel. The loading row lives in here
+     and has to be legible while the boot statement is still up — that is the
+     whole sequence: the bar is on screen from the first frame, and the works
+     arrive underneath it. */
+  z-index: 450;
+  width: min(560px, calc(100vw - var(--page-pad) * 2));
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  font-size: 10px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.bar.is-hidden { display: none; }
+
+/* The pull tab on the top edge. */
+.bar-tab {
+  position: absolute;
+  top: calc(var(--border) * -1);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(var(--u) * 4);
+  height: calc(var(--u) * 2);
+  border: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 1.5);
+}
+
+.bar-row + .bar-row { border-top: var(--border) solid var(--ink); }
+
+.bar-btn {
+  border: 0;
+  padding: calc(var(--u) * .5);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Active state is an inversion, the way a selected cell inverts on a terminal.
+   No colour is introduced — the ink and the ground simply swap. */
+.bar-btn[aria-pressed="true"], .bar-btn.is-active {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.bar-views { display: flex; gap: calc(var(--u) * 2); margin: 0 auto; }
+
+/* The tick scale under ZOOM/GRID/LIST. Purely indicative, like a printed
+   rule — the buttons above it are what you press. */
+.bar-scale {
+  display: block;
+  margin-top: calc(var(--u) * .5);
+  font-size: 8px;
+  color: var(--dim);
+  letter-spacing: -.05em;
+  text-align: center;
+}
+
+.bar-modes { display: flex; gap: calc(var(--u) * .5); margin-left: auto; }
+
+/* Scroll position, as a segmented bar. */
+.bar-scroll { height: calc(var(--u) * .75); border-top: var(--border) solid var(--ink); background: var(--bg); }
+.bar-scroll span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 6px, transparent 6px 8px);
+}
+
+/* ── Loading row ─────────────────────────────────────────────────────────── */
+
+/* The loading bar does not fly anywhere: it is already in the bar's slot, as
+   a row below INFO, and retracts once it has said WELCOME. */
+.bar-loading { display: block; padding: calc(var(--u) * 1.5); }
+.bar-loading.is-gone { display: none; }
+.bar-loading-label { display: block; margin-bottom: var(--u); font-size: 10px; }
+
+.bar-progress { height: calc(var(--u) * 2); border: var(--border) solid var(--ink); padding: 2px; }
+.bar-progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: repeating-conic-gradient(var(--ink) 0 25%, transparent 0 50%) 0 0 / 4px 4px;
+  transition: width .25s steps(8, end);
+}
+
+/* ── Dropdown panes ──────────────────────────────────────────────────────── */
+
+.bar-drawer { display: none; border-top: var(--border) solid var(--ink); }
+.bar-drawer.is-open { display: block; }
+
+.filters { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+.filters > * + * { border-left: var(--border) solid var(--ink); }
+
+.filter-head {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 1.5);
+  border-bottom: var(--border) solid var(--ink);
+  font-size: 10px;
+}
+
+.filter-list { padding: calc(var(--u) * 1.5); display: flex; flex-direction: column; align-items: flex-start; gap: var(--u); }
+.filter-list .bar-btn { text-align: left; }
+.filter-foot { border-top: var(--border) solid var(--ink); padding: calc(var(--u) * 1.5); }
+.filter-foot a { color: var(--ink); text-decoration: none; font-size: 10px; }
+
+.info-pane { padding: calc(var(--u) * 2); font-size: 10px; line-height: 2.1; text-transform: uppercase; }
+.info-pane p { margin: 0 0 calc(var(--u) * 2); }
+.info-pane a { color: var(--ink); }
+
+/* ── Catalogue ───────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--tile-gap);
+  align-items: center;
+  padding: calc(var(--u) * 14) var(--page-pad) calc(var(--u) * 8);
+}
+
+.grid.view-zoom { --cols: 2; }
+.grid.view-grid { --cols: 4; }
+.grid.view-list { --cols: 1; }
+
+.tile { display: block; min-width: 0; text-decoration: none; color: inherit; }
+
+.tile-figure { position: relative; margin: 0; display: block; line-height: 0; }
+
+/* The 1-bit rendition, painted rather than displayed.
+
+   The PNG is black ink on a transparent ground, so using it as a MASK over a
+   block of --ink gives the work the theme's exact colour in both themes, from
+   one asset. A filter chain could approximate the same green, but only ever
+   approximate it, and it would drift the moment the palette was touched.
+   Nearest-neighbour on the way up is the whole point: the work ends up made of
+   the same pixels as the type around it. */
+.tile-bits {
+  display: block;
+  width: 100%;
+  background-color: var(--ink);
+  -webkit-mask-image: var(--bits);
+  mask-image: var(--bits);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+/* The real photograph, revealed on hover. It sits over the bitmap rather than
+   replacing it, so nothing reflows and the swap is instant. */
+.tile-real {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-reveal="on"] .tile:hover .tile-real,
+html[data-reveal="on"] .tile:focus-visible .tile-real { opacity: 1; }
+
+/* ── Work panel ──────────────────────────────────────────────────────────── */
+
+/* A panel, not a page. The bar hides while it is open, which is what keeps the
+   promise that there are only ever two things to click. */
+.panel {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: none;
+  background: var(--bg);
+  padding: calc(var(--u) * 3);
+}
+
+.panel.is-open { display: block; }
+
+.panel-inner { position: relative; height: 100%; border: var(--border) solid var(--ink); padding: calc(var(--u) * 3); overflow-y: auto; }
+
+.panel-meta {
+  font-size: 12px;
+  line-height: 2;
+  text-transform: uppercase;
+  white-space: pre-wrap;
+  min-height: calc(var(--u) * 14);
+}
+
+/* The block cursor that trails the typing, and keeps blinking after it. */
+.caret {
+  display: inline-block;
+  width: .8em;
+  height: 1em;
+  background: var(--ink);
+  vertical-align: text-bottom;
+  animation: blink 1s steps(1, end) infinite;
+}
+
+@keyframes blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+.panel-esc {
+  position: absolute;
+  top: calc(var(--u) * 2);
+  right: calc(var(--u) * 2);
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  padding: var(--u) calc(var(--u) * 1.5);
+  cursor: pointer;
+}
+
+.panel-art { display: grid; place-items: center; margin-top: calc(var(--u) * 4); }
+.panel-art img { max-width: 100%; max-height: 60vh; border: var(--border) solid var(--ink); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 899px) {
+  .bar { left: var(--page-pad); right: var(--page-pad); width: auto; }
+  .grid.view-grid { --cols: 2; }
+  .grid.view-zoom { --cols: 1; }
+  .filters { grid-template-columns: 1fr; }
+  .filters > * + * { border-left: 0; border-top: var(--border) solid var(--ink); }
+  .grid { padding-top: calc(var(--u) * 18); }
+  .panel { padding: 0; }
+  .panel-inner { border: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret { animation: none; }
+  .bar-progress span { transition: none; }
+  html, body, .bar, .panel, .tile-figure { transition: none; }
+}
