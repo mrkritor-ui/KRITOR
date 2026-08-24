@@ -251,9 +251,15 @@ html, body, .bar, .panel, .tile-figure {
   padding: calc(var(--u) * 14) var(--page-pad) calc(var(--u) * 8);
 }
 
-.grid.view-zoom { --cols: 2; }
-.grid.view-grid { --cols: 4; }
-.grid.view-list { --cols: 1; }
+.grid.view-zoom { --cols: 3; }
+.grid.view-grid { --cols: 5; }
+
+/* LIST is not a one-column grid — it is the archive as a table. */
+.grid.view-list {
+  display: block;
+  padding-left: 0;
+  padding-right: 0;
+}
 
 .tile { display: block; min-width: 0; text-decoration: none; color: inherit; }
 
@@ -294,6 +300,76 @@ html, body, .bar, .panel, .tile-figure {
 
 html[data-reveal="on"] .tile:hover .tile-real,
 html[data-reveal="on"] .tile:focus-visible .tile-real { opacity: 1; }
+
+/* Captioned tiles hang from a common baseline instead of being centred, so
+   the captions line up across a row however tall each work is. */
+.grid.has-captions { align-items: end; }
+
+/* A listing has to say what it is and what it costs; a catalogue work does
+   not. This is the only caption in the system. */
+.tile-caption {
+  display: block;
+  margin-top: var(--u);
+  font-size: 8px;
+  line-height: 1.8;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.tile.is-sold-out .tile-bits { opacity: .4; }
+
+/* ── List view ───────────────────────────────────────────────────────────── */
+
+/* Columns are fixed rather than auto so every row lines up down the page, the
+   way a printed index does. IDX and YEAR are sized to their content; TITLE
+   takes the slack. */
+.row {
+  display: grid;
+  grid-template-columns: 5ch minmax(0, 2fr) 6ch minmax(0, 1fr) 10ch minmax(0, 1fr) 12ch;
+  gap: var(--u);
+  align-items: baseline;
+  padding: calc(var(--u) * 1.25) var(--page-pad);
+  border-bottom: var(--border) solid var(--ink);
+  font-size: 10px;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.row-head { border-bottom-width: calc(var(--border) * 2); }
+
+/* Selecting a row inverts it, the same gesture the bar uses for an active
+   value — one idea of "chosen" across the whole surface. */
+a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+
+.cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Screensaver ─────────────────────────────────────────────────────────── */
+
+.screensaver {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: none;
+  background: var(--bg);
+}
+
+.screensaver.is-on { display: block; }
+
+.screensaver-cell {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: var(--ink);
+  -webkit-mask-image: var(--bits);
+  mask-image: var(--bits);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  image-rendering: pixelated;
+  will-change: transform;
+}
 
 /* ── Work panel ──────────────────────────────────────────────────────────── */
 
@@ -352,8 +428,10 @@ html[data-reveal="on"] .tile:focus-visible .tile-real { opacity: 1; }
 
 @media (max-width: 899px) {
   .bar { left: var(--page-pad); right: var(--page-pad); width: auto; }
-  .grid.view-grid { --cols: 2; }
-  .grid.view-zoom { --cols: 1; }
+  .grid.view-grid { --cols: 3; }
+  .grid.view-zoom { --cols: 2; }
+  .grid.view-list { overflow-x: auto; }
+  .row { min-width: 720px; }
   .filters { grid-template-columns: 1fr; }
   .filters > * + * { border-left: 0; border-top: var(--border) solid var(--ink); }
   .grid { padding-top: calc(var(--u) * 18); }

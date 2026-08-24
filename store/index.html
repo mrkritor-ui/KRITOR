@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -10,64 +10,72 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-title" content="KRITOR">
-  <meta name="theme-color" content="#f1f0ee">
+  <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="../icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- Loaded async: media="print" keeps it out of the critical path, so a slow
        or blocked font host can never delay rendering or script execution. -->
   <link rel="stylesheet" media="print" onload="this.media='all'"
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap"></noscript>
-  <link rel="preload" as="script" href="../products.js?v=1">
-  <link rel="preload" as="script" href="../image-manifest.js">
-  <link rel="preload" as="script" href="../tile-image.js?v=1">
-  <link rel="preload" as="script" href="../store.js?v=5">
-  <link rel="stylesheet" href="../type.css?v=3">
-  <link rel="stylesheet" href="../store.css?v=6" data-kritor-page-style>
-  <link rel="stylesheet" href="../cart.css?v=4">
-  <link rel="stylesheet" href="../zoom.css?v=4">
-  <link rel="stylesheet" href="../transitions.css?v=11">
-  <script src="../zoom-transition.js?v=3"></script>
-  <script src="../spa-transition.js?v=5"></script>
-  <style>
-    /* Sits in the header's centre grid track — see .site-header in store.css.
-       Being a grid item is what stops it colliding: tracks cannot overlap. */
-    #kritor-top-logo{justify-self:center;width:min(120px,22vw);max-width:100%;height:auto;display:block;opacity:0;pointer-events:none;transition:opacity .8s cubic-bezier(.22,.61,.36,1);will-change:opacity}
-    #kritor-top-logo.is-visible{opacity:1}
-  </style>
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap"></noscript>
+
+  <link rel="stylesheet" href="../terminal.css?v=2">
+  <script>
+    /* Applied before first paint: booting light and repainting dark is a white
+       flash on every load for anyone who chose the terminal. */
+    try {
+      var t = localStorage.getItem("kritor-theme");
+      if (t === "dark") document.documentElement.dataset.theme = "dark";
+    } catch (e) {}
+  </script>
 </head>
 <body>
-  <header class="site-header" aria-label="KRITOR navigation">
-    <div class="catalog-controls">
-      <button id="zoom-control" class="zoom-control" type="button" aria-label="Store view: normal. Tap to change view">+</button>
+
+  <div class="boot" id="boot">
+    <div class="boot-statement">
+      <p>KRITOR STORE.<br>ORIGINAL WORK AND EDITIONS,<br>SHIPPED FROM MELBOURNE.</p>
+      <p class="boot-legal">ALL RIGHTS RESERVED.<br>&copy; 2026 KRITOR. V1.0</p>
     </div>
-    <img id="kritor-top-logo" src="/images/kritor%20top%20text.png" alt="KRITOR">
-    <nav class="site-nav" data-bag-slot>
-      <a class="nav-link" href="/" aria-label="Catalogue">Catalogue</a>
-      <a class="nav-link" href="/about/">About</a>
-    </nav>
-  </header>
-  <main id="grid" class="grid" aria-label="Works for sale"></main>
+  </div>
+
+  <div class="bar" id="bar">
+    <button class="bar-tab" id="bar-tab" type="button" aria-label="Show store parameters"><svg class="ico" viewBox="0 0 7 4" width="14" height="8" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/></svg></button>
+
+    <div class="bar-row" id="info-row" hidden>
+      <button class="bar-btn" id="info-btn" type="button" aria-pressed="false"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg> INFO</button>
+      <div class="bar-views"><div><a class="bar-btn" href="/">CATALOGUE</a></div></div>
+      <div class="bar-modes">
+        <button class="bar-btn" data-theme-btn="dark" type="button" aria-pressed="false" aria-label="Terminal mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/></svg></button>
+        <button class="bar-btn" data-theme-btn="light" type="button" aria-pressed="true" aria-label="Paper mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/></svg></button>
+      </div>
+    </div>
+
+    <div class="bar-loading" id="loading-row">
+      <span class="bar-loading-label" id="loading-label">LOADING</span>
+      <div class="bar-progress"><span id="loading-fill"></span></div>
+    </div>
+
+    <div class="bar-drawer" id="drawer">
+      <div class="filters" id="filters-pane"></div>
+      <div class="info-pane" id="info-pane" hidden>
+        <p>ORIGINAL WORK AND EDITIONS, SOLD DIRECTLY BY THE ARTIST. EACH PIECE SHIPS FROM MELBOURNE, PACKED FLAT OR ROLLED DEPENDING ON SIZE.</p>
+        <p>CONTACT: <a href="mailto:info@kritor.au">INFO@KRITOR.AU</a></p>
+      </div>
+    </div>
+
+    <div class="bar-scroll"><span id="scroll-fill"></span></div>
+  </div>
+
+  <main class="grid view-grid" id="grid" aria-label="Works for sale"></main>
+
   <script src="../products.js?v=1"></script>
   <script src="../image-manifest.js"></script>
+  <script src="../terminal-manifest.js"></script>
   <script src="../tile-image.js?v=1"></script>
-  <script src="../cart.js?v=1"></script>
-  <script src="../store.js?v=5"></script>
-  <script>
-    (function(){
-      const logo=document.getElementById('kritor-top-logo');
-      if(!logo)return;
-      let revealed=false;
-      const reveal=()=>{
-        if(revealed)return;
-        revealed=true;
-        logo.classList.add('is-visible');
-        ['scroll','pointerdown','pointermove','keydown','wheel','touchstart'].forEach(type=>window.removeEventListener(type,reveal));
-      };
-      ['scroll','pointerdown','pointermove','keydown','wheel','touchstart'].forEach(type=>window.addEventListener(type,reveal,{passive:true}));
-    })();
-  </script>
+  <script src="../terminal-shell.js?v=1"></script>
+  <script src="../terminal-store.js?v=1"></script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("../sw.js").catch(function(){})})}</script>
 </body>
 </html>

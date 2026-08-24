@@ -44,6 +44,7 @@ originals — meant to be upscaled in CSS with `image-rendering: pixelated`.
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -53,11 +54,37 @@ from PIL import Image, ImageFilter, ImageOps
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def slug(rel):
+    """A filename-safe stem for a store image, which has no work id of its own."""
+    return re.sub(r"[^a-z0-9]+", "-", rel.lower().rsplit(".", 1)[0]).strip("-")
+
+
 def sources():
-    """Every catalogue image, in the order artworks.js lists them."""
+    """Every image the terminal renders: the catalogue, then the store.
+
+    The store's inventory is independent of the archive by design, so both
+    lists are read — an item for sale need not be a catalogue work."""
+    wanted = []
+
     text = (ROOT / "artworks.js").read_text()
-    works = json.loads(text[text.index("["):text.rindex("]") + 1])
-    return [(w["id"], w["image"]) for w in works if w.get("image")]
+    for work in json.loads(text[text.index("["):text.rindex("]") + 1]):
+        if work.get("image"):
+            wanted.append((work["id"], work["image"]))
+
+    products = ROOT / "products.js"
+    if products.exists():
+        text = products.read_text()
+        for match in re.finditer(r"images:\s*\[(.*?)\]", text, re.S):
+            for rel in re.findall(r'"([^"]+)"', match.group(1)):
+                wanted.append((slug(rel), rel))
+
+    seen, out = set(), []
+    for work_id, rel in wanted:
+        if rel in seen:
+            continue
+        seen.add(rel)
+        out.append((work_id, rel))
+    return out
 
 
 def load(path, grid):
