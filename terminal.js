@@ -341,7 +341,10 @@
 
   function openPanel(work, push) {
     if (cancelReveal) cancelReveal();
-    panelArt.textContent = "";
+    /* Only the work is replaced. The two halves that walk the sequence are
+       mounted once and live in here, and emptying the box took them with it. */
+    const previous = panelArt.querySelector("img");
+    if (previous) previous.remove();
     const img = document.createElement("img");
     /* The panel shows the real work. The bitmap is the catalogue's language,
        not a way of hiding the painting from someone who asked to see it. */
@@ -381,8 +384,7 @@
     }
     const index = document.createElement("span");
     index.className = "panel-index";
-    index.textContent = String(at + 1).padStart(3, "0") + " / " +
-                        String(list.length).padStart(3, "0") + "  > NEXT";
+    index.textContent = T.walkLabel(at, list.length);
     panelFoot.appendChild(index);
 
     hidePreview();
@@ -420,6 +422,12 @@
   document.querySelectorAll("[data-view]").forEach(b =>
     b.classList.toggle("is-active", b.dataset.view === view));
 
+  T.mountPanelNav({
+    art: panelArt,
+    surface: panel.querySelector(".panel-inner"),
+    step: step,
+  });
+
   const opening = works.find(w =>
     w.id === location.pathname.replace(/\/+$/, "").split("/").pop());
 
@@ -453,8 +461,6 @@
 
   document.getElementById("panel-esc").addEventListener("click", () => closePanel(false));
   document.getElementById("shuffle-btn").addEventListener("click", randomise);
-  /* Left-click the work to move to the next one in the sequence. */
-  panelArt.addEventListener("click", () => step(1));
 
   /* The eye drops the bitmap and shows every work in its real colours, and
      clears the filters so "all" means all. */

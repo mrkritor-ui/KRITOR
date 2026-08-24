@@ -951,6 +951,11 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   background: var(--bg);
   padding: calc(var(--u) * 3);
   overflow-y: auto;
+  /* Down the page is the browser's, side to side is ours. Without this the
+     panel is a scroll container in both directions, so the moment a finger
+     moved the browser claimed the gesture and cancelled the pointer — the
+     swipe was never delivered, whichever way it went. */
+  touch-action: pan-y;
 }
 
 /* The panel plays out rather than appearing: the work fades up, its name is
@@ -1013,8 +1018,40 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   cursor: var(--cur-arrow);
 }
 
-.panel-art { display: grid; place-items: center; margin-top: calc(var(--u) * 4); }
+.panel-art { position: relative; display: grid; place-items: center; margin-top: calc(var(--u) * 4); }
 .panel-art img { max-width: 100%; max-height: 46vh; }
+
+/* The two halves of the walk. Buttons, so a keyboard can reach them and a
+   screen reader is told what they are, but drawn as nothing at all: the work
+   is what you are meant to be looking at, and the cursor already says which
+   way the click goes. They cover the whole art row rather than the image, so
+   the margin beside a narrow portrait is a target too. */
+.panel-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.panel-zone[data-zone="prev"] { left: 0; }
+.panel-zone[data-zone="next"] { right: 0; }
+
+.panel-zone:focus-visible {
+  outline: var(--border) solid var(--ink);
+  outline-offset: calc(var(--u) * -1);
+}
+
+/* On a touch screen the halves would answer every attempt to simply look at
+   the work, so there they are gone and the gesture is a swipe instead. */
+@media (hover: none), (pointer: coarse) {
+  .panel-zone { display: none; }
+}
 
 /* ── Panel footer ────────────────────────────────────────────────────────── */
 
@@ -1028,7 +1065,9 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   color: var(--dim);
 }
 
-.panel-index { margin-left: auto; }
+/* Set as written: the label spaces the two directions off the position with
+   runs of spaces, and HTML would otherwise collapse them all to one. */
+.panel-index { margin-left: auto; white-space: pre; }
 
 .panel-ar {
   border: var(--border) solid var(--ink);

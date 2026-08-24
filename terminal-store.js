@@ -111,16 +111,29 @@
   const panelTitle = document.getElementById("panel-title");
   const panelMeta = document.getElementById("panel-meta");
   const panelBuy = document.getElementById("panel-buy");
+  const panelFoot = document.getElementById("panel-foot");
   let cancelReveal = null;
   let panelItem = null;
   let panelQty = 1;
+
+  /* The store walks in the order the shopfront is laid out — there are no
+     series here to hold together, and an order that did not match the grid
+     would read as a shuffle. */
+  function step(delta) {
+    if (!panelItem || !items.length) return;
+    const at = items.findIndex(i => i.id === panelItem.id);
+    openPanel(items[((at < 0 ? 0 : at) + delta + items.length) % items.length]);
+  }
 
   function openPanel(item) {
     if (cancelReveal) cancelReveal();
     panelItem = item;
     panelQty = 1;
 
-    panelArt.textContent = "";
+    /* Only the work is replaced. The two halves that walk the sequence are
+       mounted once and live in here, and emptying the box took them with it. */
+    const previous = panelArt.querySelector("img");
+    if (previous) previous.remove();
     const img = document.createElement("img");
     img.src = realFor(firstImage(item), 1440);
     img.alt = nameOf(item);
@@ -138,6 +151,13 @@
     if (item.shipping) lines.push("", String(item.shipping).toUpperCase());
 
     paintBuy();
+    if (panelFoot) {
+      panelFoot.textContent = "";
+      const index = document.createElement("span");
+      index.className = "panel-index";
+      index.textContent = T.walkLabel(items.findIndex(i => i.id === item.id), items.length);
+      panelFoot.appendChild(index);
+    }
     panel.classList.add("is-open");
     document.getElementById("bar").classList.add("is-hidden");
     document.body.style.overflow = "hidden";
@@ -347,6 +367,12 @@
 
   document.getElementById("panel-esc").addEventListener("click", closePanel);
   panel.addEventListener("click", e => { if (e.target === panel) closePanel(); });
+
+  T.mountPanelNav({
+    art: panelArt,
+    surface: panel.querySelector(".panel-inner"),
+    step: step,
+  });
   bagBtn.addEventListener("click", () =>
     bag.classList.contains("is-open") ? closeBag() : openBag());
   document.getElementById("bag-close").addEventListener("click", closeBag);
@@ -364,9 +390,15 @@
   });
 
   document.addEventListener("keydown", e => {
-    if (e.key !== "Escape") return;
-    if (panel.classList.contains("is-open")) closePanel();
-    else if (bag.classList.contains("is-open")) closeBag();
+    if (e.key === "Escape") {
+      if (panel.classList.contains("is-open")) closePanel();
+      else if (bag.classList.contains("is-open")) closeBag();
+      return;
+    }
+    /* The same walk the two halves and the swipe make, for a keyboard. */
+    if (!panel.classList.contains("is-open")) return;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); step(1); }
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); step(-1); }
   });
 
   cart.subscribe(paintBag);

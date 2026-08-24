@@ -452,6 +452,80 @@
     poke();
   }
 
+  /* ── Panel navigation ──────────────────────────────────────────────────── */
+
+  /* One work at a time, and two ways through it. On a pointer the art is
+     divided in half — the left side goes back, the right side goes on, and the
+     drawn cursor turns to face whichever way the click would take you. On a
+     touch screen those halves would answer every attempt to simply look at the
+     work, so there the gesture is a swipe and the halves are switched off in
+     the stylesheet.
+
+     Clicking the work used to always advance, with no way back short of the
+     arrow keys, which is most of a catalogue you could only walk in one
+     direction. */
+
+  const SWIPE_MIN = 55;        // px of travel before a drag is a swipe
+  const SWIPE_BIAS = 1.4;      // how much more horizontal than vertical
+
+  /* art      the box the two halves are laid over
+     surface  what the swipe is read on
+     step     called with -1 or 1 */
+  function mountPanelNav(options) {
+    const step = options.step;
+
+    ["prev", "next"].forEach(dir => {
+      const zone = document.createElement("button");
+      zone.type = "button";
+      zone.className = "panel-zone";
+      zone.dataset.zone = dir;
+      /* Which is also what the drawn cursor reads to decide which way to
+         point, so the direction is known before the click is made. */
+      zone.dataset.cursor = dir;
+      zone.setAttribute("aria-label", dir === "prev" ? "Previous work" : "Next work");
+      zone.addEventListener("click", e => {
+        e.stopPropagation();
+        step(dir === "prev" ? -1 : 1);
+      });
+      options.art.appendChild(zone);
+    });
+
+    /* Read on the panel's own box rather than on the backdrop, where the same
+       gesture would also land on the click that closes the panel. */
+    const surface = options.surface;
+    let id = -1;
+    let sx = 0;
+    let sy = 0;
+
+    surface.addEventListener("pointerdown", e => {
+      if (e.pointerType !== "touch") return;
+      id = e.pointerId;
+      sx = e.clientX;
+      sy = e.clientY;
+    }, { passive: true });
+
+    surface.addEventListener("pointerup", e => {
+      if (e.pointerId !== id) return;
+      id = -1;
+      const dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      /* Horizontal, and decisively so. The panel scrolls under the finger, and
+         a gesture that is mostly down the page is a scroll that drifted, not
+         somebody asking for the next work. */
+      if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * SWIPE_BIAS) return;
+      step(dx < 0 ? 1 : -1);
+    }, { passive: true });
+
+    surface.addEventListener("pointercancel", () => { id = -1; }, { passive: true });
+  }
+
+  /* Where you are in the walk, and how to move through it — which is not the
+     same sentence on a phone as it is on a desktop. */
+  function walkLabel(at, total) {
+    const pos = String(at + 1).padStart(3, "0") + " / " + String(total).padStart(3, "0");
+    return touch ? pos + "   SWIPE" : "< BACK   " + pos + "   NEXT >";
+  }
+
   /* Reveal a panel as a sequence: the work fades up, its name follows, and the
      record types itself in under both. Returns a canceller, because opening
      another work mid-sequence must not leave the previous one's timers running
@@ -490,6 +564,7 @@
   window.KritorTerminal = {
     reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot,
     mountBar, filterColumn, revealWork, startScreensaver, flash, FLASH_MS,
+    mountPanelNav, walkLabel,
     /* Touch has no hover and needs the bar left closed until asked for. */
     isTouch: touch,
   };

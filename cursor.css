@@ -105,7 +105,12 @@ html.kc-on .kritor-cursor { display: block; }
    middle for the other two. These grids have to agree with the viewBoxes in
    cursor.js. */
 .kritor-cursor .kc-s[data-kc="arrow"] { width: 12em; height: 16em; }
-.kritor-cursor .kc-s[data-kc="next"] { width: 12em; height: 11em; margin: -5.5em 0 0 -6em; }
+.kritor-cursor .kc-s[data-kc="next"],
+.kritor-cursor .kc-s[data-kc="prev"] { width: 12em; height: 11em; margin: -5.5em 0 0 -6em; }
+
+/* Back is next, reflected. One sprite, so the arrow that goes on and the arrow
+   that goes back are the same drawing and always will be. */
+.kritor-cursor .kc-s[data-kc="prev"] { transform: scaleX(-1); }
 .kritor-cursor .kc-s[data-kc="text"] { width: 12em; height: 16em; margin: -8em 0 0 -5.5em; }
 
 /* Body in the ink, halo in the page. Drawn from the palette rather than baked

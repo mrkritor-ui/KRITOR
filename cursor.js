@@ -49,9 +49,16 @@
     }
   };
 
-  /* One click advances to the next work, so the cursor says so — the same rule
-     cursor.css had, kept here now that the cursor is drawn rather than named. */
+  /* Back is the same sprite facing the other way. Mirrored in cursor.css rather
+     than traced a second time, so the two halves of the walk can never drift
+     out of agreement with each other. */
+  SPRITES.prev = { w: SPRITES.next.w, h: SPRITES.next.h, svg: SPRITES.next.svg };
+
+  /* The work is walked in two directions, and the cursor says which one this
+     click would take — the left half of the panel goes back, the right half
+     goes on. */
   var NEXT_SEL = '[data-cursor="next"], .panel-art img';
+  var PREV_SEL = '[data-cursor="prev"]';
 
   /* Where a caret goes, not a click. Buttons wearing <input> clothes are not
      fields, so they are excluded rather than matched. */
@@ -131,6 +138,7 @@
 
   function stateFor(el) {
     if (!el || !el.closest) return "arrow";
+    if (el.closest(PREV_SEL)) return "prev";
     if (el.closest(NEXT_SEL)) return "next";
     if (el.closest(TEXT_SEL)) return "text";
     return "arrow";
