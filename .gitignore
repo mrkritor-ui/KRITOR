@@ -10,6 +10,12 @@
 /derived/
 /image-manifest.js
 
+# 1-bit terminal renditions and their manifest, built by
+# tools/terminal-images.py. Same rule as above: derivatives are built, never
+# committed, so they cannot drift from the paintings they came from.
+/derived-1bit/
+/terminal-manifest.js
+
 node_modules/
 __pycache__/
 *.pyc
