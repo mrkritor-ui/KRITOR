@@ -25,6 +25,7 @@
   const WELCOME_HOLD_MS = 1000;  // how long the welcome message stands alone
 
   const root = document.documentElement;
+  const touch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
   /* prefers-reduced-motion is about large, vestibular movement — not about
      text arriving. Gating the typing and the screensaver on it turned them off
@@ -223,16 +224,21 @@
       measure();
     }
 
-    const toggle = which => set(state === which ? null : which);
+    /* The bar's resting state: the parameters on a pointer, folded on touch.
+       On a pointer there is no "nothing" for the bar to be, so everything that
+       wants to dismiss a pane comes back here rather than to null. */
+    const rest = () => set(touch ? null : "filters");
+    const toggle = which => (state === which ? rest() : set(which));
 
     if (tab) tab.addEventListener("click", () => toggle("filters"));
     if (infoBtn) infoBtn.addEventListener("click", () => toggle("info"));
 
     if (window.ResizeObserver) new ResizeObserver(measure).observe(bar);
     window.addEventListener("resize", measure, { passive: true });
-    set(null);
 
-    return { set, toggle, measure, isOpen: () => state !== null, state: () => state };
+    rest();
+
+    return { set, rest, toggle, measure, isOpen: () => state !== null, state: () => state };
   }
 
   /* ── Bar columns ───────────────────────────────────────────────────────── */
@@ -261,23 +267,18 @@
     build(body);
     col.appendChild(body);
 
-    head.addEventListener("click", () => {
-      /* On a pointer that hovers, the column is already showing before the
-         first click — so "open" means: was it showing at all? Otherwise the
-         first click would only latch what hover had already opened, and the
-         second would be the one that appeared to work. */
-      /* :hover is only meaningful on a pointer that can hover. On touch it
-         latches after a tap, so consulting it made every tap read as "already
-         showing" and shut the column instead of opening it. */
-      const hoverOpens = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-      const showing = col.classList.contains("is-open") ||
-                      (hoverOpens && !col.classList.contains("is-shut") && col.matches(":hover"));
-      col.classList.toggle("is-open", !showing);
-      /* is-shut suppresses the hover reveal until the pointer leaves, which is
-         what lets a second click shut a column you are still pointing at. */
-      col.classList.toggle("is-shut", showing);
-      head.setAttribute("aria-expanded", String(!showing));
-
+    /* Hover shows a column's values; clicking the title pins them up so they
+       stay when the pointer leaves. Clicking again unpins. Touch has no hover,
+       so there a tap is the only thing that opens it — same class, same code
+       path, no separate branch to keep in step. */
+    head.addEventListener("click", event => {
+      const pinned = col.classList.toggle("is-open");
+      head.setAttribute("aria-expanded", String(pinned));
+      /* The column is also held open by :focus-within, which a mouse click
+         leaves behind — so unpinning with the mouse appeared to do nothing.
+         detail > 0 means a real pointer click; a keyboard Enter reports 0 and
+         keeps its focus, which is the whole point of focus-within. */
+      if (!pinned && event.detail > 0) head.blur();
       [...(col.parentNode ? col.parentNode.children : [])].forEach(other => {
         if (other === col) return;
         other.classList.remove("is-open");
@@ -285,8 +286,6 @@
         if (h) h.setAttribute("aria-expanded", "false");
       });
     });
-
-    col.addEventListener("pointerleave", () => col.classList.remove("is-shut"));
 
     return col;
   }
@@ -396,10 +395,19 @@
     return () => { timers.forEach(clearTimeout); stopTyping(); };
   }
 
+  /* Blink a control twice, the way a terminal acknowledges a key. Restarted
+     from zero each time, so holding down repeated clicks still reads. */
+  function flash(el) {
+    el.classList.remove("is-flashing");
+    void el.offsetWidth;
+    el.classList.add("is-flashing");
+    setTimeout(() => el.classList.remove("is-flashing"), 600);
+  }
+
   window.KritorTerminal = {
     reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot,
-    mountBar, filterColumn, revealWork, startScreensaver,
+    mountBar, filterColumn, revealWork, startScreensaver, flash,
     /* Touch has no hover and needs the bar left closed until asked for. */
-    isTouch: window.matchMedia("(hover: none), (pointer: coarse)").matches,
+    isTouch: touch,
   };
 })();

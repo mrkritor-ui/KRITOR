@@ -83,7 +83,7 @@ html, body {
   font-family: var(--face);
   font-size: 11px;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: var(--cur-arrow);
 }
 
 .pay-button:hover:not([disabled]) { background: var(--ink); color: var(--bg); }

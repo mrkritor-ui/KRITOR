@@ -212,6 +212,7 @@
         btn.textContent = format ? format(value) : value;
         btn.setAttribute("aria-pressed", "false");
         btn.addEventListener("click", () => {
+          T.flash(btn);
           /* Pressing the active value clears it: the column doubles as its own
              "all", so no row has to be spent on one. */
           filters[key] = filters[key] === value ? null : value;
@@ -417,7 +418,7 @@
     const work = works.find(w => w.id === hit.dataset.workId);
     if (!work) return;
     e.preventDefault();
-    barUI.set(null);
+    barUI.rest();
     openPanel(work, true);
   });
 
@@ -455,7 +456,7 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       if (panel.classList.contains("is-open")) closePanel(false);
-      else barUI.set(null);
+      else barUI.rest();
       return;
     }
     if (!panel.classList.contains("is-open")) return;

@@ -217,7 +217,7 @@
      currently showing. Two panels fighting for the same corner is worse than
      either. */
   function openBag() {
-    barUI.set(null);
+    barUI.rest();
     bag.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
     bag.classList.add("is-open");
   }
