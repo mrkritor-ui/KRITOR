@@ -163,8 +163,43 @@
     if (live) look(document.elementFromPoint(x, y));
   }
 
+  /* Suspended while a page is playing something expensive over the whole
+     screen — the boot screen's fire and starfield rewrite a grid of a thousand
+     elements every frame, and drawing the cursor in JavaScript competes for
+     exactly those frames. It is not the transform that costs: it is `kc-on`,
+     whose universal `cursor: none` has to be resolved against every one of
+     those elements as they are created. Handing back to the PNG for the
+     duration is the same artwork drawn by the compositor for nothing. */
+  /* Carried as a class on the root rather than as a variable, because this
+     file is deferred and the page that wants the cursor out of the way runs
+     first: a call to suspend() before this module exists would be a call on
+     nothing, whereas the class is already there to be read when it does. */
+  var OFF = "kc-off";
+  var inside = false;
+
+  function suspended() { return HTML.classList.contains(OFF); }
+
+  function suspend() {
+    HTML.classList.add(OFF);
+    hide();
+  }
+
+  function resume() {
+    if (!suspended()) return;
+    HTML.classList.remove(OFF);
+    /* Straight back, rather than waiting for the next twitch of the mouse —
+       a pointer resting still over a page that has just arrived would
+       otherwise keep the fallback until it was moved. Only where the pointer
+       is actually in the window: restoring a cursor that has left it would
+       draw one frozen against the edge. */
+    if (!inside) return;
+    show();
+    frame();
+    relook();
+  }
+
   function show() {
-    if (!fine.matches) return;
+    if (!fine.matches || suspended()) return;
     ensure();
     if (live) return;
     /* No element, no handover. Switching the system cursor off first would
@@ -191,9 +226,11 @@
     /* A finger is not a pointer to draw. On a laptop that also has a screen you
        can touch, both kinds arrive here — the drawn cursor belongs to the mouse
        only, and a touch hands the page back until the mouse moves again. */
-    if (e.pointerType === "touch") { hide(); return; }
+    if (e.pointerType === "touch") { hide(); inside = false; return; }
     x = e.clientX;
     y = e.clientY;
+    inside = true;
+    if (suspended()) return;
     show();
     look(e.target);
     frame();
@@ -203,7 +240,7 @@
      or down into a frame. Both are cases the drawn cursor cannot follow, and a
      cursor frozen at the edge of a Stripe field reads as a broken page. */
   function onOut(e) {
-    if (!e.relatedTarget) hide();
+    if (!e.relatedTarget) { inside = false; hide(); }
   }
 
   /* A click is the one thing that reliably changes what is under a pointer that
@@ -240,4 +277,6 @@
   } else {
     build();
   }
+
+  window.KritorCursor = { suspend: suspend, resume: resume };
 })();

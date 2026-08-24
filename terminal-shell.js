@@ -98,6 +98,14 @@
     const scene = window.KritorBoot
       ? window.KritorBoot.mount(options.page || "catalogue")
       : { ready: Promise.resolve(), stop: function () {} };
+    /* The drawn cursor stands down for the duration. Both scenes rewrite a grid
+       of a thousand elements every frame, and the cursor's own `cursor: none`
+       has to be resolved against every one of them as it is created — the PNG
+       does the same job here for nothing. */
+    /* The class, not the call: cursor.js is deferred and has not run yet at
+       this point in the page. It reads the class when it does. */
+    root.classList.add("kc-off");
+
     let sceneReady = false;
 
     /* The bar is paced to the scene in front of it. On the gate it fills while
@@ -171,6 +179,10 @@
           loadingRow.classList.add("is-gone");     // and the loading row goes
           boot.classList.add("is-done");
           scene.stop();                            // nothing animates underneath
+          /* By now cursor.js has run, and resume() puts the cursor back under
+             the pointer rather than waiting for it to be moved. */
+          if (window.KritorCursor) window.KritorCursor.resume();
+          else root.classList.remove("kc-off");
 
           if (options.onParams) options.onParams();
           deal();

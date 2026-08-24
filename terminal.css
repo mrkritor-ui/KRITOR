@@ -115,17 +115,29 @@ html, body, .bar, .panel, .tile-figure {
   left: 0;
   right: 0;
   z-index: 0;
-  margin: 0;
   overflow: hidden;
   pointer-events: none;
-  white-space: pre;
   /* Its own face rather than the site's: the ramp needs a dozen distinguishable
      densities, and this is on screen while Press Start 2P is still arriving —
-     a swap mid-boot would re-rule the whole grid. */
+     a swap mid-boot would re-rule the whole grid. Set here rather than on the
+     layers so that scaling the grid to the box is one number. */
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: clamp(7px, 1.05vw, 12px);
   line-height: 1;
   color: var(--ink);
+}
+
+/* Six layers, stacked, one per tone. A cell is a character in its own layer
+   and a space in the other five, so the stack reads as one image — and a frame
+   is six assignments of text rather than a thousand elements built and thrown
+   away. */
+.boot-fx-band {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  font: inherit;
+  white-space: pre;
 }
 
 /* The fire owns the floor and dissolves before it reaches the type. The
@@ -148,25 +160,9 @@ html, body, .bar, .panel, .tile-figure {
   mask-image: radial-gradient(ellipse at center, transparent 13%, #000 52%, #000 88%, rgba(0, 0, 0, .5) 100%);
 }
 
-/* One ramp, shared by both animations: the page's own ink, thinned. No colour
-   is introduced anywhere — in paper mode the fire is soot on white, in terminal
-   mode it is phosphor, and neither needed a palette of its own.
-   font: inherit matters: <b> would otherwise come up bold and a bold cell is a
-   different width, which shears every row it appears in. */
-.boot-fx b { font: inherit; }
-
-.fx1  { opacity: .09 }
-.fx2  { opacity: .15 }
-.fx3  { opacity: .22 }
-.fx4  { opacity: .30 }
-.fx5  { opacity: .38 }
-.fx6  { opacity: .47 }
-.fx7  { opacity: .56 }
-.fx8  { opacity: .66 }
-.fx9  { opacity: .76 }
-.fx10 { opacity: .86 }
-.fx11 { opacity: .94 }
-.fx12 { opacity: 1 }
+/* No colour is introduced anywhere: every layer is the page's own ink at a
+   different opacity. In paper mode the fire is soot on white, in terminal mode
+   it is phosphor, and neither needed a palette of its own. */
 
 /* ── The two layers of type ──────────────────────────────────────────────── */
 
