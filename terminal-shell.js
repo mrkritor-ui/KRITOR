@@ -214,9 +214,9 @@
       }
       if (tab) tab.setAttribute("aria-expanded", String(open));
 
-      /* Leaving a pane also leaves whichever column was expanded inside it,
-         so coming back does not reopen someone's last filter. */
-      drawer.querySelectorAll(".filter-col.is-open").forEach(col => {
+      /* Leaving a pane closes whichever column was merely expanded, but not
+         one that is holding a filter — that is state, not a disclosure. */
+      drawer.querySelectorAll(".filter-col.is-open:not(.is-filtered)").forEach(col => {
         col.classList.remove("is-open");
         const title = col.querySelector(".filter-title");
         if (title) title.setAttribute("aria-expanded", "false");
@@ -296,7 +296,10 @@
          keeps its focus, which is the whole point of focus-within. */
       if (!pinned && event.detail > 0) title.blur();
       [...(col.parentNode ? col.parentNode.children : [])].forEach(other => {
-        if (other === col) return;
+        /* A column holding a value is not closed by opening another one:
+           several filters can be narrowing the catalogue at once, and all of
+           them should stay visible until they are cleared. */
+        if (other === col || other.classList.contains("is-filtered")) return;
         other.classList.remove("is-open");
         const h = other.querySelector(".filter-title");
         if (h) h.setAttribute("aria-expanded", "false");
@@ -418,7 +421,7 @@
      key. Restarted from zero each time — without the reflow a second click
      during the first flash does nothing, because the class is already on. The
      clear-up must outlast the animation or it cuts the second strike short. */
-  const FLASH_MS = 460 * 2;
+  const FLASH_MS = 460 * 2;   // one strike is 460ms and it runs twice
 
   function flash(el) {
     el.classList.remove("is-flashing");
@@ -430,7 +433,7 @@
 
   window.KritorTerminal = {
     reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot,
-    mountBar, filterColumn, revealWork, startScreensaver, flash,
+    mountBar, filterColumn, revealWork, startScreensaver, flash, FLASH_MS,
     /* Touch has no hover and needs the bar left closed until asked for. */
     isTouch: touch,
   };

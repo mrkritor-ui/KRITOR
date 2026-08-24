@@ -294,7 +294,10 @@ html, body, .bar, .panel, .tile-figure {
   padding: 0 calc(var(--u) * 1.5);
   border: 0;
   border-left: var(--border) solid var(--ink);
-  background: var(--bg);
+  /* Transparent, not --bg: the flash is a block behind the element, so an
+     opaque background of its own hides it completely. The bar's ground is
+     already behind this. */
+  background: transparent;
   color: var(--ink);
   font: inherit;
   font-size: 10px;
@@ -321,6 +324,11 @@ html, body, .bar, .panel, .tile-figure {
 }
 
 .filter-col.is-open .filter-list { display: flex; }
+
+/* A column with a value showing stays open — you should be able to see every
+   filter that is currently narrowing the catalogue, not just the last one you
+   touched. It closes when the X clears it. */
+.filter-col.is-filtered .filter-list { display: flex; }
 
 /* Hover shows a column's values; is-open is the pin a click leaves behind, so
    they stay once the pointer moves away. */

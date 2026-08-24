@@ -212,11 +212,15 @@
         btn.className = "bar-btn";
         btn.textContent = format ? format(value) : value;
         btn.setAttribute("aria-pressed", "false");
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", event => {
           T.flash(btn);
           /* Pressing the active value clears it: the column doubles as its own
              "all", so no row has to be spent on one. */
           select(filters[key] === value ? null : value);
+          /* A mouse click leaves focus on the value, and :focus-within holds
+             the whole column open — so a cleared column would not close. A
+             keyboard Enter reports detail 0 and keeps its focus. */
+          if (event.detail > 0) btn.blur();
         });
         list.appendChild(btn);
       });
@@ -225,17 +229,26 @@
 
     /* One place that knows what "chosen" means for this column: the filter,
        the pressed states and whether the X is there all move together. */
-    function select(value) {
+    function select(value, keepClear) {
       filters[key] = value;
       buttons.forEach(b =>
         b.setAttribute("aria-pressed", String(value !== null && b.textContent === (format ? format(value) : value))));
-      col.clearButton.hidden = value === null;
+      /* Hiding the X the instant it is pressed is why it never appeared to
+         flash: a display:none element runs no animation. The grid updates
+         straight away; only the X's disappearance waits for its own flash. */
+      if (!keepClear) col.clearButton.hidden = value === null;
+      /* Holding a value keeps the column open, so every filter narrowing the
+         catalogue stays on screen rather than only the one last pointed at. */
+      col.classList.toggle("is-filtered", value !== null);
+      if (value === null) col.classList.remove("is-open");
       render();
     }
 
-    col.clearButton.addEventListener("click", () => {
+    col.clearButton.addEventListener("click", event => {
       T.flash(col.clearButton);
-      select(null);
+      select(null, true);
+      setTimeout(() => { col.clearButton.hidden = true; }, T.FLASH_MS);
+      if (event.detail > 0) col.clearButton.blur();
     });
     return col;
   }
