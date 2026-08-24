@@ -90,10 +90,12 @@
     const showingInfo = which === "info";
     if (drawer.classList.contains("is-open") && infoPane.hidden !== showingInfo) {
       drawer.classList.remove("is-open");
+      document.getElementById("bar").classList.remove("is-open");
       infoBtn.setAttribute("aria-pressed", "false");
       return;
     }
     drawer.classList.add("is-open");
+    document.getElementById("bar").classList.add("is-open");
     infoPane.hidden = !showingInfo;
     filtersPane.hidden = showingInfo;
     infoBtn.setAttribute("aria-pressed", String(showingInfo));

@@ -94,8 +94,10 @@ html, body, .bar, .panel, .tile-figure {
 
 .boot-statement {
   text-align: center;
-  font-size: 12px;
-  line-height: 2;
+  /* Clamped rather than fixed: Press Start 2P has no narrow forms, so a size
+     that carries on a desktop would run off the side of a phone. */
+  font-size: clamp(11px, 1.5vw, 20px);
+  line-height: 2.2;
   letter-spacing: .02em;
   text-transform: uppercase;
 }
@@ -129,9 +131,11 @@ html, body, .bar, .panel, .tile-figure {
 .bar.is-hidden { display: none; }
 
 /* The pull tab on the top edge. */
+/* On the bottom edge, because that is the edge the drawer opens from —
+   a handle at the top pointed away from where the panel was going. */
 .bar-tab {
   position: absolute;
-  top: calc(var(--border) * -1);
+  bottom: calc(var(--border) * -1);
   left: 50%;
   transform: translateX(-50%);
   width: calc(var(--u) * 4);
@@ -154,6 +158,9 @@ html, body, .bar, .panel, .tile-figure {
 }
 
 .bar-row + .bar-row { border-top: var(--border) solid var(--ink); }
+
+/* Points down to open, up to collapse. */
+.bar.is-open .bar-tab .ico { transform: rotate(180deg); }
 
 .bar-btn {
   border: 0;
@@ -356,11 +363,11 @@ html[data-reveal="on"] .tile:focus-visible .tile-real { opacity: 1; }
    takes the slack. */
 .row {
   display: grid;
-  grid-template-columns: 5ch minmax(0, 2fr) 6ch minmax(0, 1fr) 10ch minmax(0, 1fr) 12ch;
-  gap: var(--u);
+  grid-template-columns: 5ch minmax(0, 2fr) 6ch minmax(0, 1fr) 10ch minmax(0, 1fr) 13ch;
+  gap: calc(var(--u) * 1.5);
   align-items: baseline;
-  padding: calc(var(--u) * 1.25) var(--page-pad);
-  font-size: 10px;
+  padding: calc(var(--u) * 1.5) var(--page-pad);
+  font-size: 12px;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--ink);
@@ -377,7 +384,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 .row-preview {
   position: fixed;
   z-index: 200;
-  width: 220px;
+  width: 320px;
   display: none;
   background-color: var(--ink);
   -webkit-mask-image: var(--bits);
@@ -438,11 +445,12 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 /* A box on the catalogue rather than a page over it — sized to the work, not
    to the viewport, so what is behind stays visible around its edges. */
+/* No rule around it. The panel is legible as a block of ground over the
+   catalogue; a frame only competed with the work inside it. */
 .panel-inner {
   position: relative;
   width: min(680px, 100%);
   max-height: 86vh;
-  border: var(--border) solid var(--ink);
   background: var(--bg);
   padding: calc(var(--u) * 3);
   overflow-y: auto;
@@ -486,12 +494,19 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
+/* The table sets its own floor: below this the columns would crush rather
+   than wrap, so it scrolls sideways instead. */
+@media (max-width: 1279px) {
+  .grid.view-list { overflow-x: auto; }
+  .row { min-width: 1180px; }
+}
+
 @media (max-width: 899px) {
   .bar { left: var(--page-pad); right: var(--page-pad); width: auto; }
   .grid.view-grid { --cols: 3; }
   .grid.view-zoom { --cols: 2; }
   .grid.view-list { overflow-x: auto; }
-  .row { min-width: 720px; }
+  .row { min-width: 900px; }
   .filters { grid-template-columns: 1fr; }
   .filters > * + * { border-left: 0; border-top: var(--border) solid var(--ink); }
   .grid { padding-top: calc(var(--u) * 18); }

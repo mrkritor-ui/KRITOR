@@ -143,26 +143,54 @@
     visibleWorks().forEach((w, i) => grid.appendChild(entryFor(w, i)));
   }
 
-  /* Randomise deals the works back in rather than swapping them in place: the
-     re-order is the same event as the first load, just faster, which keeps the
-     catalogue feeling like something being read out rather than rearranged. */
+  /* Randomise displaces the works within the grid they are already in — it
+     does not clear and re-deal them. Nothing is destroyed and nothing is
+     re-fetched: the same elements travel to their new cells, so what you see
+     is the order changing rather than the page reloading.
+
+     Done as a FLIP: measure where everything is, reorder the DOM, measure
+     again, then animate each element from where it was to where it now is.
+     Stepped rather than eased, so the works jump between positions the way
+     everything else on this surface moves. */
   function randomise() {
+    const moved = [...grid.children].filter(el => el.dataset.workId);
+    if (moved.length < 2) return;
+    const before = new Map(moved.map(el => [el, el.getBoundingClientRect()]));
+
     for (let i = works.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [works[i], works[j]] = [works[j], works[i]];
     }
-    grid.textContent = "";
-    const items = visibleWorks();
-    if (T.reduceMotion) return render();
-    if (view === "list") grid.appendChild(listHead());
-    let i = 0;
-    const next = () => {
-      if (i >= items.length) return;
-      grid.appendChild(entryFor(items[i], i));
-      i += 1;
-      setTimeout(next, 22);
-    };
-    next();
+
+    /* Reordering by appendChild moves the existing nodes; the list's header is
+       untouched because it carries no work id, so it stays at the top. */
+    const byId = new Map(moved.map(el => [el.dataset.workId, el]));
+    visibleWorks().forEach(w => {
+      const el = byId.get(w.id);
+      if (el) grid.appendChild(el);
+    });
+    if (T.reduceMotion) return;
+
+    moved.forEach(el => {
+      const from = before.get(el);
+      const to = el.getBoundingClientRect();
+      const dx = from.left - to.left;
+      const dy = from.top - to.top;
+      if (!dx && !dy) return;
+      el.style.transition = "none";
+      el.style.transform = "translate(" + dx + "px," + dy + "px)";
+    });
+
+    requestAnimationFrame(() => {
+      moved.forEach(el => {
+        el.style.transition = "transform 420ms steps(10, end)";
+        el.style.transform = "";
+      });
+      setTimeout(() => moved.forEach(el => {
+        el.style.transition = "";
+        el.style.transform = "";
+      }), 460);
+    });
   }
 
   const entryFor = (work, index) =>
@@ -179,7 +207,9 @@
   function openDrawer(which) {
     const showingInfo = which === "info";
     if (drawer.classList.contains("is-open") && infoPane.hidden !== showingInfo) return closeDrawer();
+
     drawer.classList.add("is-open");
+    bar.classList.add("is-open");
     infoPane.hidden = !showingInfo;
     filtersPane.hidden = showingInfo;
     infoBtn.setAttribute("aria-pressed", String(showingInfo));
@@ -187,6 +217,7 @@
 
   function closeDrawer() {
     drawer.classList.remove("is-open");
+    bar.classList.remove("is-open");
     infoBtn.setAttribute("aria-pressed", "false");
   }
 
@@ -240,10 +271,10 @@
     const entry = bitsEntry(work.image);
     const ratio = entry ? entry.h / entry.w : 1;
     preview.style.setProperty("--bits", 'url("' + bitsUrl(work.image) + '")');
-    preview.style.height = Math.round(220 * ratio) + "px";
+    const w = 320, h = 320 * ratio, pad = 16;
+    preview.style.height = Math.round(h) + "px";
     /* Kept inside the viewport, and flipped to the other side of the cursor
        when there is not room, so it never hangs off an edge. */
-    const w = 220, h = 220 * ratio, pad = 16;
     const left = x + pad + w > window.innerWidth ? x - pad - w : x + pad;
     const top = Math.min(Math.max(pad, y - h / 2), window.innerHeight - h - pad);
     preview.style.left = Math.round(left) + "px";
