@@ -20,6 +20,11 @@ const APP_FILES = [
   "./product.html",
   "./product.css",
   "./product.js",
+  /* The drawn cursor. Precached with the rest of the shell so it is there on a
+     cold or offline load — a page that came out of the cache with no cursor is
+     the same broken page as one that never had it. */
+  "./cursor.css",
+  "./cursor.js",
   "./icon.png"
 ];
 

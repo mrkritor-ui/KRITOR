@@ -1,6 +1,19 @@
 /* KRITOR — the drawn cursor. Shared by every page, including the checkout,
    which has its own stylesheet but the same hand.
 
+   Two halves. The PNG cursors below are what the browser is *asked* for, and
+   the block at the foot of this file is what the page *draws* — cursor.js hangs
+   an element on the pointer, and while it is doing that (`html.kc-on`) the
+   system cursor is switched off everywhere.
+
+   The second half exists because the first can never be relied on. `cursor` is
+   a request: a browser that will not carry the image falls back to the system
+   arrow silently, and nothing readable from inside the page says so. Over a
+   link it hardly showed, because the pointer there is a hand either way — over
+   everything else, which is most of a page of paintings, the drawn cursor
+   simply was not there. The PNGs stay as the opening frame and the fallback;
+   the drawn element is the promise.
+
    PNG, not SVG. The CSS was already resolving to the drawn cursor on every
    element — measured at the page background, over a tile, over the bar and at
    the foot of the page — so the cascade was never what was wrong. What varies
@@ -39,4 +52,68 @@ a, button, summary, [role="button"], label { cursor: var(--cur-arrow); }
 @media (hover: none) {
   html, body, a, button, summary, [role="button"], label,
   .panel-art img { cursor: auto; }
+  .kritor-cursor { display: none !important; }
 }
+
+/* ── The drawn cursor ────────────────────────────────────────────────────── */
+
+/* While cursor.js is drawing, the browser draws nothing. The universal
+   selector is the point of this rule rather than an excess of it: every
+   `cursor: pointer` in checkout.css, cart.css, product.css, store.css and
+   style.css was handing the pointer back to the operating system, and each one
+   of them is a place the drawn cursor used to disappear. One declaration
+   settles all of them, and every one written after today. */
+html.kc-on, html.kc-on *, html.kc-on *::before, html.kc-on *::after {
+  cursor: none !important;
+}
+
+/* Except inside a frame, whose own document draws its own cursor and never
+   tells us where the pointer is. cursor.js hands back as the pointer crosses
+   in; this makes sure there is something to hand back to. */
+html.kc-on iframe { cursor: auto !important; }
+
+/* A zero-sized box translated to the pointer. Fixed, so it does not move with
+   the scroll, and fixed boxes are outside the scrollable overflow — the cursor
+   at the right-hand edge of the window cannot push a scrollbar into being. */
+.kritor-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  display: none;
+  pointer-events: none;
+  /* One sprite pixel. Everything below is measured in em, so the size of the
+     cursor is this one number and the hotspots follow it without a second set
+     of numbers to keep in step. 2px against a 12x16 grid is the 24x32 the PNG
+     was drawn at. */
+  font-size: 2px;
+  line-height: 0;
+  will-change: transform;
+}
+
+html.kc-on .kritor-cursor { display: block; }
+
+.kritor-cursor .kc-s {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  overflow: visible;
+}
+
+/* Sized, and pulled back onto its own hotspot: the tip for the arrow, the
+   middle for the other two. These grids have to agree with the viewBoxes in
+   cursor.js. */
+.kritor-cursor .kc-s[data-kc="arrow"] { width: 12em; height: 16em; }
+.kritor-cursor .kc-s[data-kc="next"] { width: 12em; height: 11em; margin: -5.5em 0 0 -6em; }
+.kritor-cursor .kc-s[data-kc="text"] { width: 12em; height: 16em; margin: -8em 0 0 -5.5em; }
+
+/* Body in the ink, halo in the page. Drawn from the palette rather than baked
+   into an image, which is what lets one sprite stay legible over a black
+   painting and a white one — whatever is underneath, one of the two tones is
+   against it. The fallbacks are for the pages that predate the terminal
+   palette and define neither. */
+.kritor-cursor .b { fill: var(--ink, #000); }
+.kritor-cursor .h { fill: var(--bg, #fff); }
+html[data-theme="dark"] .kritor-cursor .b { fill: var(--ink, #fff); }
+html[data-theme="dark"] .kritor-cursor .h { fill: var(--bg, #000); }
