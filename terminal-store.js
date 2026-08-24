@@ -43,7 +43,7 @@
   function tileFor(item) {
     const path = firstImage(item);
     const a = document.createElement("a");
-    a.className = "tile";
+    a.className = "tile tile-buy";
     a.href = "/shop/" + encodeURIComponent(item.id) + "/";
     a.dataset.itemId = item.id;
     if (soldOut(item)) a.classList.add("is-sold-out");
@@ -83,7 +83,6 @@
       cart.add(item.id, 1);
       openBag();
     });
-    figure.appendChild(add);
 
     a.appendChild(figure);
 
@@ -100,6 +99,10 @@
     ].filter(Boolean).join("  ·  ").toUpperCase();
     caption.append(name, detail);
     a.appendChild(caption);
+
+    /* Under the record rather than on the picture — see .tile-add in
+       terminal.css for why it moved off the work. */
+    a.appendChild(add);
 
     return a;
   }

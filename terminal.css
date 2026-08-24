@@ -146,6 +146,7 @@ html, body, .bar, .panel, .tile-figure {
 .boot[data-mode="gate"] .boot-fx {
   bottom: 0;
   height: 64vh;
+  height: 64dvh;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 46%);
   mask-image: linear-gradient(to bottom, transparent 0, #000 46%);
 }
@@ -721,11 +722,17 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
    corner of the work, present whether or not anything is being pointed at. */
 .tile-figure { position: relative; }
 
+/* The add control, under the record rather than on the picture.
+
+   It used to sit in the bottom-right corner of the work, which on a phone is a
+   44px button in the corner of a 93px thumbnail — the whole bottom-right
+   quadrant of the painting. Worse than the look: the browser's touch
+   adjustment hands a button every tap that lands near it, so tapping the
+   middle of a work put it in the bag instead of opening it. Under the caption
+   it can be the size a finger needs without standing on the work. */
 .tile-add {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
+  display: block;
+  margin: calc(var(--u) * 2) auto 0;
   width: calc(var(--u) * 3.5);
   height: calc(var(--u) * 3.5);
   padding: 0;
@@ -751,6 +758,7 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
   z-index: 460;
   width: min(460px, calc(100vw - var(--page-pad) * 2));
   max-height: 80vh;
+  max-height: 80dvh;
   display: none;
   flex-direction: column;
   border: var(--border) solid var(--ink);
@@ -1020,6 +1028,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 .panel-art { position: relative; display: grid; place-items: center; margin-top: calc(var(--u) * 4); }
 .panel-art img { max-width: 100%; max-height: 46vh; }
+.panel-art img { max-height: 46dvh; }
 
 /* The two halves of the walk. Buttons, so a keyboard can reach them and a
    screen reader is told what they are, but drawn as nothing at all: the work
@@ -1117,6 +1126,31 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   /* The views get their own line rather than being squeezed alongside the
      icons; at 390px the single row overflowed its own box. */
   .bar-views { flex-basis: 100%; order: 3; margin: 0; justify-content: space-between; }
+
+  /* Two rows of 44px targets is as short as the bar can honestly be, so what
+     comes off is everything around them: the padding halves, the gap tightens,
+     and the printed rule under the views goes. On a phone the bar was 143px —
+     a fifth of the screen before the safe area is added to it, and on iOS the
+     notch pushes all of that further down the page. */
+  .bar-row { padding: calc(var(--u) * .75); gap: calc(var(--u) * .75); }
+  .bar-scale { display: none; }
+
+  /* space-between was already asked for on .bar-views, but it has a single
+     child to distribute — so the views sat bunched at the left of a row they
+     had all to themselves. Spreading the buttons themselves uses the width and
+     gives each one more of it to be hit with. */
+  .bar-views > div { display: flex; width: 100%; justify-content: space-between; align-items: center; }
+
+  /* Which puts a control on the bar's bottom edge at every point the pull tab
+     could hang from, and the tab was drawing its arrow inside the active view's
+     inverted box — black on black. It moves to the corner, and the views stop
+     short of it. The printed rule used to sit between the two and kept them
+     apart by accident. */
+  /* Position only. The tab's size is set in the touch-target block below, and
+     setting it here as well only looked like it worked — that block comes
+     later and won, so the tab stayed 72px wide while this cleared 48. */
+  .bar-tab { left: auto; right: 0; transform: none; }
+  .bar-views > div { padding-right: calc(var(--u) * 9.5); }
   .bar-modes { margin-left: auto; }
   .grid.view-grid { --cols: 3; }
   .grid.view-zoom { --cols: 2; }
@@ -1125,7 +1159,11 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   .filters { grid-template-columns: 1fr; }
   .filters > * + * { border-left: 0; border-top: var(--border) solid var(--ink); }
   .panel { padding: 0; }
+  /* dvh, because iOS counts its own collapsing toolbars into vh: at 100vh the
+     panel is taller than the screen it is on and its foot sits under the
+     browser's chrome. The vh line stays as the fallback. */
   .panel-inner { border: 0; width: 100%; max-height: 100vh; height: 100%; }
+  .panel-inner { max-height: 100dvh; }
 }
 
 /* Touch targets. Everything in the bar was drawn at type size — 18 to 26px
@@ -1148,7 +1186,10 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   .filter-clear { min-width: 52px; }
   .filter-list { gap: 0; padding: 0; }
   .filter-list .bar-btn { align-self: stretch; justify-content: flex-start; padding: 0 calc(var(--u) * 2); }
-  .tile-add { width: calc(var(--u) * 5.5); height: calc(var(--u) * 5.5); font-size: 12px; }
+  /* Ruled to the width of the work rather than floating under it as a square:
+     a finger gets the whole row, and the tile reads as one object instead of a
+     picture with a box parked beneath it. */
+  .tile-add { width: 100%; height: calc(var(--u) * 5.5); font-size: 12px; }
   .qty button { width: 44px; height: 44px; }
   .panel-esc { min-height: 44px; }
   .info-pane a { display: inline-block; padding: calc(var(--u) * 1.5) 0; }
