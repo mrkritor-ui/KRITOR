@@ -19,7 +19,8 @@
   const WELCOME_MS = 700;        // how long WELCOME holds before the row goes
   const DEAL_MS = 45;            // gap between works arriving
   const IDLE_MS = 20000;         // idle before the screensaver takes over
-  const TYPE_MS = 18;            // ms per character
+  const TYPE_MS = 22;            // ms per character
+  const TYPE_LINE_MS = 110;      // extra pause at the end of each line
 
   const root = document.documentElement;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -61,7 +62,12 @@
       i += 1;
       el.textContent = text.slice(0, i);
       el.appendChild(caret);
-      if (i < text.length) typeTimer = setTimeout(tick, TYPE_MS);
+      if (i >= text.length) return;
+      /* A terminal prints a line and then draws breath before the next one.
+         Typing at a flat rate reads as an effect; pausing at the newline reads
+         as something actually coming down the wire. */
+      const justEndedLine = text[i - 1] === "\n";
+      typeTimer = setTimeout(tick, justEndedLine ? TYPE_LINE_MS : TYPE_MS);
     };
     typeTimer = setTimeout(tick, TYPE_MS);
   }
@@ -149,6 +155,46 @@
     requestAnimationFrame(frame);
   }
 
+  /* ── Bar columns ───────────────────────────────────────────────────────── */
+
+  /* A column in the bar's drawer: a header that is always visible, and a body
+     that drops out of it on hover. Only the three headers show at rest, so the
+     bar stays a strip of parameters rather than a wall of values.
+
+     The body is absolutely positioned so opening one does not resize the bar
+     or shove the other columns around — it hangs over the catalogue, which is
+     what makes it read as a menu rather than a panel. Touch has no hover, so
+     the header is also a button that latches the column open. */
+  function filterColumn(label, build) {
+    const col = document.createElement("div");
+    col.className = "filter-col";
+
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "filter-head";
+    head.setAttribute("aria-expanded", "false");
+    head.innerHTML = "<span>" + label + '</span><span class="hatch"></span>';
+    col.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "filter-list";
+    build(body);
+    col.appendChild(body);
+
+    head.addEventListener("click", () => {
+      const open = col.classList.toggle("is-open");
+      head.setAttribute("aria-expanded", String(open));
+      [...(col.parentNode ? col.parentNode.children : [])].forEach(other => {
+        if (other === col) return;
+        other.classList.remove("is-open");
+        const h = other.querySelector(".filter-head");
+        if (h) h.setAttribute("aria-expanded", "false");
+      });
+    });
+
+    return col;
+  }
+
   /* ── Screensaver ───────────────────────────────────────────────────────── */
 
   /* The corner-bouncer, with one rule of its own: every time it touches an
@@ -234,6 +280,7 @@
   }
 
   window.KritorTerminal = {
-    reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot, startScreensaver,
+    reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot,
+    filterColumn, startScreensaver,
   };
 })();

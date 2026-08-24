@@ -29,7 +29,8 @@
   const materialOf = w => (w.materials || "—").toUpperCase();
   const titleOf = w => (w.title || "UNTITLED").toUpperCase();
 
-  const works = ARTWORKS.slice().sort((a, b) => (b.year || 0) - (a.year || 0));
+  const byYear = (a, b) => (b.year || 0) - (a.year || 0);
+  let works = ARTWORKS.slice().sort(byYear);
 
   const bitsEntry = path =>
     (typeof TERMINAL_MANIFEST !== "undefined" ? TERMINAL_MANIFEST[path] : null) || null;
@@ -142,6 +143,28 @@
     visibleWorks().forEach((w, i) => grid.appendChild(entryFor(w, i)));
   }
 
+  /* Randomise deals the works back in rather than swapping them in place: the
+     re-order is the same event as the first load, just faster, which keeps the
+     catalogue feeling like something being read out rather than rearranged. */
+  function randomise() {
+    for (let i = works.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [works[i], works[j]] = [works[j], works[i]];
+    }
+    grid.textContent = "";
+    const items = visibleWorks();
+    if (T.reduceMotion) return render();
+    if (view === "list") grid.appendChild(listHead());
+    let i = 0;
+    const next = () => {
+      if (i >= items.length) return;
+      grid.appendChild(entryFor(items[i], i));
+      i += 1;
+      setTimeout(next, 22);
+    };
+    next();
+  }
+
   const entryFor = (work, index) =>
     view === "list" ? listRowFor(work, index) : tileFor(work);
 
@@ -167,21 +190,8 @@
     infoBtn.setAttribute("aria-pressed", "false");
   }
 
-  function column(label, build) {
-    const col = document.createElement("div");
-    const head = document.createElement("div");
-    head.className = "filter-head";
-    head.innerHTML = "<span>" + label + '</span><span class="hatch"></span>';
-    col.appendChild(head);
-    const body = document.createElement("div");
-    body.className = "filter-list";
-    build(body);
-    col.appendChild(body);
-    return col;
-  }
-
   function valueColumn(label, key, values, format) {
-    return column(label, list => {
+    return T.filterColumn(label, list => {
       values.forEach(value => {
         const btn = document.createElement("button");
         btn.type = "button";
@@ -208,7 +218,7 @@
     filtersPane.textContent = "";
     /* The store takes the column the reference gives to clients: it is the one
        place on the site that leads anywhere else. */
-    filtersPane.appendChild(column("STORE", list => {
+    filtersPane.appendChild(T.filterColumn("STORE", list => {
       const link = document.createElement("a");
       link.className = "bar-btn";
       link.href = "/store/";
@@ -218,6 +228,39 @@
     filtersPane.appendChild(valueColumn("FORMAT", "format", [...new Set(works.map(formatOf))].sort()));
     filtersPane.appendChild(valueColumn("YEARS", "year", years, y => "— " + y));
   }
+
+  /* ── List preview ──────────────────────────────────────────────────────── */
+
+  const preview = document.createElement("div");
+  preview.className = "row-preview";
+  preview.setAttribute("aria-hidden", "true");
+  document.body.appendChild(preview);
+
+  function showPreview(work, x, y) {
+    const entry = bitsEntry(work.image);
+    const ratio = entry ? entry.h / entry.w : 1;
+    preview.style.setProperty("--bits", 'url("' + bitsUrl(work.image) + '")');
+    preview.style.height = Math.round(220 * ratio) + "px";
+    /* Kept inside the viewport, and flipped to the other side of the cursor
+       when there is not room, so it never hangs off an edge. */
+    const w = 220, h = 220 * ratio, pad = 16;
+    const left = x + pad + w > window.innerWidth ? x - pad - w : x + pad;
+    const top = Math.min(Math.max(pad, y - h / 2), window.innerHeight - h - pad);
+    preview.style.left = Math.round(left) + "px";
+    preview.style.top = Math.round(top) + "px";
+    preview.classList.add("is-on");
+  }
+
+  const hidePreview = () => preview.classList.remove("is-on");
+
+  grid.addEventListener("pointermove", e => {
+    if (view !== "list") return hidePreview();
+    const row = e.target.closest("a.row");
+    if (!row) return hidePreview();
+    const work = works.find(w => w.id === row.dataset.workId);
+    if (work) showPreview(work, e.clientX, e.clientY);
+  });
+  grid.addEventListener("pointerleave", hidePreview);
 
   /* ── Work panel ────────────────────────────────────────────────────────── */
 
@@ -244,6 +287,7 @@
     ];
     if (work.text) lines.push("", work.text.toUpperCase());
 
+    hidePreview();
     panel.classList.add("is-open");
     bar.classList.add("is-hidden");          // only ever two things to click
     document.body.style.overflow = "hidden";
@@ -302,6 +346,10 @@
   });
 
   document.getElementById("panel-esc").addEventListener("click", () => closePanel(false));
+  document.getElementById("shuffle-btn").addEventListener("click", randomise);
+  /* Clicking the backdrop closes it: the panel is a box on the catalogue, so
+     the catalogue around it should still be a way out. */
+  panel.addEventListener("click", e => { if (e.target === panel) closePanel(false); });
   document.getElementById("bar-tab").addEventListener("click", () => openDrawer("filters"));
   infoBtn.addEventListener("click", () => openDrawer("info"));
   document.querySelectorAll("[data-view]").forEach(b =>

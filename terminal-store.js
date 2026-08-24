@@ -99,19 +99,6 @@
     infoBtn.setAttribute("aria-pressed", String(showingInfo));
   }
 
-  function column(label, build) {
-    const col = document.createElement("div");
-    const head = document.createElement("div");
-    head.className = "filter-head";
-    head.innerHTML = "<span>" + label + '</span><span class="hatch"></span>';
-    col.appendChild(head);
-    const body = document.createElement("div");
-    body.className = "filter-list";
-    build(body);
-    col.appendChild(body);
-    return col;
-  }
-
   function line(list, text, href) {
     const el = document.createElement(href ? "a" : "span");
     el.className = "bar-btn";
@@ -120,12 +107,12 @@
     list.appendChild(el);
   }
 
-  filtersPane.appendChild(column("CATALOGUE", list => line(list, "ENTER CATALOGUE", "/")));
-  filtersPane.appendChild(column("AVAILABLE", list => {
+  filtersPane.appendChild(T.filterColumn("CATALOGUE", list => line(list, "ENTER CATALOGUE", "/")));
+  filtersPane.appendChild(T.filterColumn("AVAILABLE", list => {
     line(list, String(items.filter(i => !soldOut(i)).length).padStart(2, "0") + " FOR SALE");
     line(list, String(items.filter(soldOut).length).padStart(2, "0") + " SOLD OUT");
   }));
-  filtersPane.appendChild(column("SHIPPING", list => {
+  filtersPane.appendChild(T.filterColumn("SHIPPING", list => {
     line(list, "AUSTRALIA");
     line(list, "WORLDWIDE");
   }));

@@ -167,11 +167,16 @@ html, body, .bar, .panel, .tile-figure {
   white-space: nowrap;
 }
 
-/* Active state is an inversion, the way a selected cell inverts on a terminal.
-   No colour is introduced — the ink and the ground simply swap. */
-.bar-btn[aria-pressed="true"], .bar-btn.is-active {
+/* Inversion is the only selection cue in the system — hover, focus and active
+   all swap ink and ground, and nothing introduces a colour. One gesture across
+   the bar, the filters and the table, so anything that inverts is actionable. */
+.bar-btn[aria-pressed="true"],
+.bar-btn.is-active,
+.bar-btn:hover,
+.bar-btn:focus-visible {
   background: var(--ink);
   color: var(--bg);
+  outline: 0;
 }
 
 .bar-views { display: flex; gap: calc(var(--u) * 2); margin: 0 auto; }
@@ -221,21 +226,47 @@ html, body, .bar, .panel, .tile-figure {
 .bar-drawer.is-open { display: block; }
 
 .filters { display: grid; grid-template-columns: 1fr 1fr 1fr; }
-.filters > * + * { border-left: var(--border) solid var(--ink); }
+.filter-col { position: relative; }
+.filter-col + .filter-col { border-left: var(--border) solid var(--ink); }
 
 .filter-head {
   display: flex;
   align-items: center;
   gap: var(--u);
+  width: 100%;
   padding: calc(var(--u) * 1.5);
-  border-bottom: var(--border) solid var(--ink);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
   font-size: 10px;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
-.filter-list { padding: calc(var(--u) * 1.5); display: flex; flex-direction: column; align-items: flex-start; gap: var(--u); }
-.filter-list .bar-btn { text-align: left; }
-.filter-foot { border-top: var(--border) solid var(--ink); padding: calc(var(--u) * 1.5); }
-.filter-foot a { color: var(--ink); text-decoration: none; font-size: 10px; }
+/* The values hang out of the header rather than sitting under it: opening one
+   must not resize the bar or move the other two columns. */
+.filter-list {
+  position: absolute;
+  top: 100%;
+  left: calc(var(--border) * -1);
+  right: calc(var(--border) * -1);
+  z-index: 1;
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--u);
+  padding: calc(var(--u) * 1.5);
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+}
+
+.filter-col:hover .filter-list,
+.filter-col:focus-within .filter-list,
+.filter-col.is-open .filter-list { display: flex; }
+
+.filter-list .bar-btn { text-align: left; width: 100%; }
 
 .info-pane { padding: calc(var(--u) * 2); font-size: 10px; line-height: 2.1; text-transform: uppercase; }
 .info-pane p { margin: 0 0 calc(var(--u) * 2); }
@@ -329,18 +360,37 @@ html[data-reveal="on"] .tile:focus-visible .tile-real { opacity: 1; }
   gap: var(--u);
   align-items: baseline;
   padding: calc(var(--u) * 1.25) var(--page-pad);
-  border-bottom: var(--border) solid var(--ink);
   font-size: 10px;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--ink);
 }
 
-.row-head { border-bottom-width: calc(var(--border) * 2); }
-
-/* Selecting a row inverts it, the same gesture the bar uses for an active
-   value — one idea of "chosen" across the whole surface. */
+/* No rules between rows. The inversion on hover is the only structure the
+   table needs, and it is the same gesture the bar uses for a chosen value. */
 a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+
+.row-head { color: var(--dim); }
+
+/* The bitmap of the row under the cursor, floating over the table. It follows
+   the pointer, so it never covers the row being read. */
+.row-preview {
+  position: fixed;
+  z-index: 200;
+  width: 220px;
+  display: none;
+  background-color: var(--ink);
+  -webkit-mask-image: var(--bits);
+  mask-image: var(--bits);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.row-preview.is-on { display: block; }
 
 .cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -380,13 +430,23 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   inset: 0;
   z-index: 500;
   display: none;
-  background: var(--bg);
+  place-items: center;
   padding: calc(var(--u) * 3);
 }
 
-.panel.is-open { display: block; }
+.panel.is-open { display: grid; }
 
-.panel-inner { position: relative; height: 100%; border: var(--border) solid var(--ink); padding: calc(var(--u) * 3); overflow-y: auto; }
+/* A box on the catalogue rather than a page over it — sized to the work, not
+   to the viewport, so what is behind stays visible around its edges. */
+.panel-inner {
+  position: relative;
+  width: min(680px, 100%);
+  max-height: 86vh;
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  padding: calc(var(--u) * 3);
+  overflow-y: auto;
+}
 
 .panel-meta {
   font-size: 12px;
@@ -422,7 +482,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 }
 
 .panel-art { display: grid; place-items: center; margin-top: calc(var(--u) * 4); }
-.panel-art img { max-width: 100%; max-height: 60vh; border: var(--border) solid var(--ink); }
+.panel-art img { max-width: 100%; max-height: 52vh; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
