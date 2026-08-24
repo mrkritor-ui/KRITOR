@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - redesign/catalogue-v2
+      # The terminal redesign publishes too. Both branches deploy to the same
+      # Pages site, so whichever is pushed last is what kritor.au serves; the
+      # concurrency group below cancels an in-flight run rather than racing it.
+      - claude/terminal-redesign-sar634
   workflow_dispatch:
 
 concurrency:

@@ -347,15 +347,46 @@ html, body, .bar, .panel, .tile-figure {
 .info-pane p { margin: 0 0 calc(var(--u) * 2); }
 .info-pane a { color: var(--ink); }
 
-/* Selecting a value flashes it twice before settling — the acknowledgement a
-   key makes when a terminal accepts it. Stepped, so it blinks rather than
-   fades. */
-@keyframes kritor-flash {
-  0%, 100% { background: var(--ink); color: var(--bg); }
-  25%, 75% { background: transparent; color: var(--ink); }
+/* Choosing a value flashes it twice before it settles — the acknowledgement a
+   key makes when a terminal takes it. Struck hard and allowed to decay rather
+   than blinked on and off: the block lands at full ink and fades, twice, at a
+   speed that reads as urgent rather than as a glitch.
+
+   The block is a pseudo-element behind the text, so it can fade on its own
+   while the label flips cleanly from ground to ink halfway down the decay —
+   animating a background colour to `transparent` fades through black instead,
+   which on a phosphor ground looks like a fault rather than a flash. */
+@keyframes kritor-flash-block {
+  0%, 22% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
-.bar-btn.is-flashing { animation: kritor-flash .26s steps(1, end) 2; }
+@keyframes kritor-flash-ink {
+  0%, 45% { color: var(--bg); }
+  46%, 100% { color: var(--ink); }
+}
+
+.is-flashing { position: relative; animation: kritor-flash-ink .46s steps(1, end) 2; }
+
+.is-flashing::before {
+  content: "";
+  position: absolute;
+  inset: -2px -4px;
+  z-index: -1;
+  background: var(--ink);
+  animation: kritor-flash-block .46s ease-out 2;
+  pointer-events: none;
+}
+
+/* An active value is already inverted, so the block would be invisible against
+   it — the flash inverts the other way for those. */
+.bar-btn[aria-pressed="true"].is-flashing::before { background: var(--bg); }
+.bar-btn[aria-pressed="true"].is-flashing { animation-name: kritor-flash-ink-inverse; }
+
+@keyframes kritor-flash-ink-inverse {
+  0%, 45% { color: var(--ink); }
+  46%, 100% { color: var(--bg); }
+}
 
 /* ── Catalogue ───────────────────────────────────────────────────────────── */
 

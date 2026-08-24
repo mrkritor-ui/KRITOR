@@ -414,13 +414,18 @@
     return () => { timers.forEach(clearTimeout); stopTyping(); };
   }
 
-  /* Blink a control twice, the way a terminal acknowledges a key. Restarted
-     from zero each time, so holding down repeated clicks still reads. */
+  /* Strike a control twice and let it decay, the way a terminal acknowledges a
+     key. Restarted from zero each time — without the reflow a second click
+     during the first flash does nothing, because the class is already on. The
+     clear-up must outlast the animation or it cuts the second strike short. */
+  const FLASH_MS = 460 * 2;
+
   function flash(el) {
     el.classList.remove("is-flashing");
     void el.offsetWidth;
     el.classList.add("is-flashing");
-    setTimeout(() => el.classList.remove("is-flashing"), 600);
+    clearTimeout(el._flashTimer);
+    el._flashTimer = setTimeout(() => el.classList.remove("is-flashing"), FLASH_MS + 40);
   }
 
   window.KritorTerminal = {
