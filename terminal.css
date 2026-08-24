@@ -525,7 +525,7 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
 }
 
 .tile-add:hover, .tile-add:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
-.tile-add[disabled] { opacity: .35; cursor: default; }
+.tile-add[disabled] { opacity: .35; cursor: var(--cur-arrow); }
 .tile.is-sold-out .tile-name { text-decoration: line-through; }
 
 /* ── Bag ─────────────────────────────────────────────────────────────────── */
@@ -606,7 +606,7 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
 }
 
 .qty button:hover:not([disabled]) { background: var(--ink); color: var(--bg); }
-.qty button[disabled] { opacity: .35; cursor: default; }
+.qty button[disabled] { opacity: .35; cursor: var(--cur-arrow); }
 .qty output { min-width: calc(var(--u) * 3); text-align: center; }
 
 .bag-go, .panel-add {
