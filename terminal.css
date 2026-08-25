@@ -17,14 +17,41 @@
 
   /* The pair. Everything is the terminal face except a work's own name, set in
      Jacquarda Bastarda 9 — a pixel blackletter, so it stays on the same grid
-     while reading as a title rather than as machine output. */
+     while reading as a title rather than as machine output.
+
+     The shopfront overrides this below. A blackletter name is a label on an
+     archive, which is what the catalogue is; on a page where the name is what
+     somebody has to read before deciding to spend money on it, it is a puzzle.
+     Two faces for the same job in two places, deliberately. */
   --title-font: "Jacquarda Bastarda 9", "Press Start 2P", serif;
+
+  /* KRITOR's own voice on the boot screens. Held apart from --title-font
+     rather than pointed at it, so the store's override cannot reach it: the
+     blackletter is who is speaking, and that does not change from page to
+     page. */
+  --voice-font: "Jacquarda Bastarda 9", "Press Start 2P", serif;
   --border: 2px;
   --page-pad: calc(var(--u) * 2);
   --tile-gap: calc(var(--u) * 5);
   --cols: 4;
   color-scheme: light;
 }
+
+/* VT323 on the shopfront: a terminal face with the same bitmap ancestry as the
+   rest of the system, so the names read at a glance without becoming the odd
+   one out on a page built out of pixels. It sits smaller on the line than the
+   blackletter at the same size, so the sizes that use it are set up to
+   compensate where they are declared. */
+html[data-page="store"] {
+  --title-font: "VT323", "Press Start 2P", ui-monospace, monospace;
+}
+
+/* The panel's name is an <h2>, so the browser asks for bold — and VT323 is
+   drawn at one weight, so it fakes it by widening every stroke. On a bitmap
+   face that is precisely the mud the rest of the system switches anti-aliasing
+   off to avoid. Only here: the catalogue's blackletter has worn the same
+   synthetic bold since it was set and that is the weight it was chosen at. */
+html[data-page="store"] .panel-title { font-weight: 400; }
 
 html[data-theme="dark"] {
   --bg: #0a1f12;
@@ -215,7 +242,7 @@ html, body, .bar, .panel, .tile-figure {
    screen — the line about running for your life read as a status code when it
    was set in the same face and the same capitals as everything else. */
 .boot-voice {
-  font-family: var(--title-font);
+  font-family: var(--voice-font);
   text-transform: none;
   letter-spacing: 0;
   font-size: clamp(14px, 1.45vw, 21px);
