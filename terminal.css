@@ -236,19 +236,23 @@ html, body, .bar, .panel, .tile-figure {
   max-width: min(46ch, 100%);
 }
 
-/* On the door it breathes. Not a blink — a blink is a cursor, and this is not
-   waiting for input, it is the room saying something. Six seconds from dim to
-   lit and back, eased at both ends so there is no moment it can be caught
-   switching, with the ink blooming very slightly at the top of the breath. In
-   the phosphor theme that is a screen glowing; on paper it is ink bleeding.
-   Slow enough that it reads as the fire under it, not as a button. */
+/* On the door it fades out and back. Not a pulse: a pulse never arrives
+   anywhere, it just moves, and the line ends up permanently half-lit and
+   restless. This holds. It comes up over a second and a half, stands there
+   lit long enough to be read twice, goes out over a second and a half, and is
+   gone for a beat before it returns. Nothing moves but the ink — the line
+   keeps its place whether it is there or not, so the screen never reflows.
+
+   No bloom. A glow around the type was the other half of what made the pulse
+   feel like an effect, and this system has no shadows in it anywhere else. */
 .boot[data-mode="gate"] .boot-voice {
-  animation: boot-breathe 6s ease-in-out infinite;
+  animation: boot-flash 7s ease-in-out infinite;
 }
 
-@keyframes boot-breathe {
-  0%, 100% { opacity: .34; text-shadow: none; }
-  50% { opacity: 1; text-shadow: 0 0 calc(var(--u) * 1.5) currentColor; }
+@keyframes boot-flash {
+  0% { opacity: 0; }
+  20%, 60% { opacity: 1; }
+  80%, 100% { opacity: 0; }
 }
 
 .boot-welcome {
@@ -258,12 +262,9 @@ html, body, .bar, .panel, .tile-figure {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Held at the top of the breath rather than taken away: the line is meant to
-     be lit, and the movement is what there is to opt out of. */
-  .boot[data-mode="gate"] .boot-voice {
-    animation: none;
-    text-shadow: 0 0 calc(var(--u) * 1.5) currentColor;
-  }
+  /* Held lit rather than taken away: the line is meant to be read, and the
+     fading is what there is to opt out of. */
+  .boot[data-mode="gate"] .boot-voice { animation: none; opacity: 1; }
 }
 
 /* ── The bar ─────────────────────────────────────────────────────────────── */
