@@ -885,7 +885,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   z-index: 500;
   display: none;
   place-items: center;
-  padding: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2);
 }
 
 .panel.is-open { display: grid; }
@@ -898,9 +898,10 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   position: relative;
   width: min(1040px, 100%);
   max-height: 90vh;
+  max-height: 94dvh;
   border: var(--border) solid var(--ink);
   background: var(--bg);
-  padding: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2.5);
   overflow-y: auto;
   /* Down the page is the browser's, side to side is ours. Without this the
      panel is a scroll container in both directions, so the moment a finger
@@ -921,12 +922,14 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 /* The one place a second face is allowed. Everything else on the site is the
    terminal; a work's name is the thing that is not machine output. */
+/* Set down from 38px. The name was competing with the painting for the eye,
+   and on a work of any height it was the name that won. */
 .panel-title {
-  margin-top: calc(var(--u) * 2);
+  margin-top: calc(var(--u) * 1.5);
   margin-bottom: 0;
   font-family: var(--title-font);
-  font-size: clamp(22px, 2.6vw, 38px);
-  line-height: 1.25;
+  font-size: clamp(17px, 1.9vw, 27px);
+  line-height: 1.2;
   text-align: center;
   opacity: 0;
   transition: opacity .5s ease;
@@ -934,14 +937,17 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 .panel-title.is-in { opacity: 1; }
 
+/* Closed up, so the record is a block of five short lines under the work
+   rather than a column the height of the work itself. */
 .panel-meta {
-  margin-top: calc(var(--u) * 2);
-  font-size: 10px;
-  line-height: 2.2;
+  margin-top: var(--u);
+  font-size: 9px;
+  line-height: 1.9;
+  letter-spacing: .06em;
   text-align: center;
   text-transform: uppercase;
   white-space: pre-wrap;
-  min-height: calc(var(--u) * 12);
+  min-height: calc(var(--u) * 9);
 }
 
 /* The block cursor that trails the typing, and keeps blinking after it. */
@@ -969,9 +975,13 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   cursor: var(--cur-arrow);
 }
 
-.panel-art { position: relative; display: grid; place-items: center; margin-top: calc(var(--u) * 4); }
-.panel-art img { max-width: 100%; max-height: 46vh; }
-.panel-art img { max-height: 46dvh; }
+/* 46vh was what kept the work small: a portrait painting is capped by its
+   height long before it runs out of width, so the box could be as wide as it
+   liked and the picture stayed the same size in the middle of it. Height is
+   the lever, and the type below gave up the room for it. */
+.panel-art { position: relative; display: grid; place-items: center; margin-top: calc(var(--u) * 2); }
+.panel-art img { max-width: 100%; max-height: 62vh; }
+.panel-art img { max-height: 62dvh; }
 
 /* The two halves of the walk. Buttons, so a keyboard can reach them and a
    screen reader is told what they are, but drawn as nothing at all: the work
@@ -1011,8 +1021,8 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   display: flex;
   align-items: center;
   gap: calc(var(--u) * 2);
-  margin-top: calc(var(--u) * 3);
-  font-size: 10px;
+  margin-top: calc(var(--u) * 2);
+  font-size: 9px;
   text-transform: uppercase;
   color: var(--dim);
 }
@@ -1036,16 +1046,22 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 /* The boot statement again at the bottom of the page. It is the first thing
    said and the last, and it gives the scroll somewhere to end rather than
    stopping at the final row of works. */
+/* Fine print, and the space around it is what makes it read as fine rather
+   than as small: the padding stays where it was while the type comes down to
+   9px and opens up. A statement set large enough to read from across the room
+   is a poster; set at this size in that much air it is a colophon. */
 .foot {
   padding: calc(var(--u) * 12) var(--page-pad) calc(var(--u) * 8);
   text-align: center;
-  font-size: clamp(10px, 1.1vw, 14px);
-  line-height: 2.2;
+  font-size: clamp(8px, .72vw, 9px);
+  line-height: 2.6;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--dim);
+  opacity: .8;
 }
 
-.foot p { margin: 0 0 calc(var(--u) * 3); }
+.foot p { margin: 0 0 calc(var(--u) * 2.5); }
 .foot p:last-child { margin-bottom: 0; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
