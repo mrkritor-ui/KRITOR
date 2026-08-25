@@ -325,7 +325,7 @@
   const filtersPane = document.getElementById("filters-pane");
   const bar = document.getElementById("bar");
   const scrollFill = document.getElementById("scroll-fill");
-  const barUI = T.mountBar();
+  const barUI = T.mountBar({ rest: null });
 
   function line(list, text, href) {
     const el = document.createElement(href ? "a" : "span");
@@ -351,11 +351,35 @@
   grid.classList.add("has-captions");
   T.initTheme();
 
+  /* The eye, in one place. The default and the button have to set the same
+     four things — the flag the tiles read, the pressed state, and which of the
+     two icons is showing — and writing that twice is how a default and a
+     toggle end up disagreeing about which one is on. */
+  const eyeBtn = document.getElementById("eye-btn");
+
+  function setColour(on) {
+    root.dataset.colour = on ? "on" : "off";
+    eyeBtn.setAttribute("aria-pressed", String(on));
+    /* toggleAttribute, not .hidden — see the note in terminal-shell.js: these
+       are <svg>, which has no `hidden` property to assign to. */
+    eyeBtn.querySelectorAll("[data-eye]").forEach(ico => {
+      ico.toggleAttribute("hidden", (ico.dataset.eye === "open") !== on);
+    });
+  }
+
+  /* The shopfront opens in colour. The 1-bit rendition is the catalogue's
+     language — it is how the archive holds a work at arm's length — but this
+     page is asking to be bought from, and nobody buys a painting they have not
+     been shown. The eye still takes it back to the bitmap. */
+  setColour(true);
+
   T.runBoot({
     page: "store",
-    preload: items.map(item => bitsUrl(firstImage(item))),
+    /* Which means the real renditions are what the boot has to wait for. Gated
+       on the bitmaps it would have finished while the tiles everyone can see
+       were still arriving. */
+    preload: items.map(item => realFor(firstImage(item), 480)),
     items: items,
-    onParams: () => { if (!T.isTouch) barUI.set("filters"); },
     onDeal: item => grid.appendChild(tileFor(item)),
   });
 
@@ -380,17 +404,7 @@
     bag.classList.contains("is-open") ? closeBag() : openBag());
   document.getElementById("bag-close").addEventListener("click", closeBag);
 
-  const eyeBtn = document.getElementById("eye-btn");
-  eyeBtn.addEventListener("click", () => {
-    const on = root.dataset.colour !== "on";
-    root.dataset.colour = on ? "on" : "off";
-    eyeBtn.setAttribute("aria-pressed", String(on));
-    /* toggleAttribute, not .hidden — see the note in terminal-shell.js: these
-       are <svg>, which has no `hidden` property to assign to. */
-    eyeBtn.querySelectorAll("[data-eye]").forEach(ico => {
-      ico.toggleAttribute("hidden", (ico.dataset.eye === "open") !== on);
-    });
-  });
+  eyeBtn.addEventListener("click", () => setColour(root.dataset.colour !== "on"));
 
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {

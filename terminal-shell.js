@@ -225,7 +225,11 @@
      It also measures itself. Where the bar spans the page it must not overlay
      the catalogue, so --bar-h is published on every change and the grid's top
      padding follows it — the works get pushed down rather than buried. */
-  function mountBar() {
+  /* rest  what the bar falls back to when nothing is open, on a pointer.
+           Defaults to the parameters. */
+  function mountBar(options) {
+    const opts = options || {};
+    const restState = opts.rest === undefined ? "filters" : opts.rest;
     const bar = document.getElementById("bar");
     const drawer = document.getElementById("drawer");
     const filtersPane = document.getElementById("filters-pane");
@@ -233,6 +237,12 @@
     const infoBtn = document.getElementById("info-btn");
     const tab = document.getElementById("bar-tab");
     if (!bar || !drawer) return null;
+
+    /* Where the bar can be fully closed, the tab is the only way back into it,
+       so it has to be there on a pointer as well — on the catalogue the
+       parameters are always on screen and the handle would have nothing to do,
+       which is why it is a touch-only control by default. */
+    bar.dataset.rest = restState === null ? "closed" : restState;
 
     let state = null;
 
@@ -276,10 +286,15 @@
       measure();
     }
 
-    /* The bar's resting state: the parameters on a pointer, folded on touch.
-       On a pointer there is no "nothing" for the bar to be, so everything that
-       wants to dismiss a pane comes back here rather than to null. */
-    const rest = () => set(touch ? null : "filters");
+    /* The bar's resting state: folded on touch, and on a pointer whatever the
+       page says it is. On the catalogue that is the parameters — there is
+       nothing else for the bar to be there, so everything that dismisses a
+       pane comes back to them rather than to null. The shopfront says closed,
+       and it has to be said here rather than set once at startup: rest() is
+       also where the INFO pane returns to, and a shopfront that opened with
+       the filters folded only to spring them open the first time somebody
+       looked at INFO has not really defaulted to anything. */
+    const rest = () => set(touch ? null : restState);
     const toggle = which => (state === which ? rest() : set(which));
 
     if (tab) tab.addEventListener("click", () => toggle("filters"));

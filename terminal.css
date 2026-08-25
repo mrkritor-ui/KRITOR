@@ -291,6 +291,10 @@ html, body, .bar, .panel, .tile-figure {
   .bar-tab { display: block; }
 }
 
+/* And wherever the bar's resting state is closed, whatever the pointer: there
+   the handle is the only way back to the parameters. */
+.bar[data-rest="closed"] .bar-tab { display: block; }
+
 .bar-tab {
   position: absolute;
   z-index: 5;
@@ -415,6 +419,12 @@ html.is-booting .bar-progress { height: calc(var(--u) * 1.25); padding: 1px; }
    titles are always on the bar and only their values come and go. Nothing has
    to be opened before the catalogue can be filtered. */
 .bar-drawer { display: block; border-top: var(--border) solid var(--ink); }
+
+/* A drawer with both its panes hidden is still a border ruled under the bar.
+   On the catalogue it is never in that state — the parameters are the bar's
+   resting position there — but the store opens with them folded, and an empty
+   rule under the row reads as something that failed to load. */
+.bar-drawer:not(.is-open) { display: none; }
 
 /* Touch is the exception — there the bar spans the page, so the row folds
    away behind the tab and the works keep the screen. */
