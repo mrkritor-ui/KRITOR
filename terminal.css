@@ -193,20 +193,6 @@ html, body, .bar, .panel, .tile-figure {
   gap: calc(var(--u) * .75);
 }
 
-/* Layer one: the machine. Only the warps use it — on the door there is nothing
-   above the name. */
-.boot-lead {
-  font-size: clamp(7px, .75vw, 10px);
-  letter-spacing: .3em;
-  /* The letter-spacing is applied after every character including the last,
-     which walks a centred line off centre by half a space. */
-  text-indent: .3em;
-  color: var(--dim);
-  opacity: .8;
-}
-
-.boot-lead:empty { display: none; }
-
 .boot-mark {
   font-size: clamp(20px, 3.2vw, 46px);
   line-height: 1;
@@ -214,6 +200,9 @@ html, body, .bar, .panel, .tile-figure {
   text-indent: .12em;
 }
 
+/* Where the flight is headed, under the name. The text-indent answers the
+   letter-spacing, which is applied after every character including the last
+   and walks a centred line off centre by half a space. */
 .boot-sub {
   font-size: clamp(8px, .85vw, 11px);
   letter-spacing: .42em;

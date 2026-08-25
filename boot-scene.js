@@ -62,12 +62,13 @@
     ],
   };
 
-  /* Nothing above the name on the door. The invitation used to be written out
-     — "YOU HAVE STUMBLED UPON", and an ENTER button under it — and four lines
-     of type over a fire is a game's title card, not a painter's archive. What
-     is left is the name and the line KRITOR says. The warps keep their labels:
-     those are wayfinding rather than theatre. */
-  const LEAD = { gate: "", out: "OUTBOUND", back: "INBOUND" };
+  /* Nothing above the name, on any of the three screens. The door used to spell
+     out its invitation — "YOU HAVE STUMBLED UPON", and an ENTER button under
+     it — and the warps announced their own direction, OUTBOUND and INBOUND.
+     Four lines of type over a fire is a game's title card, not a painter's
+     archive, and a flight that has to caption which way it is going is not
+     flying convincingly. The name, where you are headed, and what KRITOR has
+     to say about it. */
   const SUB = { gate: "", out: "STORE", back: "CATALOGUE" };
 
   /* Long enough that the starfield gets to accelerate and mean something,
@@ -107,7 +108,6 @@
     if (!boot) return { mode: mode, ready: Promise.resolve(), stop: function () {} };
 
     boot.dataset.mode = mode;
-    setText("boot-lead", LEAD[mode]);
     setText("boot-sub", SUB[mode]);
     setText("boot-voice", pick(VOICE[mode]));
 
