@@ -106,6 +106,10 @@
        this point in the page. It reads the class when it does. */
     root.classList.add("kc-off");
 
+    /* While the boot screen is up the bar is only a loading row, and it does
+       not need the width it holds a whole catalogue's parameters in. */
+    root.classList.add("is-booting");
+
     let sceneReady = false;
 
     /* The bar is paced to the scene in front of it. On the gate it fills while
@@ -181,6 +185,7 @@
           scene.stop();                            // nothing animates underneath
           /* By now cursor.js has run, and resume() puts the cursor back under
              the pointer rather than waiting for it to be moved. */
+          root.classList.remove("is-booting");
           if (window.KritorCursor) window.KritorCursor.resume();
           else root.classList.remove("kc-off");
 

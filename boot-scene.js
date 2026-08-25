@@ -62,7 +62,12 @@
     ],
   };
 
-  const LEAD = { gate: "YOU HAVE STUMBLED UPON", out: "OUTBOUND", back: "INBOUND" };
+  /* Nothing above the name on the door. The invitation used to be written out
+     — "YOU HAVE STUMBLED UPON", and an ENTER button under it — and four lines
+     of type over a fire is a game's title card, not a painter's archive. What
+     is left is the name and the line KRITOR says. The warps keep their labels:
+     those are wayfinding rather than theatre. */
+  const LEAD = { gate: "", out: "OUTBOUND", back: "INBOUND" };
   const SUB = { gate: "", out: "STORE", back: "CATALOGUE" };
 
   /* Long enough that the starfield gets to accelerate and mean something,
@@ -118,6 +123,14 @@
     let cleanupGate = function () {};
 
     if (mode === "gate") {
+      /* With no ENTER button left to press, the screen itself has to be the
+         button in name as well as in behaviour, or the one interaction the
+         site insists on is invisible to a keyboard and unannounced to a
+         screen reader. */
+      boot.setAttribute("role", "button");
+      boot.setAttribute("tabindex", "0");
+      boot.setAttribute("aria-label", "Enter KRITOR");
+
       /* Anything counts as entering — the whole screen is the button, and the
          keyboard has to work too, or the one interaction the site insists on
          is the one a keyboard cannot perform. */
@@ -129,6 +142,9 @@
           if (e.type === "keydown") e.preventDefault();
           entered = true;
           boot.dataset.entered = "true";
+          boot.removeAttribute("role");
+          boot.removeAttribute("tabindex");
+          boot.removeAttribute("aria-label");
           cleanupGate();
           resolve();
         };

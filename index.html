@@ -30,22 +30,20 @@
 
   <!-- Boot. Covers the page while it loads; the bar sits above it. The mode
        attribute is written by boot-scene.js on the first frame and decides
-       everything below: the fire and its gate, or the starfield. The official
-       line and the fine print are at the top because the fire owns the floor. -->
+       everything below: the fire, or the starfield.
+
+       Two lines and no more. The masthead, the invitation and the ENTER button
+       all used to stand here and it read as a title card for a game rather
+       than the door to a painter's archive. The name, what KRITOR has to say,
+       and the fire underneath. -->
   <div class="boot" id="boot">
     <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
     <div class="boot-statement">
-      <div class="boot-head">
-        <p class="boot-official">KRITOR MAKES THINGS. A CHOICE MADE AT 17 TO NOT TAKE TIME FOR GRANTED.</p>
-        <p class="boot-fine">KRITOR TRADED FROM MELBOURNE &middot; ALL RIGHTS RESERVED &middot; &copy; 2026 KRITOR &middot; V1.0</p>
-      </div>
       <div class="boot-core">
-        <p class="boot-lead" id="boot-lead">YOU HAVE STUMBLED UPON</p>
+        <p class="boot-lead" id="boot-lead"></p>
         <p class="boot-mark">KRITOR</p>
         <p class="boot-sub" id="boot-sub"></p>
         <p class="boot-voice" id="boot-voice"></p>
-        <p class="boot-ask">DO YOU WISH TO ENTER?</p>
-        <p class="boot-enter"><button class="boot-enter-btn" id="boot-enter-btn" type="button">ENTER</button></p>
         <p class="boot-welcome" id="boot-welcome" hidden>WELCOME.</p>
       </div>
     </div>

@@ -167,22 +167,19 @@ html, body, .bar, .panel, .tile-figure {
 
 /* ── The two layers of type ──────────────────────────────────────────────── */
 
+/* Set small. The first cut of this screen was a 88px wordmark over a 42px
+   blackletter line with a masthead above and an ENTER button below, and at
+   that size a fire behind type reads as a game's title card. The work is what
+   is meant to be large on this site; the door is not. */
+
 .boot-statement {
   position: absolute;
   inset: 0;
   z-index: 2;
-  /* The masthead is lifted out of the flow and pinned to the top so that what
-     is left centres on the screen rather than in the space under it — on a
-     phone, where the masthead is three lines deep, centring in the remainder
-     dropped the whole door into the fire. */
   display: grid;
   place-items: center;
   padding: var(--page-pad);
   text-align: center;
-  /* Clamped rather than fixed: Press Start 2P has no narrow forms, so a size
-     that carries on a desktop would run off the side of a phone. */
-  font-size: clamp(11px, 1.5vw, 20px);
-  line-height: 2.2;
   letter-spacing: .02em;
   text-transform: uppercase;
   pointer-events: none;
@@ -190,43 +187,16 @@ html, body, .bar, .panel, .tile-figure {
 
 .boot-statement p { margin: 0; }
 
-/* The masthead. It sits at the top because the fire has the bottom, and the
-   two lines are the only things on the screen that are not theatre. */
-.boot-head {
-  position: absolute;
-  top: calc(env(safe-area-inset-top) + var(--u) * 2);
-  left: var(--page-pad);
-  right: var(--page-pad);
-  display: grid;
-  gap: calc(var(--u) * 1.5);
-}
-
-.boot-official {
-  font-size: clamp(8px, .95vw, 11px);
-  line-height: 1.9;
-  letter-spacing: .1em;
-}
-
-/* Fine print, and meant to be read as such: at this size it is one line on
-   anything wider than a phone, and it is allowed to wrap rather than to clip
-   where it is not. */
-.boot-fine {
-  color: var(--dim);
-  opacity: .72;
-  font-size: clamp(6px, .62vw, 8px);
-  line-height: 2;
-  letter-spacing: .08em;
-}
-
 .boot-core {
   display: grid;
   justify-items: center;
-  gap: calc(var(--u) * 2);
+  gap: calc(var(--u) * .75);
 }
 
-/* Layer one: the machine. */
+/* Layer one: the machine. Only the warps use it — on the door there is nothing
+   above the name. */
 .boot-lead {
-  font-size: clamp(8px, .95vw, 12px);
+  font-size: clamp(7px, .75vw, 10px);
   letter-spacing: .3em;
   /* The letter-spacing is applied after every character including the last,
      which walks a centred line off centre by half a space. */
@@ -235,15 +205,17 @@ html, body, .bar, .panel, .tile-figure {
   opacity: .8;
 }
 
+.boot-lead:empty { display: none; }
+
 .boot-mark {
-  font-size: clamp(30px, 8vw, 88px);
+  font-size: clamp(20px, 3.2vw, 46px);
   line-height: 1;
-  letter-spacing: .1em;
-  text-indent: .1em;
+  letter-spacing: .12em;
+  text-indent: .12em;
 }
 
 .boot-sub {
-  font-size: clamp(9px, 1.2vw, 15px);
+  font-size: clamp(8px, .85vw, 11px);
   letter-spacing: .42em;
   text-indent: .42em;
 }
@@ -257,79 +229,41 @@ html, body, .bar, .panel, .tile-figure {
   font-family: var(--title-font);
   text-transform: none;
   letter-spacing: 0;
-  font-size: clamp(19px, 3.6vw, 42px);
-  line-height: 1.35;
-  max-width: 24ch;
-  margin-top: calc(var(--u) * 2);
+  font-size: clamp(14px, 1.45vw, 21px);
+  line-height: 1.4;
+  /* Wide enough for the longest line KRITOR has to say to stay on one, and
+     capped at the screen so the short ones never push against it. */
+  max-width: min(46ch, 100%);
 }
 
-.boot-ask {
-  font-size: clamp(8px, 1.05vw, 13px);
-  letter-spacing: .22em;
-  text-indent: .22em;
-  color: var(--dim);
-  opacity: .8;
-  margin-top: calc(var(--u) * 2);
+/* On the door it breathes. Not a blink — a blink is a cursor, and this is not
+   waiting for input, it is the room saying something. Six seconds from dim to
+   lit and back, eased at both ends so there is no moment it can be caught
+   switching, with the ink blooming very slightly at the top of the breath. In
+   the phosphor theme that is a screen glowing; on paper it is ink bleeding.
+   Slow enough that it reads as the fire under it, not as a button. */
+.boot[data-mode="gate"] .boot-voice {
+  animation: boot-breathe 6s ease-in-out infinite;
 }
 
-/* The one thing on the site that has to be pressed. It flashes on a hard step
-   rather than a fade, because a cursor blinks — it does not breathe. */
-.boot-enter { margin-top: calc(var(--u) * 2); pointer-events: auto; }
-
-.boot-enter-btn {
-  font: inherit;
-  font-size: clamp(10px, 1.3vw, 16px);
-  letter-spacing: .3em;
-  text-indent: .3em;
-  text-transform: uppercase;
-  color: var(--bg);
-  background: var(--ink);
-  border: var(--border) solid var(--ink);
-  padding: calc(var(--u) * 1.5) calc(var(--u) * 2.5);
-  animation: boot-flash 1.06s steps(1, end) infinite;
+@keyframes boot-breathe {
+  0%, 100% { opacity: .34; text-shadow: none; }
+  50% { opacity: 1; text-shadow: 0 0 calc(var(--u) * 1.5) currentColor; }
 }
-
-.boot-enter-btn::before { content: "> "; }
-.boot-enter-btn::after { content: " <"; }
-
-@keyframes boot-flash {
-  0%, 55% { color: var(--bg); background: var(--ink); }
-  56%, 100% { color: var(--ink); background: transparent; }
-}
-
-/* Everything the mode does not call for. The gate is the only screen that asks
-   a question, and once it has been answered it stops asking. */
-.boot:not([data-mode="gate"]) .boot-ask,
-.boot:not([data-mode="gate"]) .boot-enter,
-.boot[data-entered] .boot-ask,
-.boot[data-entered] .boot-enter { display: none; }
 
 .boot-welcome {
-  margin-top: calc(var(--u) * 4);
-  font-size: clamp(13px, 1.9vw, 26px);
+  margin-top: calc(var(--u) * 2);
+  font-size: clamp(10px, 1.1vw, 15px);
   letter-spacing: .08em;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Still the brightest thing on the screen, just not moving. */
-  .boot-enter-btn { animation: none; }
-}
-
-/* Above the phone breakpoint the bar hangs in the top-right corner, so the
-   masthead moves out from under it and takes the top-left: two lines of record
-   on one side, the machine's own panel on the other. */
-@media (min-width: 900px) {
-  .boot-head {
-    text-align: left;
-    max-width: calc(100% - min(576px, 46vw));
+  /* Held at the top of the breath rather than taken away: the line is meant to
+     be lit, and the movement is what there is to opt out of. */
+  .boot[data-mode="gate"] .boot-voice {
+    animation: none;
+    text-shadow: 0 0 calc(var(--u) * 1.5) currentColor;
   }
-}
-
-@media (max-width: 899px) {
-  /* The bar spans the width here instead, so the masthead starts under
-     whatever it is currently showing rather than behind it. */
-  .boot-head { top: calc(var(--bar-h, 56px) + var(--u) * 2); }
-  .boot-fine { font-size: 7px; line-height: 1.9; }
 }
 
 /* ── The bar ─────────────────────────────────────────────────────────────── */
@@ -458,6 +392,25 @@ html, body, .bar, .panel, .tile-figure {
 .bar-loading-label { display: block; margin-bottom: var(--u); font-size: 10px; }
 
 .bar-progress { height: calc(var(--u) * 2); border: var(--border) solid var(--ink); padding: 2px; }
+
+/* While the boot screen is up the bar is only this row, and it was still
+   holding the width it needs for a catalogue's worth of parameters — a wide
+   panel in the corner of an otherwise almost empty screen. It takes only what
+   it needs until the machine is up. */
+/* Only where the bar is a panel in the corner. On a phone it spans the width
+   by design, and pinning a 300px box to the left edge there is not smaller,
+   only lopsided. */
+@media (min-width: 900px) {
+  html.is-booting .bar { width: 300px; }
+}
+/* The parameters are part of the sequence, not chrome that was always there —
+   they arrive with the rest of the bar once the machine says WELCOME. Standing
+   open behind the door they were three empty filter titles doing nothing. */
+html.is-booting .bar-drawer,
+html.is-booting .bar-scroll { display: none; }
+html.is-booting .bar-loading { padding: var(--u); }
+html.is-booting .bar-loading-label { margin-bottom: calc(var(--u) * .5); font-size: 8px; }
+html.is-booting .bar-progress { height: calc(var(--u) * 1.25); padding: 1px; }
 .bar-progress span {
   display: block;
   height: 100%;
