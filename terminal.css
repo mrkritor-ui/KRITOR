@@ -984,7 +984,9 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   text-align: center;
   text-transform: uppercase;
   white-space: pre-wrap;
-  min-height: calc(var(--u) * 9);
+  /* Room held for the typing so the foot does not jump up under it as the
+     lines land. Two lines came off the record, so two lines come off this. */
+  min-height: calc(var(--u) * 6);
 }
 
 /* The block cursor that trails the typing, and keeps blinking after it. */
@@ -1008,9 +1010,17 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   color: var(--ink);
   font: inherit;
   font-size: 10px;
-  padding: var(--u) calc(var(--u) * 1.5);
+  /* Square, because the word came off it. The X is the same 7x7 glyph the
+     rest of the chrome is drawn on, and the box around it is the frame every
+     other control on the site already wears. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--u) * .75);
   cursor: var(--cur-arrow);
 }
+
+.panel-esc:hover, .panel-esc:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
 
 /* 46vh was what kept the work small: a portrait painting is capped by its
    height long before it runs out of width, so the box could be as wide as it
@@ -1050,6 +1060,45 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
    the work, so there they are gone and the gesture is a swipe instead. */
 @media (hover: none), (pointer: coarse) {
   .panel-zone { display: none; }
+}
+
+/* Side by side, once there is width for two columns.
+
+   Stacked, the work is capped by its height long before it runs out of width:
+   a portrait painting sat small in the middle of a box that could be as wide
+   as it liked, with the record centred underneath and the rest of the box
+   empty either side. The record moves into that empty width and the work takes
+   the height the record was holding — the picture gets bigger by the same
+   move that gives the type somewhere to go.
+
+   The condition is a screen wider than it is tall, with the width to carry two
+   columns. That is the only shape where the move pays: held upright — a phone,
+   a tablet in portrait — the work is capped by width rather than height, so a
+   column taken out beside it would make the picture smaller, not bigger, and
+   there it stays stacked. */
+@media (min-width: 800px) and (orientation: landscape) {
+  .panel-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, calc(var(--u) * 30));
+    /* The first row is the slack: the work spans all three, so whatever it is
+       taller than the type collects here and the record sits on the work's
+       bottom edge rather than floating beside its middle. */
+    grid-template-rows: 1fr auto auto;
+    column-gap: calc(var(--u) * 3);
+  }
+
+  .panel-art { grid-column: 1; grid-row: 1 / span 3; margin-top: 0; }
+  .panel-art img { max-height: 78vh; }
+  .panel-art img { max-height: 78dvh; }
+
+  /* Ranged right, against the edge they were moved to. Centred, a column this
+     narrow reads as a caption that has come adrift of the picture. */
+  .panel-title { grid-column: 2; grid-row: 2; text-align: right; }
+  .panel-meta { grid-column: 2; grid-row: 3; text-align: right; }
+
+  /* The buy controls and the walk stay full width under both columns: they
+     are about the panel, not about the work in it. */
+  .panel-buy, .panel-foot { grid-column: 1 / -1; }
 }
 
 /* ── Panel footer ────────────────────────────────────────────────────────── */
@@ -1217,7 +1266,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
      picture with a box parked beneath it. */
   .tile-add { width: 100%; height: calc(var(--u) * 5.5); font-size: 12px; }
   .qty button { width: 44px; height: 44px; }
-  .panel-esc { min-height: 44px; }
+  .panel-esc { min-height: 44px; min-width: 44px; }
   .info-pane a { display: inline-block; padding: calc(var(--u) * 1.5) 0; }
 }
 

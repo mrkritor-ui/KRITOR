@@ -356,10 +356,11 @@
        title face, and everything measurable about the piece goes below that. */
     panelTitle.textContent = work.title || "Untitled";
 
+    /* Series and format are how the catalogue is *sorted* — they are in the
+       bar's parameters and in LIST, where they do work. Beside the painting
+       they were two lines of filing between the name and the object itself. */
     const lines = [
       String(work.year || ""),
-      "SERIES: " + seriesOf(work),
-      "FORMAT: " + formatOf(work),
       "MATERIAL: " + materialOf(work),
       "SIZE: " + (work.size || "—"),
     ];
