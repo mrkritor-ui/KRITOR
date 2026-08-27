@@ -1103,11 +1103,14 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
-/* The table sets its own floor: below this the columns would crush rather
-   than wrap, so it scrolls sideways instead. */
+/* The table has no floor to scroll under: it drops columns instead. A sideways
+   scroll hides the fact that there is more of the record off to the right, and
+   asks for a gesture the rest of the page never asks for. Narrowing the screen
+   narrows the record — the fields that describe the object physically go first,
+   since the page behind the row carries all of them anyway. */
 @media (max-width: 1279px) {
-  .grid.view-list { overflow-x: auto; }
-  .row { min-width: 1180px; }
+  .row { grid-template-columns: 5ch minmax(0, 2fr) 6ch minmax(0, 1fr) 10ch; }
+  .cell:nth-child(n + 6) { display: none; }
 }
 
 @media (max-width: 899px) {
@@ -1150,10 +1153,37 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   .bar-modes { margin-left: auto; }
   .grid.view-grid { --cols: 3; }
   .grid.view-zoom { --cols: 2; }
-  .grid.view-list { overflow-x: auto; }
-  .row { min-width: 900px; }
-  .filters { grid-template-columns: 1fr; }
-  .filters > * + * { border-left: 0; border-top: var(--border) solid var(--ink); }
+  /* What is left is what an index needs to be read as one: a number, a name,
+     and a date. Everything else has already gone by 1279px. */
+  .row {
+    grid-template-columns: 4ch minmax(0, 1fr) 5ch;
+    gap: var(--u);
+    padding: calc(var(--u) * 1.25) var(--page-pad);
+  }
+  .cell:nth-child(n + 4) { display: none; }
+
+  /* The three parameters hold one line, the way the reference has them.
+     Stacked they cost three rows of a screen that has few to spare, and the
+     bar stops being a strip and becomes a page of its own.
+
+     The column dissolves so its two halves can be placed separately: the
+     header keeps its third of the line, and the values drop the full width of
+     the drawer underneath it. A third of a phone is no width to read a list of
+     years in, and the header row has to stay reachable while one is open. */
+  .filter-col { display: contents; }
+  .filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .filters > .filter-col > .filter-head { grid-row: 1; }
+  .filters > .filter-col:nth-child(1) > .filter-head { grid-column: 1; }
+  .filters > .filter-col:nth-child(2) > .filter-head { grid-column: 2; }
+  .filters > .filter-col:nth-child(3) > .filter-head { grid-column: 3; }
+  .filters > .filter-col + .filter-col > .filter-head { border-left: var(--border) solid var(--ink); }
+  .filter-list { grid-column: 1 / -1; }
+
+  /* A third of a phone is not much width to title: the label truncates rather
+     than pushing the row wider than the drawer it sits in. The hatch is a fill,
+     not information, so it gives up its space first. */
+  .filter-title { padding-left: var(--u); padding-right: var(--u); }
+  .filter-title > span:not(.hatch) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .panel { padding: 0; }
   /* dvh, because iOS counts its own collapsing toolbars into vh: at 100vh the
      panel is taller than the screen it is on and its foot sits under the
