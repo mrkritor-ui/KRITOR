@@ -412,6 +412,21 @@ html, body, .bar, .panel, .tile-figure {
 .bar-loading.is-gone { display: none; }
 .bar-loading-label { display: block; margin-bottom: var(--u); font-size: 10px; }
 
+/* The bar full, the door still shut. Everything else on this screen is either
+   burning or holding still, so the one thing being asked for is the one thing
+   that blinks — and it blinks the way a terminal's cursor does, hard on and
+   hard off with no fade, rather than pulsing like something decorative. Lit
+   for most of the cycle: it is meant to be read, not just noticed.
+
+   Nothing moves but the ink. The label keeps its box whether it is showing or
+   not, so a row that is already sitting on the boot screen never reflows the
+   bar underneath it. */
+.bar-loading.is-waiting .bar-loading-label {
+  animation: bar-prompt 1.1s steps(1, end) infinite;
+}
+
+@keyframes bar-prompt { 0%, 64% { opacity: 1; } 64.01%, 100% { opacity: 0; } }
+
 .bar-progress { height: calc(var(--u) * 2); border: var(--border) solid var(--ink); padding: 2px; }
 
 /* While the boot screen is up the bar is only this row, and it was still
@@ -1272,6 +1287,9 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 @media (prefers-reduced-motion: reduce) {
   .caret { animation: none; }
+  /* Held lit, not taken away — the blinking is the effect, the sentence is the
+     only instruction the door gives. */
+  .bar-loading.is-waiting .bar-loading-label { animation: none; opacity: 1; }
   .bar-progress span { transition: none; }
   html, body, .bar, .panel, .tile-figure { transition: none; }
 }

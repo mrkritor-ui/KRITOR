@@ -72,9 +72,13 @@
     </div>
 
     <!-- Already in the bar's slot: the loading row does not travel here, it
-         retracts from here once it has said WELCOME. -->
+         retracts from here once it has said WELCOME. It is also where the door
+         asks: once the bar is full and the fire is still waiting, LOADING
+         becomes PRESS TO ENTER and blinks until somebody answers. Announced,
+         because a full bar that has stopped moving tells a screen reader
+         nothing about whose turn it is. -->
     <div class="bar-loading" id="loading-row">
-      <span class="bar-loading-label" id="loading-label">LOADING</span>
+      <span class="bar-loading-label" id="loading-label" aria-live="polite">LOADING</span>
       <div class="bar-progress"><span id="loading-fill"></span></div>
     </div>
 

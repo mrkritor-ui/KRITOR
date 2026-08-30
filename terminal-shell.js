@@ -11,7 +11,14 @@
    discrete steps, flashes WELCOME, brings the bar's parameters up, and only
    then deals the works in one after another like rows off a database. Real
    loading still gates it — the sequence cannot finish while images are
-   outstanding — it just never finishes early. */
+   outstanding — it just never finishes early.
+
+   On the door the bar also has to ask. The fire waits for a click and used to
+   wait behind a label that still read LOADING, so a full bar and a lit screen
+   sat there saying the machine was busy when in fact it was holding for the
+   one thing nobody had been told to do. Once the bar is full and the door is
+   still shut the label turns into a prompt and blinks — the arcade's own way
+   of saying the machine is not busy, you are. */
 (function () {
   "use strict";
 
@@ -24,6 +31,14 @@
   const TYPE_MS_REDUCED = 6;     // still types, just briskly
   const WELCOME_HOLD_MS = 650;   // how long the welcome message stands alone
   const RUSH_MS = 320;           // what is left of the bar once the gate opens
+
+  /* What the loading row says. PRESS covers all three ways in without naming
+     any of them: a tap on a phone, a click on a laptop, Enter or space on a
+     keyboard. TAP is wrong on a desktop, CLICK is wrong on a phone, and PRESS
+     ANY KEY — which is the line this is really quoting — is wrong on both when
+     there is no keyboard to hand. */
+  const LOAD_LABEL = "LOADING";
+  const GATE_LABEL = "PRESS TO ENTER";
 
   const root = document.documentElement;
   const touch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
@@ -141,6 +156,21 @@
     const started = performance.now();
     let ended = false;
 
+    /* Only the door asks for anything. A warp lands on its own, so its bar
+       fills and finishes and is never in a position to prompt. */
+    const gate = scene.mode === "gate";
+    let prompting = false;
+
+    /* Driven from the frame rather than fired once, so it turns itself off the
+       moment the door is answered. The class blinks it; the text is what says
+       which state the row is in, and the two always change together. */
+    function setPrompt(on) {
+      if (on === prompting) return;
+      prompting = on;
+      loadingLabel.textContent = on ? GATE_LABEL : LOAD_LABEL;
+      loadingRow.classList.toggle("is-waiting", on);
+    }
+
     scene.ready.then(() => {
       sceneReady = true;
       /* Answered before the bar had filled. Somebody who knocks early is not
@@ -157,6 +187,12 @@
          sliding — a terminal fills a bar in characters, not pixels. */
       const scripted = Math.min(1, elapsed / fillMs);
       loadingFill.style.width = (Math.round(scripted * 32) / 32 * 100) + "%";
+      /* A full bar in front of a shut door is the whole confusion: the machine
+         has nothing left to do and is waiting on a person who has not been
+         asked. Ask, from the moment there is nothing else the bar could be
+         reporting. Answered early, the bar is still filling and there is
+         nothing to explain — the door is already open before this is true. */
+      setPrompt(gate && !sceneReady && scripted >= 1);
       /* Real loading and the scripted fill both have to be done, and so does
          the scene — on the fire that is a click, and there is deliberately no
          timeout on it. */
@@ -172,6 +208,9 @@
       if (ended) return;
       ended = true;
       loadingFill.style.width = "100%";
+      /* The prompt has been answered, so it stops blinking before it is
+         replaced — WELCOME is stated once, not flashed. */
+      setPrompt(false);
       loadingLabel.textContent = "WELCOME";
 
       const welcome = document.getElementById("boot-welcome");
