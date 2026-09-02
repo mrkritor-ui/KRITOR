@@ -5,16 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <title>KRITOR</title>
 <meta name="theme-color" content="#f1f0ee">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Loaded async: media="print" keeps it out of the critical path, so a slow
-     or blocked font host can never delay rendering or script execution. -->
-<link rel="stylesheet" media="print" onload="this.media='all'"
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap"></noscript>
+<!-- The site face, served from this origin. Preloaded rather than left to
+     the stylesheet to discover: it is 4 KB, and font-display: block means
+     nothing is painted in it until it lands. -->
+<link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="script" href="/products.js">
 <link rel="preload" as="script" href="/product.js">
-<link rel="stylesheet" href="/type.css?v=3">
+<link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="/work.css?v=5">
 <link rel="stylesheet" href="/product.css?v=4">
 <link rel="stylesheet" href="/cart.css?v=4">

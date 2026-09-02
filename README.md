@@ -66,9 +66,12 @@ cart.js             cart state and Stripe plumbing. Untouched by the
 same way it stamps `sw.js`. Hand-numbered versions are how a change ships and
 nobody is served it — that happened for seven deploys.
 
-**Type is Press Start 2P, except a work's own name**, which is Jacquarda
-Bastarda 9. Anything outside those faces' character sets silently falls back
-and breaks the pixel grid, so check a glyph exists before using it.
+**Type is pix Chicago, except a work's own name**, which is Jacquarda
+Bastarda 9 (VT323 on the shopfront). pix Chicago is served from `fonts/` —
+see the README there for where it came from and what it covers. Anything
+outside those faces' character sets silently falls back and breaks the pixel
+grid, so check a glyph exists before using it: pix Chicago is Latin-1 plus the
+usual punctuation, with no box-drawing characters and no `−` (U+2212).
 
 ## Adding work
 

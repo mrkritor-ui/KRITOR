@@ -6,16 +6,17 @@
    and a restyle is not a reason to go near it.
 
    The page keeps its own Content-Security-Policy, which already allows
-   fonts.googleapis.com and fonts.gstatic.com, so the pixel faces load here the
-   same way they do everywhere else. */
+   fonts.googleapis.com and fonts.gstatic.com for the blackletter, and 'self'
+   for the local pix Chicago that type.css declares, so the pixel faces load
+   here the same way they do everywhere else. */
 
 :root {
   --u: 8px;
   --bg: #ffffff;
   --ink: #000000;
   --dim: #000000;
-  --face: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --title-font: "Jacquarda Bastarda 9", "Press Start 2P", serif;
+  --face: "pix Chicago", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --title-font: "Jacquarda Bastarda 9", "pix Chicago", serif;
   --border: 2px;
 }
 

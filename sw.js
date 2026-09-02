@@ -11,6 +11,10 @@ const APP_FILES = [
   "./store.js",
   "./products.js",
   "./type.css",
+  /* The site face. Precached with the shell for the same reason as the cursor:
+     font-display is block, so a page that came out of the cache without it
+     waits with nothing drawn. */
+  "./fonts/pix-chicago.woff2",
   "./tile-image.js",
   "./zoom.css",
   "./zoom-transition.js",

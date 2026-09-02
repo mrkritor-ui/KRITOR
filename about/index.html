@@ -5,14 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>About — KRITOR</title>
 <link rel="canonical" href="/about/">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Loaded async: media="print" keeps it out of the critical path, so a slow
-     or blocked font host can never delay rendering or script execution. -->
-<link rel="stylesheet" media="print" onload="this.media='all'"
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&amp;display=swap"></noscript>
-<link rel="stylesheet" href="../type.css?v=3">
+<!-- The site face, served from this origin. Preloaded rather than left to
+     the stylesheet to discover: it is 4 KB, and font-display: block means
+     nothing is painted in it until it lands. -->
+<link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../type.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="../about.css" data-kritor-page-style>
 <link rel="stylesheet" href="../transitions.css?v=11">
 <script src="../spa-transition.js?v=5"></script>

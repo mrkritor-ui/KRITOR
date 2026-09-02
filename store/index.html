@@ -15,11 +15,16 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- The site face, served from this origin. Preloaded rather than left to
+       the stylesheet to discover: it is 4 KB, and font-display: block means
+       nothing is painted in it until it lands. -->
+  <link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
   <!-- Loaded async: media="print" keeps it out of the critical path, so a slow
        or blocked font host can never delay rendering or script execution. -->
   <link rel="stylesheet" media="print" onload="this.media='all'"
-        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=Jacquarda+Bastarda+9&amp;family=VT323&amp;display=swap">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=Jacquarda+Bastarda+9&amp;family=VT323&amp;display=swap"></noscript>
+        href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;family=VT323&amp;display=swap">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;family=VT323&amp;display=swap"></noscript>
 
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">

@@ -4,42 +4,53 @@
    Loaded on every page and deliberately NOT tagged as a page style, so the SPA
    swap leaves it in place.
 
-   TO CHANGE THE TYPEFACE, change --ui-font below AND the <link href> in
-   index.html, about/, store/, work.html, product.html and checkout/. Nothing
-   else reads a font name directly.
+   The face is pix Chicago — Etienne Desclides' bitmap redraw of Chicago, the
+   system font of the first Macintosh and later of the iPod. It is served from
+   this origin (4 KB, /fonts/), so unlike the Google-hosted faces it cannot go
+   missing, and it is declared here as well as in terminal.css because the two
+   sets of pages load one file or the other and an @import would block the
+   parser.
 
-   Currently IBM Plex Mono — a monospace, chosen to match the stark
-   order-summary look the store is modelled on. Alternates worth trying, all on
-   Google Fonts:
+   TO CHANGE THE TYPEFACE, change --ui-font below AND, if the new face is
+   hosted rather than local, the <link href> in index.html, about/, store/,
+   work.html, product.html and checkout/. Nothing else reads a font name
+   directly.
 
-     Mono, same register
-       DM Mono             lighter, more elegant
-       Space Mono          more distinctive, quirkier
-       Courier Prime       closest to a typewriter
-
-     Grotesque, if you'd rather it read gallery than technical
-       Jost                geometric, Futura-like — classic gallery signage
-       Archivo             neutral grotesque, wide tracking
-       Inter               the safest neutral
-
-   The webfont itself is NOT imported here. An @import is render-blocking, and
-   a pending stylesheet blocks classic scripts from executing — so a slow or
+   The webfonts that are still remote — the blackletter and VT323, both of them
+   heading faces — are NOT imported here. An @import is render-blocking, and a
+   pending stylesheet blocks classic scripts from executing, so a slow or
    unreachable fonts.googleapis.com would leave pages blank rather than merely
-   unstyled. Each page loads it through an async <link> that cannot gate
-   parsing, and falls back to the system mono until it arrives. */
+   unstyled. Each page loads them through an async <link> that cannot gate
+   parsing. */
+
+/* The descriptors are explained in full at the top of terminal.css: 78% puts
+   Chicago's 1.124 em cap height onto the 0.875 em the sizes were set against,
+   and 115/38 is the tightest line box that clears the caps and still leaves
+   room under the baseline for its descenders. */
+@font-face {
+  font-family: "pix Chicago";
+  src: url("/fonts/pix-chicago.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+  size-adjust: 78%;
+  ascent-override: 115%;
+  descent-override: 38%;
+  line-gap-override: 0%;
+}
 
 :root {
-  --ui-font: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ui-font: "pix Chicago", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* The terminal redesign's pair: everything is Press Start 2P except a work's
+  /* The terminal redesign's pair: everything is pix Chicago except a work's
      own name, which is set in Jacquarda Bastarda 9 — a pixel blackletter, so
      it stays on the same grid while reading as a title rather than output. */
-  --face: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --face: "pix Chicago", ui-monospace, SFMono-Regular, Menlo, monospace;
   --title-font: "Jacquarda Bastarda 9", var(--face);
 
   /* The display face for the few large moments — a work's title. Deliberately
-     a grotesque against the mono, so the title carries weight and the data
-     around it stays technical. */
+     a grotesque against the bitmap face, so the title carries weight and the
+     data around it stays technical. */
   --display-font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   /* Kept separate so the UI stays light while headlines can carry weight. */
