@@ -334,7 +334,11 @@ html, body, .bar, .panel, .tile-figure {
      whole sequence: the bar is on screen from the first frame, and the works
      arrive underneath it. */
   z-index: 450;
-  width: min(560px, calc(100vw - var(--page-pad) * 2));
+  /* Sized to its contents plus the air the design was drawn with, not to a
+     round number: pix Chicago sets the same row 70px narrower than the
+     monospace did, and at 560px that turned into a panel with a hole in the
+     middle of it. 480 keeps the parameters as a group rather than spread. */
+  width: min(480px, calc(100vw - var(--page-pad) * 2));
   border: var(--border) solid var(--ink);
   background: var(--bg);
   font-size: 10px;
@@ -423,16 +427,43 @@ html, body, .bar, .panel, .tile-figure {
 
 .bar-views { display: flex; gap: calc(var(--u) * 2); margin: 0 auto; min-width: 0; }
 
-/* The tick scale under ZOOM/GRID/LIST. Purely indicative, like a printed
-   rule — the buttons above it are what you press. */
+/* The scale under ZOOM/GRID/LIST. It was a printed rule typed out of pipes
+   and dots; it now reads as well as rules — the block sits on the stop for
+   whichever view is on and steps across when another is pressed, so the row
+   says which of the three you are in even before you look at which button is
+   inverted. Drawn rather than typed so a tick is 2px on the grid whatever the
+   face does to the width of a full stop. */
 .bar-scale {
+  position: relative;
   display: block;
+  height: calc(var(--u) * .75);
   margin-top: calc(var(--u) * .5);
-  font-size: 8px;
-  color: var(--dim);
-  letter-spacing: -.05em;
-  text-align: center;
+  /* Three stops, then the dotted rule they sit on. */
+  background-image:
+    linear-gradient(var(--dim) 0 0),
+    linear-gradient(var(--dim) 0 0),
+    linear-gradient(var(--dim) 0 0),
+    repeating-linear-gradient(90deg, var(--dim) 0 2px, transparent 2px 4px);
+  background-size: 2px 100%, 2px 100%, 2px 100%, 100% 2px;
+  background-position: left center, center center, right center, center center;
+  background-repeat: no-repeat;
 }
+
+/* Ink, not the rule's grey: it is the one part of the scale that is being
+   read. It steps rather than slides — the same stepped timing the theme swap
+   uses, so nothing on this surface moves smoothly. */
+.bar-scale-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--u) * .5);
+  background: var(--ink);
+  transition: left .16s steps(2, end);
+}
+
+html[data-view="grid"] .bar-scale-mark { left: calc(50% - var(--u) * .25); }
+html[data-view="list"] .bar-scale-mark { left: calc(100% - var(--u) * .5); }
 
 .bar-modes { display: flex; gap: calc(var(--u) * .5); margin-left: auto; }
 .bar-btn { min-width: 0; }
@@ -1333,5 +1364,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
      only instruction the door gives. */
   .bar-loading.is-waiting .bar-loading-label { animation: none; opacity: 1; }
   .bar-progress span { transition: none; }
+  /* The block still moves to the stop, it just arrives there. */
+  .bar-scale-mark { transition: none; }
   html, body, .bar, .panel, .tile-figure { transition: none; }
 }

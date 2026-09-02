@@ -129,11 +129,23 @@
     return head;
   }
 
+  /* One place where the current view becomes visible: the grid's class, the
+     button that inverts, and the attribute on the root that the block on the
+     bar's scale reads its position off. Called on the way in as well as on a
+     press, so a view restored from the last visit lands the block too.
+
+     Scoped to buttons — the root itself now carries data-view, and a bare
+     [data-view] would hand it the class meant for the control. */
+  function markView(name) {
+    VIEWS.forEach(v => grid.classList.toggle("view-" + v, v === name));
+    document.querySelectorAll("button[data-view]").forEach(b =>
+      b.classList.toggle("is-active", b.dataset.view === name));
+    root.dataset.view = name;
+  }
+
   function setView(name) {
     view = VIEWS.includes(name) ? name : "grid";
-    VIEWS.forEach(v => grid.classList.toggle("view-" + v, v === view));
-    document.querySelectorAll("[data-view]").forEach(b =>
-      b.classList.toggle("is-active", b.dataset.view === view));
+    markView(view);
     try { localStorage.setItem("kritor-view", view); } catch (e) {}
     render();
   }
@@ -419,9 +431,7 @@
   let savedView = null;
   try { savedView = localStorage.getItem("kritor-view"); } catch (e) {}
   view = VIEWS.includes(savedView) ? savedView : "grid";
-  VIEWS.forEach(v => grid.classList.toggle("view-" + v, v === view));
-  document.querySelectorAll("[data-view]").forEach(b =>
-    b.classList.toggle("is-active", b.dataset.view === view));
+  markView(view);
 
   T.mountPanelNav({
     art: panelArt,
@@ -486,7 +496,9 @@
   /* Clicking the backdrop closes it: the panel is a box on the catalogue, so
      the catalogue around it should still be a way out. */
   panel.addEventListener("click", e => { if (e.target === panel) closePanel(false); });
-  document.querySelectorAll("[data-view]").forEach(b =>
+  /* Buttons only: the root carries data-view now, and binding this to it would
+     make every click anywhere on the page a view switch. */
+  document.querySelectorAll("button[data-view]").forEach(b =>
     b.addEventListener("click", () => setView(b.dataset.view)));
 
   document.addEventListener("keydown", e => {
