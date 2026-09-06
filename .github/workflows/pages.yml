@@ -2,13 +2,16 @@ name: Deploy Website
 
 on:
   push:
-    # The terminal redesign is the live site. redesign/catalogue-v2 is the old
-    # catalogue, kept as an archive and no longer deployed — it was publishing
-    # to the same Pages site, so a push to it would have replaced this one.
-    # Nothing is lost by retiring it: its head (419c1bc) is an ancestor of this
-    # branch, so the old catalogue is still in this history.
+    # The default branch is the live site, and there is only one of each. This
+    # used to name the terminal redesign's own working branch, from back when
+    # redesign/catalogue-v2 held the old catalogue and the two were publishing
+    # to the same Pages site — but the redesign has since been folded into
+    # redesign/catalogue-v2, that working branch is gone, and a trigger on a
+    # branch that no longer exists is a site that quietly stops deploying.
+    # Nothing was lost in the fold: the old catalogue's head (419c1bc) is an
+    # ancestor of this branch, so it is still in this history.
     branches:
-      - claude/terminal-redesign-sar634
+      - redesign/catalogue-v2
   workflow_dispatch:
 
 concurrency:
