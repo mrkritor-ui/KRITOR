@@ -10,7 +10,16 @@ on:
     # branch that no longer exists is a site that quietly stops deploying.
     # Nothing was lost in the fold: the old catalogue's head (419c1bc) is an
     # ancestor of this branch, so it is still in this history.
+    #
+    # Both names are listed because the default branch is mid-rename to main.
+    # Renaming it is one action in the repository's settings and it cannot be
+    # done from in here, so this file has to be correct whether that has
+    # happened yet or not — a trigger that is only right after somebody
+    # remembers to click something is the same silent failure as the one
+    # above. Drop redesign/catalogue-v2 from this list once the rename is
+    # through and the old name is gone.
     branches:
+      - main
       - redesign/catalogue-v2
   workflow_dispatch:
 
