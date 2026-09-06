@@ -9,12 +9,21 @@
    in: the works are pixels, the icons are pixels, and the door was text
    pretending.
 
-     gate   a storm running across a plain: three ranks of cloud crossing at
-            their own speeds, lightning every few seconds, a ruin on the far
-            horizon and one figure on the near ridge looking at it. The
-            wordmark is cut into the same grid, so the lightning reaches it.
+     gate   a storm running across water: four ranks of cloud crossing at
+            their own speeds, lightning every few seconds, a ruin standing in
+            mist on the far shore, and on the near ridge one figure looking at
+            it, a fire, and grass. The wordmark is cut into the same grid, so
+            the lightning reaches it.
      warp   the flight between the catalogue and the store, forwards on the way
             out and backwards on the way home.
+
+   On the gate nothing holds still. The clouds cross, the water runs — two
+   stroke layers pulled past each other, each row at its own rate — the mist
+   drifts along the far shore, the grass leans into the same gusts, the fire
+   never repeats and its smoke climbs and thins out of the dither. Rather more
+   than a third of the canvas changes every three seconds; the version of this
+   screen with a fixed dither gradient for a sky changed about a fortieth, and
+   looked it.
 
    Nothing in the gate is a fixed-size sprite. The letters, the ruin and the
    figure are shapes — polygons and rectangles in their own coordinates —
@@ -30,17 +39,25 @@
    move. An ordered-dither gradient held across a whole sky is a screen door —
    it never moves, and at this size it buries anything drawn behind it.
 
+   Everywhere else, tone is the point. Solid ink against paper and nothing in
+   between is a cut-out: the far shore had the same weight as the ridge six
+   feet away, and the whole picture read as two flat plates. So distance is
+   dithered — mist eats into the far shore and the foot of the ruin, a stipple
+   eats into the near ridge under its crest, smoke thins as it climbs — and
+   between the white of the water and the black of the foreground there is now
+   a middle to stand things in.
+
    One bit, not one colour. Everything below produces a buffer of 0 and 1 and
    the driver paints 1 as --ink and 0 as --bg, so both scenes are correct in
-   paper mode and in terminal mode without knowing which one is on. What tone
-   there is comes from dither — during a strike, and in the far rank of cloud —
-   which is what an actual 1-bit machine would have had to do, and what the
-   renditions in the catalogue already do.
+   paper mode and in terminal mode without knowing which one is on — which is
+   what an actual 1-bit machine would have had to do, and what the renditions
+   in the catalogue already do.
 
    Nothing allocates per frame. The scene is built once per size into flat
-   typed arrays, a frame is a pass over those arrays into an ImageData, and
-   between frames the only things that change are where each cloud is, the
-   flash level, and whichever pixels the bolt is on. */
+   typed arrays — the water and the mist as textures twice the screen wide, so
+   they can be pulled past forever and meet themselves — and a frame is a pass
+   over those arrays into an ImageData. About two milliseconds of it at the
+   largest grid this hands out. */
 (function () {
   "use strict";
 
@@ -102,7 +119,7 @@
   /* How big one pixel is. The grid is not fixed — the block is — so a phone and
      a 4K display get roughly the same apparent chunk, and the scene lays itself
      out against whatever grid that leaves. */
-  const TARGET_COLS = 340;
+  const TARGET_COLS = 460;
   const MIN_SCALE = 2;
   const MAX_SCALE = 10;
 
@@ -514,10 +531,93 @@
     return { mask: mask, w: w, h: h, from: from, to: to };
   }
 
+  /* ── Water ───────────────────────────────────────────────────────────────── */
+
+  /* The plain is water, and water is the only thing in the picture that is
+     drawn the way the notebook draws it: horizontal strokes, longer and more
+     of them as the ground comes forward. Two of these are laid over each other
+     and pulled past at slightly different rates, which is what makes it flow
+     rather than shimmer in place — one layer alone reads as a texture being
+     dragged, and two crossing read as a surface.
+
+     Twice the screen wide, so it can be scrolled forever and meet itself. */
+  function buildWater(WT, rows, seed) {
+    const tex = new Uint8Array(WT * rows);
+    const rnd = rng(seed);
+    for (let y = 0; y < rows; y++) {
+      const t = rows > 1 ? y / (rows - 1) : 0;
+      const density = 0.010 + t * t * 0.055;
+      const reach = 2 + t * 18;
+      let x = 0;
+      while (x < WT) {
+        if (rnd() < density) {
+          const len = Math.max(2, Math.round(2 + rnd() * reach));
+          for (let k = 0; k < len && x + k < WT; k++) tex[y * WT + x + k] = 1;
+          x += len + 2;
+        } else x += 1;
+      }
+    }
+    return tex;
+  }
+
+  /* ── Fire ────────────────────────────────────────────────────────────────── */
+
+  /* A campfire on the ridge, drawn as a silhouette like everything else in the
+     foreground — a flame in one bit cannot be bright, it can only be a shape
+     that never holds still, and the flicker is what says fire. What it does
+     get is a hole burnt in the middle of it, which is the one place on this
+     screen where paper means heat.
+
+     The column heights come off two sines beating against each other at
+     unrelated rates, so the flame never repeats on any count you could
+     watch. */
+  function drawFlame(over, W, H, cx, baseY, w, h, t) {
+    const half = Math.max(1, w / 2);
+    const from = -Math.ceil(half), to = Math.ceil(half);
+    for (let dx = from; dx <= to; dx++) {
+      const u = dx / half;
+      if (u < -1 || u > 1) continue;
+      const x = cx + dx;
+      if (x < 0 || x >= W) continue;
+      const taper = Math.pow(Math.max(0, 1 - u * u), 0.55);
+      /* The flicker runs on the flame's own width, not on the cell index —
+         driven per column it changed by a lot between neighbours and the fire
+         came out as a comb of spikes rather than as two or three tongues. */
+      const lick = 0.58
+        + 0.24 * Math.sin(t * 7.3 + u * 2.1)
+        + 0.16 * Math.sin(t * 12.1 - u * 3.4)
+        + 0.10 * Math.sin(t * 3.1 + u * 5.0);
+      const tall = h * taper * (0.5 + lick);
+      for (let k = 0; k < tall; k++) {
+        const y = baseY - k;
+        if (y >= 0 && y < H) over[y * W + x] = 1;
+      }
+    }
+    /* The heart of it, and the one place on this screen where paper means
+       heat rather than sky. */
+    const coreW = Math.max(1, Math.round(half * 0.62));
+    const coreH = Math.max(2, Math.round(h * (0.36 + 0.10 * Math.sin(t * 9.4))));
+    for (let dx = -coreW; dx <= coreW; dx++) {
+      const x = cx + dx;
+      if (x < 0 || x >= W) continue;
+      const u = dx / (coreW + 0.5);
+      const tall = coreH * Math.pow(Math.max(0, 1 - u * u), 0.5)
+        * (0.78 + 0.22 * Math.sin(t * 13.7 + u * 2.6));
+      for (let k = 1; k <= tall; k++) {
+        const y = baseY - k;
+        if (y >= 0 && y < H) over[y * W + x] = 2;
+      }
+    }
+  }
+
   function terrain(host) {
     return run(host, reduceMotion ? 12 : 24, function (W, H, info) {
       const N = W * H;
       const rnd = rng(W * 7919 + H);
+      /* Twice the screen wide, and shared: everything that scrolls — the
+         water, the mist — is built at this width so it can be pulled past
+         forever and meet itself. */
+      const WT = W * 2;
 
       /* The scene has an aspect of its own and the viewport does not. Rather
          than stretch the horizon down a phone, the landscape keeps its shape
@@ -667,6 +767,107 @@
         }
       }
 
+      /* Distance, in the only currency one bit has. The far shore and the foot
+         of the ruin are eaten into by an ordered dither that thickens as it
+         comes down to the horizon, so the far side of the plain is grey where
+         the near ridge is solid — without it the picture was two flat plates,
+         one black and one white, and everything in the middle distance had the
+         same weight as the thing standing six feet away.
+
+         The horizon's own line is left alone, or the plain and the sky run
+         into each other. */
+      const haze = new Uint8Array(N);
+      const hazeTop = Math.max(0, hy - Math.round(sceneH * 0.11));
+      /* The horizon's own line is left out of it, or the plain and the sky run
+         into each other and the picture loses the edge it is built on. */
+      const hazeFoot = Math.max(hazeTop + 1, hy - Math.max(1, Math.round(sceneH * 0.015)));
+      const mistRows = hazeFoot - hazeTop;
+      const mistTex = new Uint8Array(WT * mistRows);
+      for (let r = 0; r < mistRows; r++) {
+        const t = r / mistRows;
+        const depth = Math.pow(t, 1.5) * 0.44;
+        for (let x = 0; x < WT; x++) {
+          /* Patchy along its length, on two long waves that do not divide into
+             each other. Held even, mist knocked a ruled band of hatching
+             through the far shore that read as a mistake rather than as
+             weather. */
+          const patch = 0.35 + 0.9 * (Math.sin(x * 0.0175) * 0.5 + 0.5)
+            * (0.55 + 0.45 * (Math.sin(x * 0.0061 + 2.2) * 0.5 + 0.5));
+          mistTex[r * WT + x] = dither(x, r, depth * patch);
+        }
+      }
+      const mistSpeed = W * 0.014;
+      let mistOff = 0;
+
+      /* And the same trick on the near ridge, the other way round. It is the
+         largest single shape on the screen and it was a flat black plate:
+         a stipple eaten out of the first few rows under its crest gives the
+         ground a surface to be, and the eye something to read the edge
+         against. It is baked in here rather than laid down each frame — the
+         mist pass only ever writes its own band, so the two share the buffer
+         without meeting. */
+      const grit = Math.max(2, Math.round(sceneH * 0.07));
+      for (let x = 0; x < W; x++) {
+        for (let k = 0; k < grit; k++) {
+          const y = nearTop[x] + k;
+          if (y < 0 || y >= H) continue;
+          const d = 0.22 * Math.pow(1 - k / grit, 1.6);
+          if (dither(x, y, d)) haze[y * W + x] = 1;
+        }
+      }
+
+      /* ── The foreground ──────────────────────────────────────────────── */
+
+      /* Grass along the whole crest, and a flower on some of it. It is the one
+         thing between us and the plain, so it is what the near ridge stops
+         being a cut-out silhouette and starts being ground. Each blade leans
+         on its own count and they all take the same gusts, which are the same
+         gusts pushing the sky. */
+      /* The fire, downhill of him. Far enough off that the smoke clears the
+         ridge before it is worth looking at, close enough to be his. */
+      const fireX = Math.max(4, peakX - Math.round(W * 0.17));
+      const fireBase = nearTop[Math.min(W - 1, fireX)];
+      const fireW = Math.max(4, Math.round(sceneH * 0.060));
+      const fireH = Math.max(5, Math.round(sceneH * 0.080));
+
+      const blades = [];
+      const bladeGap = Math.max(3, Math.round(W / 74));
+      for (let x = 1; x < W - 1; x += bladeGap) {
+        /* Clumps and bare stretches rather than an even fringe: grass sown at
+           one blade per cell all the way along is a hedge, and a hedge hides
+           the ridge it is supposed to be growing out of. */
+        if (Math.sin(x * 0.037) + Math.sin(x * 0.011 + 1.7) < -0.55) continue;
+        const n = 1 + Math.floor(hash2(x, 1, 3313) * 2);
+        for (let k = 0; k < n; k++) {
+          const bx = x + Math.round(hash2(x, k + 2, 3313) * bladeGap);
+          if (bx < 1 || bx >= W - 1) continue;
+          /* And nothing growing in the fire. */
+          if (Math.abs(bx - fireX) < fireW * 1.6) continue;
+          blades.push({
+            x: bx,
+            h: Math.max(2, Math.round(sceneH * (0.020 + hash2(bx, k, 617) * 0.045))),
+            phase: hash2(bx, k, 881) * Math.PI * 2,
+            rate: 1.1 + hash2(bx, k, 977) * 1.5,
+            lean: (hash2(bx, k, 1213) - 0.5) * 0.5,
+            flower: hash2(bx, k, 1499) < 0.14,
+          });
+        }
+      }
+
+      /* And its smoke: puffs let go from the top of the flame, climbing,
+         spreading, taking the same wind as the clouds and thinning out of the
+         dither as they go, so they are gone by the time they reach the name. */
+      const SMOKE = 16;
+      const smokeLife = 3.4;
+      const puffs = [];
+      for (let i = 0; i < SMOKE; i++) {
+        puffs.push({ x: fireX, y: fireBase, r: 1, age: (i / SMOKE) * smokeLife });
+      }
+      const smokeRise = sceneH * 0.085;
+      const smokeDrift = W * 0.020;
+      const smokeGrow = sceneH * 0.020;
+      const over = new Uint8Array(N);
+
       /* The cloak, rasterised once per hem into its own overlay. */
       const cloaks = [];
       for (let i = 0; i < CLOAK.length; i++) {
@@ -675,22 +876,20 @@
         cloaks.push(c);
       }
 
-      /* The plain, running away from us to the ruin. Horizontal strokes, more
-         of them and longer as the ground comes forward — the way the ground is
-         drawn in the notebook — rather than a field of dither, because the
-         plain has to stay quiet enough for something to stand on it. */
-      const plainRows = Math.max(1, gy - hy);
-      for (let y = hy + 1; y < gy; y++) {
-        const t = (y - hy) / plainRows;
-        const density = 0.010 + t * t * 0.055;
-        let x = 0;
-        while (x < W) {
-          if (hash2(x, y, 6197) < density) {
-            const len = Math.max(2, Math.round((2 + hash2(x, y, 8419) * (3 + t * 13)) * W / 200));
-            for (let k = 0; k < len && x + k < W; k++) still[y * W + x + k] = 1;
-            x += len + 2;
-          } else x += 1;
-        }
+      /* The water, running away from us to the ruin. Two layers pulled past at
+         their own rates and at their own rate again per row — the near rows
+         travel several times faster than the far ones, which is the same
+         parallax the sky is using and is what stops the whole surface sliding
+         as one sheet. */
+      const waterRows = Math.max(1, gy - hy - 1);
+      const waterA = buildWater(WT, waterRows, 41231);
+      const waterB = buildWater(WT, waterRows, 90127);
+      const offA = new Float32Array(waterRows);
+      const offB = new Float32Array(waterRows);
+      const rowRate = new Float32Array(waterRows);
+      for (let r = 0; r < waterRows; r++) {
+        const t = r / waterRows;
+        rowRate[r] = 0.16 + t * t * 1.5;
       }
 
       /* ── The sky ─────────────────────────────────────────────────────── */
@@ -880,6 +1079,122 @@
           }
           const cloak = cloaks[cloakFrame];
 
+          /* The water. Both layers pulled left, each row at its own rate, and
+             a slow swell laid over the top so the strokes are not marching in
+             step. Wrapped per row rather than per cell: the offsets are kept
+             inside the texture so the lookup is an add and a compare. */
+          for (let r = 0; r < waterRows; r++) {
+            offA[r] += rowRate[r] * dt * W * 0.07;
+            offB[r] += rowRate[r] * dt * W * 0.041;
+            if (offA[r] >= WT) offA[r] -= WT;
+            if (offB[r] >= WT) offB[r] -= WT;
+            const y = hy + 1 + r;
+            if (y < 0 || y >= H) continue;
+            const swell = Math.sin(t * 1.15 + r * 0.28) * (2 + r * 0.03);
+            let a = Math.round(offA[r] + swell);
+            let b = Math.round(offB[r] - swell * 0.6);
+            a = ((a % WT) + WT) % WT;
+            b = ((b % WT) + WT) % WT;
+            const src = r * WT, dst = y * W;
+            for (let x = 0; x < W; x++) {
+              let ia = x + a; if (ia >= WT) ia -= WT;
+              let ib = x + b; if (ib >= WT) ib -= WT;
+              still[dst + x] = (waterA[src + ia] || waterB[src + ib]) ? 1 : 0;
+            }
+          }
+
+          /* The mist over the far shore, drifting the same way as everything
+             else and slower than any of it. */
+          mistOff += mistSpeed * dt;
+          if (mistOff >= WT) mistOff -= WT;
+          for (let r = 0; r < mistRows; r++) {
+            const y = hazeTop + r;
+            if (y < 0 || y >= H) continue;
+            let off = Math.round(mistOff + Math.sin(t * 0.37 + r * 0.21) * 2);
+            off = ((off % WT) + WT) % WT;
+            const src = r * WT, dst = y * W;
+            for (let x = 0; x < W; x++) {
+              let ix = x + off; if (ix >= WT) ix -= WT;
+              haze[dst + x] = mistTex[src + ix];
+            }
+          }
+
+          /* Everything in front of the landscape, laid down together: 1 is ink
+             and 2 is paper, which is the only way the fire gets a heart. */
+          over.fill(0);
+
+          /* The wind, as one number, so the grass and the fire lean the same
+             way at the same moment and it reads as weather rather than as two
+             animations running next to each other. */
+          const gust = Math.sin(t * 0.63) * 0.6 + Math.sin(t * 1.71 + 1.2) * 0.4;
+
+          for (let g = 0; g < blades.length; g++) {
+            const bl = blades[g];
+            const baseY = nearTop[bl.x];
+            const sway = (Math.sin(t * bl.rate + bl.phase) * 0.5 + gust) + bl.lean;
+            for (let k = 0; k <= bl.h; k++) {
+              const f = k / bl.h;
+              /* Rooted, so the bend is all at the top — a blade that pivots
+                 from the ground is a windscreen wiper. */
+              const bx = Math.round(bl.x + sway * bl.h * 0.34 * f * f);
+              const by = baseY - k;
+              if (by < 0 || by >= H) continue;
+              const rowb = by * W;
+              if (bx >= 0 && bx < W) over[rowb + bx] = 1;
+              /* Two cells at the root and one at the tip: a blade drawn a cell
+                 wide the whole way up is a wire. */
+              if (f < 0.4 && bx + 1 < W) over[rowb + bx + 1] = 1;
+            }
+            if (bl.flower) {
+              const bx = Math.round(bl.x + sway * bl.h * 0.34);
+              const by = baseY - bl.h - 1;
+              for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                  if (dx && dy) continue;                 // a cross, not a block
+                  const tx = bx + dx, ty = by + dy;
+                  if (tx >= 0 && tx < W && ty >= 0 && ty < H) over[ty * W + tx] = 1;
+                }
+              }
+            }
+          }
+
+          drawFlame(over, W, H, fireX, fireBase, fireW, fireH, t);
+
+          for (let p = 0; p < puffs.length; p++) {
+            const pf = puffs[p];
+            pf.age += dt;
+            if (pf.age >= smokeLife) {
+              pf.age = 0;
+              pf.x = fireX + (Math.random() - 0.5) * fireW;
+              pf.y = fireBase - fireH * 0.8;
+              pf.r = Math.max(1, fireW * 0.32);
+            } else {
+              pf.y -= smokeRise * dt;
+              pf.x -= (smokeDrift + gust * smokeDrift * 0.5) * dt;
+              pf.r += smokeGrow * dt;
+            }
+            /* Thinning as it climbs. The dither is what carries that: a puff
+               is solid where it leaves the fire and half gone by the time it
+               is over the water. */
+            const fade = 1 - pf.age / smokeLife;
+            const density = Math.pow(fade, 1.5) * 0.62;
+            if (density <= 0.02) continue;
+            const r = pf.r, cxp = pf.x, cyp = pf.y;
+            const y0 = Math.max(0, Math.floor(cyp - r)), y1 = Math.min(H - 1, Math.ceil(cyp + r));
+            for (let y = y0; y <= y1; y++) {
+              const dy = (y - cyp) / r;
+              const span = 1 - dy * dy;
+              if (span <= 0) continue;
+              const half = r * Math.sqrt(span);
+              const x0 = Math.max(0, Math.round(cxp - half)), x1 = Math.min(W - 1, Math.round(cxp + half));
+              const rowp = y * W;
+              for (let x = x0; x <= x1; x++) {
+                const d = Math.sqrt((x - cxp) * (x - cxp) + (y - cyp) * (y - cyp)) / r;
+                if (dither(x, y, density * (1 - d * d))) over[rowp + x] = 1;
+              }
+            }
+          }
+
           /* One pass. */
           const lit = flash > 0.001;
           for (let y = 0; y < H; y++) {
@@ -888,11 +1203,14 @@
               const i = row + x;
               let bit;
               if (land[i] || cloak[i]) {
-                bit = lit && rim[i] ? 0 : 1;
+                bit = lit ? (rim[i] ? 0 : 1) : (haze[i] ? 0 : 1);
               } else {
                 if (sky[i]) bit = (lit || landHalo[i]) ? 0 : 1;
                 else bit = lit ? dither(x, y, flash) : still[i];
               }
+              const o = over[i];
+              if (o === 1) bit = lit ? 0 : 1;
+              else if (o === 2) bit = 0;
               if (boltOn && bolt[i]) bit = lit ? 0 : 1;
               if (halo[i]) bit = mark[i] ? (lit ? 0 : 1) : (lit ? 1 : 0);
               bits[i] = bit;
