@@ -149,8 +149,8 @@ html, body, .bar, .panel, .tile-figure {
 
 /* ── Boot screen ─────────────────────────────────────────────────────────── */
 
-/* Not a splash and not a progress bar — a door. At kritor.au a fire burns up
-   from the floor and nothing proceeds until it is answered; between the
+/* Not a splash and not a progress bar — a door. At kritor.au a storm stands
+   over a plain and nothing proceeds until it is answered; between the
    catalogue and the store a starfield carries you across, forwards on the way
    out and backwards on the way home. boot-scene.js writes data-mode on the
    first frame and everything below hangs off it.
@@ -158,7 +158,10 @@ html, body, .bar, .panel, .tile-figure {
    Two voices, two faces. The machine speaks in the terminal face, in capitals:
    where you are, what is being asked. KRITOR speaks in the blackletter, in
    sentence case, and is the only thing on the screen not in the system's own
-   handwriting — which is the whole reason the hierarchy reads at all. */
+   handwriting — which is the whole reason the hierarchy reads at all. On the
+   door there is a third: the name, which is neither of them because it is not
+   type at all — pixel-fx.js draws it into the picture, on the picture's own
+   grid, so that it takes the weather with everything else. */
 
 .boot {
   position: fixed;
@@ -181,38 +184,27 @@ html, body, .bar, .panel, .tile-figure {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  /* Its own face rather than the site's: the ramp needs a dozen distinguishable
-     densities, and this is on screen while pix Chicago is still arriving —
-     a swap mid-boot would re-rule the whole grid. Set here rather than on the
-     layers so that scaling the grid to the box is one number. */
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: clamp(7px, 1.05vw, 12px);
-  line-height: 1;
-  color: var(--ink);
 }
 
-/* Six layers, stacked, one per tone. A cell is a character in its own layer
-   and a space in the other five, so the stack reads as one image — and a frame
-   is six assignments of text rather than a thousand elements built and thrown
-   away. */
-.boot-fx-band {
-  position: absolute;
-  top: 0;
-  left: 0;
-  margin: 0;
-  font: inherit;
-  white-space: pre;
+/* One canvas, a couple of hundred cells across, blown up with
+   nearest-neighbour. It is sized in whole blocks and allowed to overhang its
+   box — pixel-fx.js sets the width and the margin that centres it — because
+   letting the browser stretch the grid onto a width that is not a multiple of
+   it is what leaves some columns a pixel wider than their neighbours, and on
+   a screen made entirely of squares you can see that from across the room. */
+.boot-fx-canvas {
+  display: block;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
-/* The fire owns the floor and dissolves before it reaches the type. The
-   starfield owns the whole screen and falls away at the edges instead, so the
-   field reads as round rather than as a rectangle of characters. */
+/* The storm owns the whole frame — it is a landscape, and a landscape that
+   fades out at the top is a vignette of one. The starfield owns the whole
+   screen too but falls away at the edges, so the field reads as round rather
+   than as a rectangle of stars. */
 .boot[data-mode="gate"] .boot-fx {
+  top: 0;
   bottom: 0;
-  height: 64vh;
-  height: 64dvh;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 46%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 46%);
 }
 
 /* A hole, not a vignette: the field is cleared where the type is and thickens
@@ -225,9 +217,11 @@ html, body, .bar, .panel, .tile-figure {
   mask-image: radial-gradient(ellipse at center, transparent 13%, #000 52%, #000 88%, rgba(0, 0, 0, .5) 100%);
 }
 
-/* No colour is introduced anywhere: every layer is the page's own ink at a
-   different opacity. In paper mode the fire is soot on white, in terminal mode
-   it is phosphor, and neither needed a palette of its own. */
+/* No colour is introduced anywhere: the canvas is painted in --ink and --bg and
+   nothing else, and every tone between them is ordered dither. In paper mode
+   the storm is ink on white, in terminal mode it is phosphor on black, and
+   neither needed a palette of its own — which is also what the catalogue's
+   renditions do, one screen earlier. */
 
 /* ── The two layers of type ──────────────────────────────────────────────── */
 
@@ -262,6 +256,34 @@ html, body, .bar, .panel, .tile-figure {
   line-height: 1;
   letter-spacing: .12em;
   text-indent: .12em;
+}
+
+/* On the door the name is in the picture, cut on the picture's own grid, so
+   this one is only left for anything reading the page rather than looking at
+   it. Taken out of the flow rather than out of the tree: display: none would
+   take the name off the screen for a screen reader as well, and the name is
+   the first thing the screen says. */
+.boot[data-mode="gate"] .boot-mark {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+/* And what is left is hung off the bottom of the drawn name — pixel-fx.js
+   publishes where that landed, in real pixels, every time it lays the scene
+   out — rather than centred in the screen, which put the line through the
+   middle of the plain and, on a phone, through the ruin. */
+.boot[data-mode="gate"] .boot-core {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(var(--boot-mark-bottom, 42%) + var(--u) * 1.5);
+  width: min(46ch, 100%);
 }
 
 /* Where the flight is headed, under the name. The text-indent answers the
@@ -300,6 +322,14 @@ html, body, .bar, .panel, .tile-figure {
    feel like an effect, and this system has no shadows in it anywhere else. */
 .boot[data-mode="gate"] .boot-voice {
   animation: boot-flash 7s ease-in-out infinite;
+  /* Cut out of the sky, not laid on top of it. Eight offsets of the paper
+     colour and no blur — this is the 1-bit outline the works and the icons are
+     already drawn with, not a glow — so the line stays readable over cloud,
+     over the ruin on a narrow screen, and through the half-second when the
+     lightning turns the whole sky to ink. */
+  text-shadow:
+    2px 0 var(--bg), -2px 0 var(--bg), 0 2px var(--bg), 0 -2px var(--bg),
+    2px 2px var(--bg), -2px 2px var(--bg), 2px -2px var(--bg), -2px -2px var(--bg);
 }
 
 @keyframes boot-flash {

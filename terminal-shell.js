@@ -105,18 +105,21 @@
      onDeal    called per item, in order, as the works arrive */
   function runBoot(options) {
     const boot = document.getElementById("boot");
-    /* The scene is the loading screen's face: the fire and its ENTER gate, or
-       the starfield between the catalogue and the store. It runs alongside the
-       bar filling, and on the gate it is also what the sequence waits for —
-       the machine will not finish coming up until somebody has answered the
+    /* The scene is the loading screen's face: the storm and its gate, or the
+       starfield between the catalogue and the store. It runs alongside the bar
+       filling, and on the gate it is also what the sequence waits for — the
+       machine will not finish coming up until somebody has answered the
        door. */
     const scene = window.KritorBoot
       ? window.KritorBoot.mount(options.page || "catalogue")
       : { ready: Promise.resolve(), stop: function () {} };
-    /* The drawn cursor stands down for the duration. Both scenes rewrite a grid
-       of a thousand elements every frame, and the cursor's own `cursor: none`
-       has to be resolved against every one of them as it is created — the PNG
-       does the same job here for nothing. */
+    /* The drawn cursor stands down for the duration. It was first taken off
+       here to pay for the scenes — they were a grid of a thousand elements
+       rewritten every frame, and `cursor: none` had to be resolved against
+       every one of them as it was created — and a canvas has cost nothing on
+       that count since. It stays off because the door is one picture and one
+       target: the whole screen is the button, and a drawn arrow hunting across
+       it for something to point at says the opposite. */
     /* The class, not the call: cursor.js is deferred and has not run yet at
        this point in the page. It reads the class when it does. */
     root.classList.add("kc-off");

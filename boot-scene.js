@@ -1,15 +1,16 @@
 /* KRITOR — the boot scene.
 
    The loading screen is a door, not a progress bar. Arriving at kritor.au you
-   are stopped: a fire burns up from the floor, KRITOR says something, and
-   nothing happens until you click ENTER. Moving between the catalogue and the
+   are stopped: a storm stands over a plain with a ruin on the far side of it
+   and one figure on the near ridge looking at the ruin, KRITOR says something,
+   and nothing happens until you answer. Moving between the catalogue and the
    store you are not stopped — a starfield flies you there, forwards on the way
    out and backwards on the way home — because the door is only worth closing
    once.
 
    Which of the two you get is decided here, from where you were last:
 
-     catalogue, arrived from anywhere but the store  →  the fire, and the gate
+     catalogue, arrived from anywhere but the store  →  the storm, and the gate
      catalogue, arrived from the store               →  starfield, flying back
      store                                           →  starfield, flying out
 
@@ -34,7 +35,7 @@
       "Kritor tells you to run.",
       "Kritor has been expecting somebody.",
       "Kritor counts the ones who turned back.",
-      "Kritor keeps the fire lit for a reason.",
+      "Kritor did not put the ruin there.",
       "Kritor asks what you came here to take.",
       "Kritor remembers every visitor.",
       "Kritor would not come in, if Kritor were you.",
@@ -65,10 +66,10 @@
   /* Nothing above the name, on any of the three screens. The door used to spell
      out its invitation — "YOU HAVE STUMBLED UPON", and an ENTER button under
      it — and the warps announced their own direction, OUTBOUND and INBOUND.
-     Four lines of type over a fire is a game's title card, not a painter's
-     archive, and a flight that has to caption which way it is going is not
-     flying convincingly. The name, where you are headed, and what KRITOR has
-     to say about it. */
+     Four lines of type over a landscape is a game's title card, not a
+     painter's archive, and a flight that has to caption which way it is going
+     is not flying convincingly. The name, where you are headed, and what
+     KRITOR has to say about it. */
   const SUB = { gate: "", out: "STORE", back: "CATALOGUE" };
 
   /* Long enough that the starfield gets to accelerate and mean something,
@@ -111,12 +112,12 @@
     setText("boot-sub", SUB[mode]);
     setText("boot-voice", pick(VOICE[mode]));
 
-    const pre = document.getElementById("boot-fx");
+    const stage = document.getElementById("boot-fx");
     let stopFx = function () {};
-    if (pre && window.KritorFX) {
+    if (stage && window.KritorFX) {
       stopFx = mode === "gate"
-        ? window.KritorFX.fire(pre)
-        : window.KritorFX.starfield(pre, { direction: mode === "back" ? "back" : "forward" });
+        ? window.KritorFX.terrain(stage)
+        : window.KritorFX.starfield(stage, { direction: mode === "back" ? "back" : "forward" });
     }
 
     let ready;

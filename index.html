@@ -35,12 +35,13 @@
 
   <!-- Boot. Covers the page while it loads; the bar sits above it. The mode
        attribute is written by boot-scene.js on the first frame and decides
-       everything below: the fire, or the starfield.
+       everything below: the storm, or the starfield.
 
-       Two lines and no more. The masthead, the invitation and the ENTER button
-       all used to stand here and it read as a title card for a game rather
-       than the door to a painter's archive. The name, what KRITOR has to say,
-       and the fire underneath. -->
+       The name is drawn into the picture rather than set over it — pixel-fx.js
+       cuts KRITOR out of the sky on the same grid as the clouds, so the
+       lightning reaches it — and the <p> below is left for anything reading
+       the page rather than looking at it. What is on screen is the landscape,
+       the name in it, and one line of what KRITOR has to say. -->
   <div class="boot" id="boot">
     <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
     <div class="boot-statement">
@@ -125,7 +126,7 @@
   <script src="/image-manifest.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-manifest.js?v=__ASSET_VERSION__"></script>
   <script src="/tile-image.js?v=__ASSET_VERSION__"></script>
-  <script src="/ascii-fx.js?v=__ASSET_VERSION__"></script>
+  <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
   <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal.js?v=__ASSET_VERSION__"></script>
