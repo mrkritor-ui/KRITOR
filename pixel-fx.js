@@ -1,41 +1,54 @@
 /* KRITOR — pixel effects.
 
    Two animations for the two loading screens, both drawn as real pixels onto a
-   canvas that is a couple of hundred cells wide and then blown up with
-   nearest-neighbour, so a "pixel" on the boot screen is a square block of the
-   same family as the 1-bit renditions the catalogue is built out of. The
-   screen used to be characters — a Doom fire and a field of full stops set in
-   a <pre> — and characters are a different bitmap from the one the rest of the
-   site speaks in: the works are pixels, the icons are pixels, and the door was
-   text pretending.
+   canvas a few hundred cells wide and then blown up with nearest-neighbour, so
+   a "pixel" on the boot screen is a square block of the same family as the
+   1-bit renditions the catalogue is built out of. The screen used to be
+   characters — a Doom fire and a field of full stops set in a <pre> — and
+   characters are a different bitmap from the one the rest of the site speaks
+   in: the works are pixels, the icons are pixels, and the door was text
+   pretending.
 
-     gate   a storm over a plain: clouds drifting at two speeds, lightning
-            every few seconds, a ruin on the far horizon and one figure on the
-            near ridge looking at it. The wordmark is drawn into the same grid,
-            so it is lit by the same lightning as the landscape.
+     gate   a storm running across a plain: three ranks of cloud crossing at
+            their own speeds, lightning every few seconds, a ruin on the far
+            horizon and one figure on the near ridge looking at it. The
+            wordmark is cut into the same grid, so the lightning reaches it.
      warp   the flight between the catalogue and the store, forwards on the way
             out and backwards on the way home.
 
+   Nothing in the gate is a fixed-size sprite. The letters, the ruin and the
+   figure are shapes — polygons and rectangles in their own coordinates —
+   rasterised into whatever grid the screen turns out to give, and the clouds
+   are built from unions of circles at the size they are needed. A bitmap
+   sprite would have had to be drawn twice, once for a phone and once for a
+   desktop, or else scaled by whole numbers and put two-by-two blocks on a
+   one-by-one background, which is the one thing that reads as fake on a
+   screen made of squares.
+
+   The sky is where the picture lives, so it is kept clean: no tone in it at
+   all, and everything you can see up there is a cloud with a hard edge, on the
+   move. An ordered-dither gradient held across a whole sky is a screen door —
+   it never moves, and at this size it buries anything drawn behind it.
+
    One bit, not one colour. Everything below produces a buffer of 0 and 1 and
    the driver paints 1 as --ink and 0 as --bg, so both scenes are correct in
-   paper mode and in terminal mode without knowing which one is on, and the
-   tone between them is ordered dithering rather than opacity — which is what
-   an actual 1-bit machine would have had to do, and what the renditions in the
-   catalogue already do.
+   paper mode and in terminal mode without knowing which one is on. What tone
+   there is comes from dither — during a strike, and in the far rank of cloud —
+   which is what an actual 1-bit machine would have had to do, and what the
+   renditions in the catalogue already do.
 
    Nothing allocates per frame. The scene is built once per size into flat
-   typed arrays, a frame is a pass over those arrays into an ImageData, and the
-   only things that change between frames are two cloud offsets, a flash level
-   and whichever pixels the bolt is currently on. */
+   typed arrays, a frame is a pass over those arrays into an ImageData, and
+   between frames the only things that change are where each cloud is, the
+   flash level, and whichever pixels the bolt is on. */
 (function () {
   "use strict";
 
   /* ── 1-bit plumbing ──────────────────────────────────────────────────────── */
 
   /* Ordered dither. A value between 0 and 1 becomes ink or paper depending on
-     where the pixel sits in a 4×4 grid, which is what turns a smooth sky into
-     a stipple that holds its shape when it moves. Error diffusion would look
-     better on a still frame and crawl horribly on a moving one. */
+     where the pixel sits in a 4×4 grid. Error diffusion would look better on a
+     still frame and crawl horribly on a moving one. */
   const BAYER = new Float32Array(16);
   (function () {
     const M = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -55,22 +68,15 @@
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
   }
 
-  function wrap(i, n) { return ((i % n) + n) % n; }
-
-  /* Value noise on a grid that repeats every `gx` cells across the width, so a
-     cloud band can be scrolled forever without a seam. */
-  function noise(x, y, gx, gy, seed, CW, CH) {
-    const fx = x / CW * gx;
-    const fy = y / CH * gy;
-    const ix = Math.floor(fx), iy = Math.floor(fy);
-    const tx = fx - ix, ty = fy - iy;
-    const sx = tx * tx * (3 - 2 * tx);
-    const sy = ty * ty * (3 - 2 * ty);
-    const x0 = wrap(ix, gx), x1 = wrap(ix + 1, gx);
-    const a = hash2(x0, iy, seed), b = hash2(x1, iy, seed);
-    const c = hash2(x0, iy + 1, seed), d = hash2(x1, iy + 1, seed);
-    const top = a + (b - a) * sx;
-    return top + (c + (d - c) * sx - top) * sy;
+  /* A stream, for the things built once at layout time — the shape of each
+     cloud, where the towers stand. Seeded, so the same screen rebuilds the
+     same weather rather than dealing a new sky every time it is resized. */
+  function rng(seed) {
+    let s = (seed >>> 0) || 1;
+    return function () {
+      s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
   }
 
   function parseColour(str) {
@@ -96,14 +102,267 @@
   /* How big one pixel is. The grid is not fixed — the block is — so a phone and
      a 4K display get roughly the same apparent chunk, and the scene lays itself
      out against whatever grid that leaves. */
-  const TARGET_COLS = 200;
-  const MIN_SCALE = 3;
-  const MAX_SCALE = 12;
+  const TARGET_COLS = 340;
+  const MIN_SCALE = 2;
+  const MAX_SCALE = 10;
+
+  /* ── Rasterising shapes ──────────────────────────────────────────────────── */
+
+  /* Even-odd scanline fill, sampled at pixel centres so every edge lands
+     between two cells and nothing is ever half-covered. Takes a list of
+     contours rather than one ring, so a letter can carry its own counter — the
+     hole in an O is the second contour of the same shape, not a second shape
+     painted back in the paper colour, which would punch through whatever the
+     first one was standing on. */
+  function fillShape(buf, W, H, contours, value) {
+    let minY = Infinity, maxY = -Infinity;
+    for (let c = 0; c < contours.length; c++) {
+      const pts = contours[c];
+      for (let i = 0; i < pts.length; i++) {
+        if (pts[i][1] < minY) minY = pts[i][1];
+        if (pts[i][1] > maxY) maxY = pts[i][1];
+      }
+    }
+    const y0 = Math.max(0, Math.round(minY));
+    const y1 = Math.min(H - 1, Math.round(maxY));
+    const xs = [];
+    for (let y = y0; y <= y1; y++) {
+      const cy = y + 0.5;
+      xs.length = 0;
+      for (let c = 0; c < contours.length; c++) {
+        const pts = contours[c];
+        for (let i = 0, n = pts.length; i < n; i++) {
+          const a = pts[i], b = pts[(i + 1) % n];
+          if ((a[1] <= cy) === (b[1] <= cy)) continue;
+          xs.push(a[0] + (cy - a[1]) / (b[1] - a[1]) * (b[0] - a[0]));
+        }
+      }
+      if (xs.length < 2) continue;
+      xs.sort(function (p, q) { return p - q; });
+      const row = y * W;
+      for (let k = 0; k + 1 < xs.length; k += 2) {
+        const sx = Math.max(0, Math.round(xs[k]));
+        const ex = Math.min(W - 1, Math.round(xs[k + 1]) - 1);
+        for (let x = sx; x <= ex; x++) buf[row + x] = value;
+      }
+    }
+  }
+
+  /* Contours given in their own units, placed and scaled on the way in. */
+  function fillShapeAt(buf, W, H, contours, ox, oy, sx, sy, value) {
+    const out = [];
+    for (let c = 0; c < contours.length; c++) {
+      const pts = contours[c];
+      const ring = new Array(pts.length);
+      for (let i = 0; i < pts.length; i++) ring[i] = [ox + pts[i][0] * sx, oy + pts[i][1] * sy];
+      out.push(ring);
+    }
+    fillShape(buf, W, H, out, value);
+  }
+
+  function rect(buf, W, H, x0, y0, x1, y1, value) {
+    const a = Math.max(0, Math.round(x0)), b = Math.min(W - 1, Math.round(x1) - 1);
+    const c = Math.max(0, Math.round(y0)), d = Math.min(H - 1, Math.round(y1) - 1);
+    for (let y = c; y <= d; y++) {
+      const row = y * W;
+      for (let x = a; x <= b; x++) buf[row + x] = value;
+    }
+  }
+
+  /* ── The wordmark ────────────────────────────────────────────────────────── */
+
+  /* KRITOR as it is drawn in the notebook, cut as outlines rather than as a
+     bitmap: one weight, everything on the diagonal, a spur where a stem meets
+     an arm, and a drip off the foot of each. Units are a hundred tall from cap
+     to baseline, drips hanging below that, so the whole word can be rasterised
+     to whatever height the screen leaves for it and still land on whole cells.
+
+     The counters are second contours of the same shape, so the sky shows
+     through the O rather than a hole being painted in it afterwards. */
+  const GLYPHS = {
+    K: {
+      w: 66,
+      shapes: [
+        [[[4, 0], [26, 0], [26, 100], [4, 100]]],                       // stem
+        [[[26, 58], [40, 58], [66, 0], [52, 0]]],                       // arm
+        [[[26, 42], [40, 42], [66, 100], [50, 100]]],                   // leg
+        [[[8, 100], [15, 100], [11, 119]]],                             // drips
+        [[[53, 100], [60, 100], [57, 113]]],
+      ],
+    },
+    R: {
+      w: 58,
+      shapes: [
+        [[[4, 0], [26, 0], [26, 100], [4, 100]]],
+        [
+          [[22, 0], [46, 0], [58, 12], [58, 34], [46, 46], [22, 46]],   // bowl
+          [[30, 10], [42, 10], [48, 17], [48, 29], [42, 36], [30, 36]], // counter
+        ],
+        [[[28, 42], [42, 42], [58, 100], [44, 100]]],                   // leg
+        [[[8, 100], [15, 100], [11, 116]]],
+        [[[46, 100], [53, 100], [50, 111]]],
+      ],
+    },
+    I: {
+      w: 34,
+      shapes: [
+        [[[11, 0], [23, 0], [23, 100], [11, 100]]],
+        [[[1, 0], [33, 0], [33, 12], [1, 12]]],
+        [[[1, 88], [33, 88], [33, 100], [1, 100]]],
+        [[[14, 100], [21, 100], [17, 115]]],
+      ],
+    },
+    T: {
+      w: 64,
+      shapes: [
+        [[[0, 0], [64, 0], [64, 14], [0, 14]]],
+        [[[25, 14], [41, 14], [41, 100], [25, 100]]],
+        [[[17, 88], [49, 88], [49, 100], [17, 100]]],
+        [[[29, 100], [37, 100], [33, 120]]],
+      ],
+    },
+    O: {
+      w: 64,
+      shapes: [
+        [
+          [[2, 22], [16, 2], [48, 2], [62, 22], [62, 78], [48, 98], [16, 98], [2, 78]],
+          [[18, 28], [26, 16], [38, 16], [46, 28], [46, 72], [38, 84], [26, 84], [18, 72]],
+        ],
+        [[[24, 94], [31, 94], [27, 117]]],
+        [[[48, 90], [54, 90], [51, 105]]],
+      ],
+    },
+  };
+
+  const WORD = "KRITOR";
+  const WORD_GAP = 8;                       // in glyph units
+  const WORD_UNITS = (function () {
+    let w = 0;
+    for (let i = 0; i < WORD.length; i++) w += GLYPHS[WORD[i]].w + (i ? WORD_GAP : 0);
+    return w;
+  })();
+  const WORD_DEPTH = 120;                   // baseline is 100; the drips reach here
+
+  function wordWidth(capHeight) { return Math.round(WORD_UNITS * capHeight / 100); }
+  function wordDepth(capHeight) { return Math.round(WORD_DEPTH * capHeight / 100); }
+
+  function drawWord(buf, W, H, x, y, capHeight, value) {
+    const s = capHeight / 100;
+    let cx = x;
+    for (let i = 0; i < WORD.length; i++) {
+      const g = GLYPHS[WORD[i]];
+      for (let k = 0; k < g.shapes.length; k++) {
+        fillShapeAt(buf, W, H, g.shapes[k], cx, y, s, s, value);
+      }
+      cx += (g.w + WORD_GAP) * s;
+    }
+  }
+
+  /* ── The ruin ────────────────────────────────────────────────────────────── */
+
+  /* Built rather than drawn: towers of their own heights and widths, a wall
+     between them with an archway still standing in it, battlements knocked
+     about, and windows left open to the sky. Assembled at whatever size the
+     horizon gives it, so a wide screen gets a ruin with more in it rather than
+     the same forty cells stretched.
+
+     Returned as its own little buffer, 1 for stone and 2 for the holes — the
+     windows and the arch — which the caller punches back out of the landscape
+     so that whatever is behind the ruin shows through them. */
+  function buildRuin(w, h, seed) {
+    const rnd = rng(seed);
+    const m = new Uint8Array(w * h);
+    const unit = Math.max(1, Math.round(h * 0.07));
+
+    /* The curtain wall, and the gate still standing in the middle of it. */
+    const wallTop = Math.round(h * 0.56);
+    rect(m, w, h, w * 0.08, wallTop, w * 0.92, h, 1);
+
+    /* Battlements: every other block along the top, with gaps where they have
+       come down. */
+    for (let x = Math.round(w * 0.08); x < w * 0.92 - unit; x += unit * 2) {
+      if (rnd() < 0.7) rect(m, w, h, x, wallTop - unit, x + unit, wallTop, 1);
+    }
+    for (let k = 0; k < 2; k++) {
+      const bx = Math.round(w * (0.15 + rnd() * 0.6));
+      rect(m, w, h, bx, wallTop, bx + unit * 2, wallTop + unit, 0);
+    }
+
+    /* The archway. Square-shouldered and then stepped in at the top, because a
+       curve drawn this small is four cells that read as a mistake. */
+    const ax = Math.round(w * 0.46), aw = Math.max(2, Math.round(w * 0.10));
+    const at = Math.round(h * 0.76);
+    rect(m, w, h, ax, at, ax + aw, h, 2);
+    rect(m, w, h, ax + 1, at - Math.max(1, unit >> 1), ax + aw - 1, at, 2);
+
+    /* Towers. Each is a block with its crown broken off in two or three clean
+       steps rather than eaten away a cell at a time — chewed, they came out as
+       staircases, and a staircase reads as scaffolding. The tall one is off to
+       one side; the others are stumps, which is what makes the row a ruin
+       rather than a skyline. */
+    const towers = [
+      { x: 0.00, w: 0.19, top: 0.26 },
+      { x: 0.26, w: 0.12, top: 0.46 },
+      { x: 0.68, w: 0.24, top: 0.04 },
+    ];
+    for (let i = 0; i < towers.length; i++) {
+      const t = towers[i];
+      const tx = Math.round(w * t.x), tw = Math.max(3, Math.round(w * t.w));
+      const ty = Math.round(h * t.top);
+      rect(m, w, h, tx, ty, tx + tw, h, 1);
+
+      /* Two or three vertical slices of the crown, each dropped by its own
+         amount. The tallest slice is left alone, so something is still
+         standing. */
+      const slices = 2 + Math.floor(rnd() * 2);
+      const keep = Math.floor(rnd() * slices);
+      for (let k = 0; k < slices; k++) {
+        if (k === keep) continue;
+        const sx = tx + Math.round(tw * k / slices);
+        const sw = Math.round(tw / slices);
+        rect(m, w, h, sx, ty, sx + sw, ty + Math.round((h - ty) * (0.12 + rnd() * 0.3)), 0);
+      }
+
+      /* One slit, high up, where a window was. Two would be a building. */
+      if (tw >= unit * 3) {
+        const wx = tx + Math.round(tw * 0.38);
+        const wy = ty + Math.round((h - ty) * 0.45);
+        rect(m, w, h, wx, wy, wx + Math.max(1, Math.round(tw * 0.2)), wy + unit * 2, 2);
+      }
+    }
+    return m;
+  }
+
+  /* ── The figure ──────────────────────────────────────────────────────────── */
+
+  /* Hooded, back to us, staff planted, looking at the ruin. Outlines again
+     rather than a sprite, for the same reason as the letters — and it buys the
+     cloak, which is the one thing on him that moves: the hem is the same shape
+     with its corners pushed about, so the wind that is driving the sky is
+     visibly getting at him too.
+
+     A hundred tall from crown to heel, staff standing above that. */
+  const FIGURE = [
+    [[[24, 0], [38, 0], [42, 7], [42, 19], [20, 19], [20, 7]]],           // hood
+    [[[16, 19], [46, 19], [53, 54], [55, 84], [7, 84], [9, 54]]],         // shoulders and cloak
+    [[[20, 80], [29, 80], [29, 100], [20, 100]]],                         // legs
+    [[[33, 80], [42, 80], [42, 100], [33, 100]]],
+    [[[60, -12], [66, -12], [66, 100], [60, 100]]],                       // staff
+    [[[56, -14], [70, -14], [70, -7], [56, -7]]],                         // and its head
+  ];
+  const FIGURE_W = 70;
+
+  /* Three hems. Same cloak, blown a little further each time. */
+  const CLOAK = [
+    [[[9, 60], [20, 60], [16, 88], [3, 82]]],
+    [[[9, 60], [20, 60], [12, 90], [-3, 78]]],
+    [[[9, 60], [20, 60], [15, 86], [1, 88]]],
+  ];
 
   /* ── The driver ──────────────────────────────────────────────────────────── */
 
-  /* build(W, H) returns { render(dt, bits) }, which fills `bits` with one 0 or
-     1 per cell. Everything else — sizing, the palette, the frame budget,
+  /* build(W, H, info) returns { render(dt, bits) }, which fills `bits` with one
+     0 or 1 per cell. Everything else — sizing, the palette, the frame budget,
      pausing in a background tab, rebuilding on resize — happens here. */
   function run(host, fps, build) {
     const canvas = document.createElement("canvas");
@@ -192,299 +451,163 @@
     };
   }
 
-  /* ── Sprites ─────────────────────────────────────────────────────────────── */
+  /* ── The gate: a storm running across a plain ────────────────────────────── */
 
-  /* '#' is ink, 'o' is a hole punched back to paper — a window in the ruin —
-     and '.' is nothing at all, which is how the sky gets through the ruined
-     archway. */
-  function blit(bits, W, H, sprite, ox, oy) {
-    for (let y = 0; y < sprite.length; y++) {
-      const row = sprite[y];
-      const ty = oy + y;
-      if (ty < 0 || ty >= H) continue;
-      for (let x = 0; x < row.length; x++) {
-        const c = row.charCodeAt(x);
-        if (c === 46) continue;                       // '.'
-        const tx = ox + x;
-        if (tx < 0 || tx >= W) continue;
-        bits[ty * W + tx] = c === 35 ? 1 : 0;         // '#' : 'o'
+  /* A cloud is a union of circles on a flat base — which is the shape a cloud
+     actually is, and it comes out of one bit with a hard edge and no help.
+     Noise thresholded through a dither gave a cloud-coloured smear with no
+     silhouette; a dozen overlapping discs gives something you can point at.
+
+     Each carries the first and last set cell of every row, so laying it into
+     the frame touches its own pixels and not the empty corners of its box —
+     which is most of a box, for a shape made of circles. */
+  function makeCloud(w, h, squash, rnd) {
+    const mask = new Uint8Array(w * h);
+    const base = h - 1;
+
+    /* Lobes standing on one line. Each is round — a cloud is wide because it
+       is made of many of them, not because each one has been squashed, and
+       squashing them was what flattened the tops into slabs. They are spaced
+       closer together than they are wide, so the union is one mass rather than
+       a string of beads, and their radii vary as much as their spacing does,
+       which is the whole of the silhouette.
+
+       squash only ever goes above 1 for the far rank, where a cloud is far
+       enough away to have lost its height. */
+    const rMax = h * 0.58 / squash;
+    const rMin = h * 0.26 / squash;
+    const gap = Math.max(1, (rMin + rMax) * 0.52 * squash);
+    const n = Math.max(3, Math.round(w / gap));
+    for (let i = 0; i < n; i++) {
+      /* Fullest a third of the way along rather than in the middle: a cloud
+         with its weight off-centre reads as being blown somewhere. */
+      const t = (i + 0.5) / n;
+      const swell = 0.42 + 0.58 * Math.sin(Math.PI * Math.pow(t, 1.4));
+      const ry = (rMin + (rMax - rMin) * rnd()) * swell + rMin * 0.5;
+      const rx = ry * squash;
+      const cx = (w / n) * (i + 0.5) + (rnd() - 0.5) * (w / n) * 0.6;
+      /* Sitting below the line by a quarter of themselves, so the clip at the
+         base is the only straight edge in the shape. */
+      const cy = base - ry * (0.62 + rnd() * 0.26);
+      const y0 = Math.max(0, Math.floor(cy - ry));
+      const y1 = Math.min(base, Math.ceil(cy + ry));
+      for (let y = y0; y <= y1; y++) {
+        const dy = (y + 0.5 - cy) / ry;
+        const span = 1 - dy * dy;
+        if (span <= 0) continue;
+        const half = rx * Math.sqrt(span);
+        const x0 = Math.max(0, Math.round(cx - half));
+        const x1 = Math.min(w - 1, Math.round(cx + half));
+        const row = y * w;
+        for (let x = x0; x <= x1; x++) mask[row + x] = 1;
       }
     }
+
+    /* Row spans, so a frame only ever walks the cloud itself. */
+    const from = new Int32Array(h), to = new Int32Array(h);
+    for (let y = 0; y < h; y++) {
+      let a = -1, b = -1;
+      const row = y * w;
+      for (let x = 0; x < w; x++) if (mask[row + x]) { if (a < 0) a = x; b = x; }
+      from[y] = a; to[y] = b;
+    }
+    return { mask: mask, w: w, h: h, from: from, to: to };
   }
-
-  function spriteWidth(sprite) {
-    let w = 0;
-    for (let i = 0; i < sprite.length; i++) w = Math.max(w, sprite[i].length);
-    return w;
-  }
-
-  /* The wordmark. A pixel cut of the letters as they are drawn in the
-     notebook — one weight, cut on the diagonal, spurs at the corners and a
-     drip off the foot of every stem. It is drawn into the scene rather than
-     set as type over it, so the lightning reaches it: for two frames the sky
-     goes to ink and the name comes back out of it in paper. */
-  const MARK = {
-    K: [
-      "###.......###",
-      "###......###.",
-      "###.....###..",
-      "###....###...",
-      "###...###....",
-      "###..###.....",
-      "###.###......",
-      "#######......",
-      "######.......",
-      "#######......",
-      "###.###......",
-      "###..###.....",
-      "###...###....",
-      "###....###...",
-      "###.....###..",
-      "###......###.",
-      "###.......###",
-      ".#.........#.",
-      ".#...........",
-    ],
-    R: [
-      "#########...",
-      "###...####..",
-      "###....###..",
-      "###....###..",
-      "###...####..",
-      "#########...",
-      "########....",
-      "###.####....",
-      "###..####...",
-      "###...####..",
-      "###....####.",
-      "###.....####",
-      "###......###",
-      "###.......##",
-      "###.......##",
-      "###........#",
-      "###........#",
-      ".#.........#",
-      ".#..........",
-    ],
-    I: [
-      "#######",
-      "#######",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "..###..",
-      "#######",
-      "#######",
-      "..#....",
-      "..#....",
-    ],
-    T: [
-      "#############",
-      "#############",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      ".....###.....",
-      "....#####....",
-      "....#####....",
-      "......#......",
-      "......#......",
-    ],
-    O: [
-      "...#######...",
-      ".##########..",
-      "###.....####.",
-      "###......####",
-      "###.......###",
-      "###.......###",
-      "###.......###",
-      "###.......###",
-      "###.......###",
-      "###.......###",
-      "###.......###",
-      "###.......###",
-      "###......####",
-      "###.....####.",
-      ".##########..",
-      "..########...",
-      "...######....",
-      ".....#..#....",
-      ".....#.......",
-    ],
-  };
-
-  const MARK_WORD = "KRITOR";
-  const MARK_GAP = 2;
-  const MARK_H = MARK.K.length;
-  const MARK_W = (function () {
-    let w = 0;
-    for (let i = 0; i < MARK_WORD.length; i++) w += spriteWidth(MARK[MARK_WORD[i]]) + (i ? MARK_GAP : 0);
-    return w;
-  })();
-
-  /* The ruin. Two towers and what is left of the wall between them, with the
-     archway open to the sky — it reads at forty cells across because it is a
-     silhouette with three or four wrong edges in it, not because any of the
-     detail survives. */
-  const RUIN = [
-    "................................#####...",
-    "................................#.###...",
-    "..........................##.#####.###..",
-    "..........................############..",
-    "..........................############..",
-    "..........................###.####.###..",
-    "...###.######.............############..",
-    "...##########.............############..",
-    "...###o######.............###o####o###..",
-    "...###o######.............###o####o###..",
-    "...##########.............############..",
-    "...#######.##.............#####.######..",
-    "...##########.............############..",
-    "...##########.............####o##o####..",
-    "...##########.............####o##o####..",
-    "...##########..##.####.###############..",
-    "...###o##o###..############.##########..",
-    "...###o##o###..############.##########..",
-    "...##########..############.###o####o###",
-    "...##########..############.###o####o###",
-    "...##########..####..#####.############.",
-    "...##########..###....####.############.",
-    "...##########..###....####.############.",
-    "...##########..###....####.############.",
-    "...##########..###....####.############.",
-    "...##########..############.############",
-  ];
-
-  /* One figure on the near ridge, back to us, staff planted, looking at the
-     ruin. Everything else on the screen moves; he does not, which is the whole
-     composition — the distance between him and the thing on the horizon is
-     what the screen is about. */
-  const FIGURE = [
-    "...###.....",
-    "..#####...#",
-    "..#####...#",
-    "...###....#",
-    "..#####...#",
-    ".#######..#",
-    "#########.#",
-    "#########.#",
-    "#########.#",
-    ".########.#",
-    ".#######..#",
-    ".##.####..#",
-    ".##.###...#",
-    ".##.###...#",
-    ".##..##...#",
-    ".##..##...#",
-    "###..###..#",
-  ];
-
-  /* The one thing about him that moves, and only by a pixel or two: the cloak
-     taking the same wind that is pushing the clouds. Offsets from the sprite's
-     own origin, so they can sit outside it. */
-  const CLOAK = [
-    [[-1, 7], [-1, 8], [-1, 9], [-1, 10], [-2, 9]],
-    [[-1, 7], [-1, 8], [-2, 8], [-2, 9], [-3, 9], [-2, 10]],
-    [[-1, 7], [-2, 7], [-2, 8], [-3, 8], [-3, 9], [-2, 10], [-1, 11]],
-    [[-1, 7], [-1, 8], [-2, 8], [-2, 9], [-1, 10], [-1, 11]],
-  ];
-
-  /* ── The gate: a storm over a plain ──────────────────────────────────────── */
 
   function terrain(host) {
-    return run(host, reduceMotion ? 10 : 20, function (W, H, info) {
+    return run(host, reduceMotion ? 12 : 24, function (W, H, info) {
       const N = W * H;
+      const rnd = rng(W * 7919 + H);
 
       /* The scene has an aspect of its own and the viewport does not. Rather
          than stretch the horizon down a phone, the landscape keeps its shape
          and the screen's spare height becomes more sky above it and more
          ground below — which is what a title screen letterboxed onto a tall
          display should look like. */
-      const sceneH = Math.min(H, Math.max(Math.round(W * 0.66), Math.round(H * 0.55)));
+      const sceneH = Math.min(H, Math.max(Math.round(W * 0.60), Math.round(H * 0.55)));
       const top = Math.round((H - sceneH) * 0.72);
       const hy = top + Math.round(sceneH * 0.66);          // the horizon
       const ridgeY = top + Math.round(sceneH * 0.74);      // crest of the near ridge
       const gy = top + Math.round(sceneH * 0.92);          // where the ridge meets the floor
 
-      /* ── The static half of the picture ──────────────────────────────── */
+      /* ── The name ────────────────────────────────────────────────────── */
 
-      /* sky   the dithered gradient, as bits, so a quiet frame is a copy
-         val   the same gradient as values, so lightning can be mixed into it
-         land  every cell the landscape occupies
-         rim   the landscape's outline, which is all that is left of it when
-               the sky goes white behind it */
-      const sky = new Uint8Array(N);
-      const val = new Float32Array(N);
+      /* Sized to the scene and then held back to the screen, so a narrow phone
+         gets a smaller name rather than one running off both edges. */
+      let capH = Math.max(12, Math.round(sceneH * 0.17));
+      if (wordWidth(capH) > W * 0.88) capH = Math.max(10, Math.floor(W * 0.88 * 100 / WORD_UNITS));
+      const markW = wordWidth(capH);
+      const markX = Math.round((W - markW) / 2);
+      const markY = top + Math.round(sceneH * 0.28);
+      const markBottom = markY + wordDepth(capH);
+
+      /* Cut once into its own buffer with a cell of paper all round it, so a
+         frame is a lookup rather than a re-rasterising of six letters, and so
+         the halo can flip with the lightning. */
+      const mark = new Uint8Array(N);
+      drawWord(mark, W, H, markX, markY, capH, 1);
+      const halo = new Uint8Array(N);
+      const grow = Math.max(1, Math.round(capH * 0.06));
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          if (!mark[y * W + x]) continue;
+          for (let dy = -grow; dy <= grow; dy++) {
+            const ty = y + dy;
+            if (ty < 0 || ty >= H) continue;
+            for (let dx = -grow; dx <= grow; dx++) {
+              const tx = x + dx;
+              if (tx >= 0 && tx < W) halo[ty * W + tx] = 1;
+            }
+          }
+        }
+      }
+
+      /* ── The land ────────────────────────────────────────────────────── */
+
+      /* land  every cell the landscape occupies
+         rim   its outline, which is all that is left of it when the sky goes
+               white behind it
+         still the plain's own marks, which are not landscape and not sky */
       const land = new Uint8Array(N);
       const rim = new Uint8Array(N);
+      const still = new Uint8Array(N);
 
-      /* Weather, not grey. An ordered dither held at a third of a screen reads
-         as noise at this size and buries everything drawn into it, so the sky
-         is paper almost all the way and only takes on grain in the last part
-         of the climb — which is also where the clouds are, so the two read as
-         one thing rather than as a texture and a shape. */
-      const SKY_TOP = 0.19;
-      for (let y = 0; y < hy; y++) {
-        const t = 1 - y / hy;
-        const base = SKY_TOP * Math.pow(t, 3);
-        for (let x = 0; x < W; x++) {
-          const i = y * W + x;
-          val[i] = base;
-          sky[i] = dither(x, y, base);
+      /* The far shore, just under the horizon. Two long waves and a short one,
+         so it has headlands rather than being a rule drawn across the page —
+         at a couple of cells' amplitude that is the whole difference between
+         a coast and a border. */
+      for (let x = 0; x < W; x++) {
+        const u = x / Math.max(1, W);
+        const h = Math.max(1, Math.round(sceneH * 0.006 +
+          (Math.sin(u * 7.1) * 0.5 + 0.5) * sceneH * 0.016 +
+          (Math.sin(u * 19.3 + 2.1) * 0.5 + 0.5) * sceneH * 0.007));
+        for (let y = hy - h; y <= hy && y < H; y++) if (y >= 0) land[y * W + x] = 1;
+      }
+
+      /* The ruin, across the plain from the figure. Held to a fifth of the
+         scene's height so it never stands up into the line KRITOR is
+         speaking, and given the width to be a ruin rather than a bump. */
+      const ruinH = Math.max(10, Math.min(Math.round(sceneH * 0.20), hy - markBottom - 2));
+      const ruinW = Math.round(ruinH * 2.1);
+      const ruinX = Math.round(W * 0.20 - ruinW / 2);
+      const ruinY = hy - ruinH + 1;
+      if (ruinH > 8) {
+        const ruin = buildRuin(ruinW, ruinH, 20260906);
+        for (let y = 0; y < ruinH; y++) {
+          const ty = ruinY + y;
+          if (ty < 0 || ty >= H) continue;
+          for (let x = 0; x < ruinW; x++) {
+            const v = ruin[y * ruinW + x];
+            if (!v) continue;
+            const tx = ruinX + x;
+            if (tx < 0 || tx >= W) continue;
+            land[ty * W + tx] = v === 1 ? 1 : 0;
+          }
         }
       }
 
-      /* The plain, running away from us to the ruin. Drawn the way it is drawn
-         in the notebook — horizontal strokes, longer and more of them as the
-         ground comes forward — rather than as a field of dither, because the
-         plain is the one part of the picture that has to stay quiet enough for
-         something to stand on it. */
-      const plainRows = Math.max(1, gy - hy);
-      for (let y = hy + 1; y < gy; y++) {
-        const t = (y - hy) / plainRows;
-        const density = 0.015 + t * t * 0.075;
-        let x = 0;
-        while (x < W) {
-          if (hash2(x, y, 6197) < density) {
-            const len = 2 + Math.floor(hash2(x, y, 8419) * (3 + t * 13));
-            for (let k = 0; k < len && x + k < W; k++) sky[y * W + x + k] = 1;
-            x += len + 2;
-          } else x += 1;
-        }
-      }
-
-      /* The far land: a low ridge just under the horizon, and the ruin
-         standing on it. Solid, because distance in one bit is size and edge
-         count, never tone. */
-      const farTop = new Int32Array(W);
-      for (let x = 0; x < W; x++) {
-        const h = 2 + Math.round(1.6 + Math.sin(x * 0.045) * 1.6 + Math.sin(x * 0.017 + 2.1) * 1.4);
-        farTop[x] = hy - Math.max(0, h);
-      }
-      for (let x = 0; x < W; x++) {
-        for (let y = farTop[x]; y < hy + 1 && y < H; y++) if (y >= 0) land[y * W + x] = 1;
-      }
-
-      /* The near ridge. One long mound with the figure on its crest and a
-         smaller one behind it on the other side of the frame, so the eye has
+      /* The near ridge: one long mound with the figure on its crest, and a
+         smaller one behind it on the other side of the frame so the eye has
          somewhere to go after it has crossed. */
       const peakX = Math.round(W * 0.70);
       const spread = Math.max(6, W * 0.26);
@@ -495,40 +618,24 @@
         const a = (x - peakX) / spread;
         const b = (x - backX) / backSpread;
         const rise = (gy - ridgeY) * Math.exp(-a * a) + (gy - ridgeY) * 0.30 * Math.exp(-b * b);
-        /* A pixel of grain along the crest: a mound drawn from a smooth
-           function has a smooth edge, and nothing else on this screen does. */
-        const grain = hash2(x, 3, 5501) < 0.34 ? 1 : 0;
-        nearTop[x] = Math.round(gy - rise) - grain;
+        /* A cell of grain along the crest: a mound drawn from a smooth
+           function has a smooth edge, and nothing else here does. */
+        nearTop[x] = Math.round(gy - rise) - (hash2(x, 3, 5501) < 0.34 ? 1 : 0);
       }
       for (let x = 0; x < W; x++) {
         for (let y = Math.max(0, nearTop[x]); y < H; y++) land[y * W + x] = 1;
       }
 
-      /* The ruin sits on the far ridge, left of centre, so it is across the
-         plain from the figure rather than behind him. Held to a fifth of the
-         scene's height, taken off the top when it has to be: on a squeezed
-         screen the full sprite stands up into the line KRITOR is speaking, and
-         a ruin that has lost its last turret is still a ruin. */
-      const ruin = RUIN.slice(RUIN.length -
-        Math.max(14, Math.min(RUIN.length, Math.round(sceneH * 0.20))));
-      const ruinW = spriteWidth(ruin);
-      const ruinX = Math.round(W * 0.20) - Math.round(ruinW / 2);
-      const ruinY = hy - ruin.length + 1;
-      blit(land, W, H, ruin, ruinX, ruinY);
-      /* The ruin's windows and its open arch are holes in the silhouette, and a
-         hole has to be a hole in the sky too or the stipple behind it never
-         shows through. */
-      for (let y = 0; y < ruin.length; y++) {
-        for (let x = 0; x < ruin[y].length; x++) {
-          if (ruin[y].charCodeAt(x) !== 111) continue;      // 'o'
-          const tx = ruinX + x, ty = ruinY + y;
-          if (tx >= 0 && tx < W && ty >= 0 && ty < H) land[ty * W + tx] = 0;
-        }
+      /* Him. Feet on the crest, and tall enough to break the horizon — the
+         whole composition is that he is on this side of it and the ruin is on
+         the other. */
+      const figH = Math.max(10, Math.round(sceneH * 0.15));
+      const figS = figH / 100;
+      const figX = peakX - Math.round(FIGURE_W * figS * 0.5);
+      const figY = nearTop[Math.min(W - 1, Math.max(0, peakX))] - figH + Math.round(figH * 0.06);
+      for (let i = 0; i < FIGURE.length; i++) {
+        fillShapeAt(land, W, H, FIGURE[i], figX, figY, figS, figS, 1);
       }
-
-      const figX = peakX - Math.round(spriteWidth(FIGURE) / 2);
-      const figY = Math.max(0, nearTop[Math.min(W - 1, Math.max(0, peakX))] - FIGURE.length + 2);
-      blit(land, W, H, FIGURE, figX, figY);
 
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
@@ -539,72 +646,119 @@
         }
       }
 
-      /* ── The clouds ──────────────────────────────────────────────────── */
-
-      /* Where the name lands, decided here rather than per frame: the storm is
-         placed against it and so is the type underneath it. */
-      const markX = Math.round((W - MARK_W) / 2);
-      const markY = top + Math.round(sceneH * 0.24);
-
-      /* Where the name ends, in real screen pixels, published once per layout
-         so the line KRITOR speaks can be hung off the bottom of it rather than
-         centred in the screen. Written on the boot element rather than on this
-         one: a custom property inherits down, and the statement is this host's
-         sibling, not its child. */
-      (host.parentElement || host).style.setProperty("--boot-mark-bottom",
-        Math.round(info.offsetTop + (markY + MARK_H) * info.scale) + "px");
-      const highH = Math.max(10, Math.min(markY - 3 + Math.max(3, Math.round(hy * 0.05)),
-        Math.round(hy * 0.42)));
-
-      /* Two banks at two speeds. Each is generated at twice the width of the
-         screen so it can be scrolled forever and meet itself, and each is
-         already dithered — the stipple belongs to the cloud and travels with
-         it, rather than the cloud sliding underneath a fixed screen door. */
-      function bank(y0, h, gx, gy2, seed, cover, gain) {
-        const CW = W * 2;
-        const mask = new Uint8Array(CW * h);
-        for (let y = 0; y < h; y++) {
-          const vy = h > 1 ? y / (h - 1) : 0.5;
-          const fall = Math.min(1, Math.sin(Math.PI * Math.pow(vy, 0.72)) * 1.2);
-          for (let x = 0; x < CW; x++) {
-            const n =
-              0.56 * noise(x, y, gx, gy2, seed, CW, h) +
-              0.30 * noise(x, y, gx * 2, gy2 * 2, seed + 17, CW, h) +
-              0.14 * noise(x, y, gx * 4, gy2 * 4, seed + 91, CW, h);
-            /* Gain decides whether the bank is weather or a wall: high gain and
-               a negative cover leaves only the top of the noise standing, which
-               is a wisp; low gain and a positive one fills the band. */
-            const v = ((n - 0.5) * gain + cover) * fall;
-            mask[y * CW + x] = v > 0 ? dither(x, y, v) : 0;
+      /* And a cell of clearance just outside that outline, which a cloud is
+         never allowed to fill. Both the landscape and the weather are solid
+         ink, so a cloud passing behind the figure simply became part of him —
+         he grew a balloon — and a bank crossing the ruin swallowed its towers.
+         One cell of paper between them is all it takes, and it is the same cut
+         the name is standing in. */
+      const landHalo = new Uint8Array(N);
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          if (!rim[y * W + x]) continue;
+          for (let dy = -1; dy <= 1; dy++) {
+            const ty = y + dy;
+            if (ty < 0 || ty >= H) continue;
+            for (let dx = -1; dx <= 1; dx++) {
+              const tx = x + dx;
+              if (tx >= 0 && tx < W && !land[ty * W + tx]) landHalo[ty * W + tx] = 1;
+            }
           }
         }
-        return { mask: mask, CW: CW, h: h, y0: y0, off: 0 };
       }
 
-      const banks = [
-        /* The high bank: heavy, close, the one the lightning is inside. It is
-           hung off the bottom of the name rather than off the top of the
-           screen, and always runs off the top edge — clouds that stop short of
-           the frame are a shape floating in a sky, not weather — with a
-           ceiling on how deep it can get so a tall screen ends up with more
-           open sky above the storm rather than one enormous soft cloud. */
-        Object.assign(bank(markY - 3 - highH, highH, 5, 3, 1301, 0.26, 2.2),
-          { speed: reduceMotion ? 1.2 : 4.6 }),
-        /* And a thin one drawn across the ruin, drifting the other way and
-           slower, which is the whole of the depth in this sky. Above the far
-           ridge rather than on it: a bank lying exactly on the horizon reads
-           as a hedge, not as weather. */
-        Object.assign(bank(hy - Math.round(sceneH * 0.15), Math.max(4, Math.round(sceneH * 0.09)), 3, 1, 4703, -0.30, 3.4),
-          { speed: reduceMotion ? -0.5 : -1.7 }),
+      /* The cloak, rasterised once per hem into its own overlay. */
+      const cloaks = [];
+      for (let i = 0; i < CLOAK.length; i++) {
+        const c = new Uint8Array(N);
+        fillShapeAt(c, W, H, CLOAK[i], figX, figY, figS, figS, 1);
+        cloaks.push(c);
+      }
+
+      /* The plain, running away from us to the ruin. Horizontal strokes, more
+         of them and longer as the ground comes forward — the way the ground is
+         drawn in the notebook — rather than a field of dither, because the
+         plain has to stay quiet enough for something to stand on it. */
+      const plainRows = Math.max(1, gy - hy);
+      for (let y = hy + 1; y < gy; y++) {
+        const t = (y - hy) / plainRows;
+        const density = 0.010 + t * t * 0.055;
+        let x = 0;
+        while (x < W) {
+          if (hash2(x, y, 6197) < density) {
+            const len = Math.max(2, Math.round((2 + hash2(x, y, 8419) * (3 + t * 13)) * W / 200));
+            for (let k = 0; k < len && x + k < W; k++) still[y * W + x + k] = 1;
+            x += len + 2;
+          } else x += 1;
+        }
+      }
+
+      /* ── The sky ─────────────────────────────────────────────────────── */
+
+      /* Three ranks, all going the same way, because wind does. The speeds are
+         fractions of the width per second rather than cells, so the sky
+         crosses the screen in the same time on a phone as on a desktop —
+         about eighteen seconds for the near rank, a minute and a half for the
+         far one, which is the parallax and is meant to be noticed. */
+      /* Three ranks, all going the same way, because wind does. Spread over
+         two and a half screens rather than one and a half so that only about a
+         third of the sky is under cloud at any moment: packed any tighter they
+         join into one black ceiling, and a ceiling cannot be seen to move
+         however fast it is going. The gaps are the motion.
+
+         Highest is slowest and smallest, nearest is lowest, biggest and
+         fastest — the near rank crosses in about ten seconds and the high one
+         takes a minute, which is the parallax and is meant to be noticed. */
+      const RANKS = [
+        /* Small ones a long way off, sitting behind the ruin and hardly
+           moving. They are what stops the band between the name and the
+           horizon being a white void, and they are round rather than drawn
+           out — a distant cloud squashed into a streak reads as a wire strung
+           across the picture, which is what the first attempt at this rank
+           looked like. */
+        { n: 5, span: 1.6, speed: 0.030, squash: 1.4,  sky: [0.55, 0.60], w: [0.06, 0.11], hw: 0.34 },
+        { n: 5, span: 2.6, speed: 0.050, squash: 1.5,  band: [0.26, 0.46], w: [0.10, 0.18], hw: 0.30 },
+        { n: 5, span: 2.6, speed: 0.110, squash: 1.25, band: [0.56, 0.74], w: [0.14, 0.24], hw: 0.28 },
+        { n: 4, span: 2.6, speed: 0.200, squash: 1.1,  band: [0.82, 0.97], w: [0.20, 0.32], hw: 0.26 },
       ];
-      const cloud = new Uint8Array(N);
+      const clouds = [];
+      for (let r = 0; r < RANKS.length; r++) {
+        const rk = RANKS[r];
+        const span = W * rk.span;
+        for (let i = 0; i < rk.n; i++) {
+          const cw = Math.max(8, Math.round(W * (rk.w[0] + rnd() * (rk.w[1] - rk.w[0]))));
+          /* Height off the cloud's own width, not off the scene. Measured
+             against the scene, the same rank came out four times as wide as it
+             was tall on a desktop and twice on a phone — the second is not a
+             cloud, it is a boulder. */
+          const ch = Math.max(5, Math.round(cw * rk.hw * (0.85 + rnd() * 0.3)));
+          /* Where a rank hangs. The three that carry the weather are placed by
+             where their base lands in the run from the top of the frame down
+             to the name, rather than at a fraction of the scene — the scene is
+             pushed down a tall screen, and measuring from it left the top
+             third of a phone as blank paper. The low rank is the exception:
+             it belongs to the horizon and is measured from the scene like the
+             rest of the landscape. */
+          const cy = rk.sky
+            ? top + Math.round(sceneH * (rk.sky[0] + rnd() * (rk.sky[1] - rk.sky[0])))
+            : Math.round(markY * (rk.band[0] + rnd() * (rk.band[1] - rk.band[0]))) - ch;
+          clouds.push({
+            shape: makeCloud(cw, ch, rk.squash, rnd),
+            x: -cw + (i + rnd() * 0.9) * (span / rk.n),
+            y: cy,
+            speed: W * rk.speed * (reduceMotion ? 0.25 : 1),
+            span: span,
+          });
+        }
+      }
+      const sky = new Uint8Array(N);
 
       /* ── The lightning ───────────────────────────────────────────────── */
 
       /* Level 0 is a quiet frame. Above it the sky fills toward solid ink, the
-         landscape keeps its ink but loses its top edge to paper, the clouds go
-         to paper from behind and the bolt is the paper it is coming from — so
-         a strike is the picture turning inside out for a fifth of a second
+         landscape keeps its ink but loses its outline to paper, the clouds go
+         to paper from behind and the bolt is the paper it is coming out of —
+         so a strike is the picture turning inside out for a fifth of a second
          rather than anything getting brighter, which is all one bit can mean.
 
          Two flickers and a decay, because a single step reads as a dropped
@@ -619,23 +773,28 @@
       function strike() {
         bolt.fill(0);
         boltOn = true;
+        const thick = Math.max(1, Math.round(W / 220));
         let x = Math.round(W * (0.12 + Math.random() * 0.72));
-        let y = top + Math.round(sceneH * 0.06);
-        const endY = hy - Math.round(2 + Math.random() * 6);
+        let y = top + Math.round(sceneH * 0.04);
+        const endY = hy - Math.round(sceneH * (0.02 + Math.random() * 0.06));
         const forkAt = y + Math.round((endY - y) * (0.35 + Math.random() * 0.3));
         let fork = null;
-        const mark = (px2, py) => {
-          if (px2 >= 0 && px2 < W && py >= 0 && py < H) bolt[py * W + px2] = 1;
+        const mark2 = (px2, py) => {
+          for (let k = 0; k < thick; k++) {
+            const tx = px2 + k;
+            if (tx >= 0 && tx < W && py >= 0 && py < H) bolt[py * W + tx] = 1;
+          }
         };
+        const step = Math.max(2, Math.round(sceneH * 0.03));
         while (y < endY) {
-          const step = 2 + Math.floor(Math.random() * 4);
-          const dx = Math.round((Math.random() - 0.5) * 5);
-          for (let k = 0; k < step && y < endY; k++, y++) {
-            const nx = x + Math.round(dx * k / step);
-            mark(nx, y);
+          const run2 = step + Math.floor(Math.random() * step);
+          const dx = Math.round((Math.random() - 0.5) * W * 0.03);
+          for (let k = 0; k < run2 && y < endY; k++, y++) {
+            const nx = x + Math.round(dx * k / run2);
+            mark2(nx, y);
             /* Thicker at the top, where it is nearest, and down to a hair by
                the time it reaches the plain. */
-            if (y < forkAt) mark(nx + 1, y);
+            if (y < forkAt) mark2(nx + thick, y);
           }
           x += dx;
           if (fork === null && y >= forkAt) fork = { x: x, y: y, dir: Math.random() < 0.5 ? -1 : 1 };
@@ -646,31 +805,46 @@
           for (let k = 0; k < len; k++) {
             fx += fork.dir * (Math.random() < 0.55 ? 1 : 0);
             fy += 1;
-            mark(fx, fy);
+            mark2(fx, fy);
           }
         }
       }
+
+      /* Published so the line KRITOR speaks can be hung off the bottom of the
+         drawn name rather than centred in the screen. Written on the boot
+         element rather than on this one: a custom property inherits down, and
+         the statement is this host's sibling, not its child. */
+      (host.parentElement || host).style.setProperty("--boot-mark-bottom",
+        Math.round(info.offsetTop + markBottom * info.scale) + "px");
 
       return {
         render: function (dt, bits) {
           t += dt;
 
-          /* Clouds first: clear the composite, then lay each bank into it at
-             its own offset. Two array walks, no allocation, and the offsets
-             land on whole cells — a cloud that moves by a third of a pixel is
-             a cloud that has stopped being made of pixels. */
-          cloud.fill(0);
-          for (let b = 0; b < banks.length; b++) {
-            const bank2 = banks[b];
-            bank2.off += bank2.speed * dt;
-            const shift = wrap(Math.round(bank2.off), bank2.CW);
-            for (let y = 0; y < bank2.h; y++) {
-              const ty = bank2.y0 + y;
+          /* The sky. Cleared and relaid every frame at whole-cell positions —
+             a cloud that moves by a third of a pixel is a cloud that has
+             stopped being made of pixels — far rank first so the near one
+             crosses in front of it. */
+          sky.fill(0);
+          for (let c = 0; c < clouds.length; c++) {
+            const cl = clouds[c];
+            cl.x -= cl.speed * dt;
+            if (cl.x + cl.shape.w < 0) cl.x += cl.span;
+            const ox = Math.round(cl.x);
+            const shape = cl.shape;
+            for (let y = 0; y < shape.h; y++) {
+              const ty = cl.y + y;
               if (ty < 0 || ty >= H) continue;
-              const src = y * bank2.CW;
-              const dst = ty * W;
-              for (let x = 0; x < W; x++) {
-                if (bank2.mask[src + wrap(x + shift, bank2.CW)]) cloud[dst + x] = 1;
+              let a = shape.from[y];
+              if (a < 0) continue;
+              let b = shape.to[y];
+              if (ox + a < 0) a = -ox;
+              if (ox + b > W - 1) b = W - 1 - ox;
+              const src = y * shape.w;
+              const dst = ty * W + ox;
+              for (let x = a; x <= b; x++) {
+                const v = shape.mask[src + x];
+                if (v) sky[dst + x] = v;
               }
             }
           }
@@ -700,77 +874,29 @@
           }
 
           cloakT += dt;
-          if (cloakT > 0.42) {
+          if (cloakT > 0.5) {
             cloakT = 0;
             cloakFrame = (cloakFrame + 1 + (Math.random() < 0.3 ? 1 : 0)) % CLOAK.length;
           }
+          const cloak = cloaks[cloakFrame];
 
-          /* One pass. Quiet frames are sky-or-cloud-or-land and nothing else;
-             lit frames mix the flash level into the sky's own value so the
-             stipple fills rather than switches, and take the rim and the bolt
-             back out of it. */
+          /* One pass. */
           const lit = flash > 0.001;
           for (let y = 0; y < H; y++) {
             const row = y * W;
             for (let x = 0; x < W; x++) {
               const i = row + x;
               let bit;
-              if (land[i]) {
+              if (land[i] || cloak[i]) {
                 bit = lit && rim[i] ? 0 : 1;
-              } else if (cloud[i]) {
-                bit = flash > 0.45 ? 0 : 1;
-              } else if (lit) {
-                const v = val[i] + (1 - val[i]) * flash;
-                bit = dither(x, y, v);
               } else {
-                bit = sky[i];
+                if (sky[i]) bit = (lit || landHalo[i]) ? 0 : 1;
+                else bit = lit ? dither(x, y, flash) : still[i];
               }
               if (boltOn && bolt[i]) bit = lit ? 0 : 1;
+              if (halo[i]) bit = mark[i] ? (lit ? 0 : 1) : (lit ? 1 : 0);
               bits[i] = bit;
             }
-          }
-
-          /* The cloak, over the ridge it is standing on. */
-          const cf = CLOAK[cloakFrame];
-          for (let k = 0; k < cf.length; k++) {
-            const cx = figX + cf[k][0], cy = figY + cf[k][1];
-            if (cx >= 0 && cx < W && cy >= 0 && cy < H) bits[cy * W + cx] = lit && cf[k][1] < 9 ? 0 : 1;
-          }
-
-          /* The wordmark last, with a cell of paper knocked out all round it,
-             so it is legible through whatever the sky is doing behind it. */
-          let mx = markX;
-          const my = markY;
-          /* The halo takes whichever tone the letters are not, so the name is
-             cut out of the sky in a quiet frame and cut back into it in a lit
-             one — either way the drips keep their edges. */
-          const halo = lit ? 1 : 0;
-          const face = lit ? 0 : 1;
-          for (let g = 0; g < MARK_WORD.length; g++) {
-            const glyph = MARK[MARK_WORD[g]];
-            for (let y = 0; y < glyph.length; y++) {
-              const row2 = glyph[y];
-              for (let x = 0; x < row2.length; x++) {
-                if (row2.charCodeAt(x) !== 35) continue;
-                for (let dy = -1; dy <= 1; dy++) {
-                  for (let dx = -1; dx <= 1; dx++) {
-                    const tx = mx + x + dx, ty = my + y + dy;
-                    if (tx < 0 || tx >= W || ty < 0 || ty >= H) continue;
-                    bits[ty * W + tx] = halo;
-                  }
-                }
-              }
-            }
-            for (let y = 0; y < glyph.length; y++) {
-              const row2 = glyph[y];
-              for (let x = 0; x < row2.length; x++) {
-                if (row2.charCodeAt(x) !== 35) continue;
-                const tx = mx + x, ty = my + y;
-                if (tx < 0 || tx >= W || ty < 0 || ty >= H) continue;
-                bits[ty * W + tx] = face;
-              }
-            }
-            mx += spriteWidth(glyph) + MARK_GAP;
           }
         },
       };
@@ -794,8 +920,7 @@
     const back = opts.direction === "back";
 
     return run(host, reduceMotion ? 16 : 30, function (W, H) {
-      const N = W * H;
-      const count = Math.min(900, Math.round(W * H * (0.09 + Math.random() * 0.05)));
+      const count = Math.min(1600, Math.round(W * H * (0.045 + Math.random() * 0.025)));
       const NEAR = 0.35, FAR = 14;
       const FOV = W * 0.42;
       const xs = new Float32Array(count);
@@ -804,6 +929,7 @@
       /* Not every star streaks, and the ones that do not are what make the ones
          that do read as near. Fixed per star, so a streak never blinks. */
       const trails = new Uint8Array(count);
+      const big = Math.max(1, Math.round(W / 200));
 
       const place = (i, z) => {
         const a = Math.random() * Math.PI * 2;
@@ -833,6 +959,9 @@
           const put = (x, y) => {
             if (x >= 0 && x < W && y >= 0 && y < H) bits[y * W + x] = 1;
           };
+          const blob = (x, y, r) => {
+            for (let dy = 0; dy < r; dy++) for (let dx = 0; dx < r; dx++) put(x + dx, y + dy);
+          };
 
           for (let i = 0; i < count; i++) {
             let z = back ? zs[i] + step : zs[i] - step;
@@ -846,21 +975,13 @@
                they were wide and the projection had to answer it; a pixel is
                square, so the field is finally round for free. */
             const sy = Math.round(cy + ys[i] * k);
-            if (sx < -3 || sx >= W + 3 || sy < -3 || sy >= H + 3) continue;
+            if (sx < -6 || sx >= W + 6 || sy < -6 || sy >= H + 6) continue;
 
             const near = Math.pow(1 - (z - NEAR) / (FAR - NEAR), 1.7);
 
-            if (near > 0.72) {
-              put(sx, sy); put(sx + 1, sy); put(sx, sy + 1); put(sx + 1, sy + 1);
-              if (near > 0.9) { put(sx - 1, sy); put(sx + 2, sy); put(sx, sy - 1); put(sx, sy + 2); }
-            } else if (near > 0.34) {
-              put(sx, sy);
-              if (near > 0.5) put(sx + 1, sy);
-            } else {
-              /* Faint, and made faint the only way one bit allows: it is on the
-                 screen only where the dither says a cell of that value is. */
-              if (dither(sx, sy, 0.22 + near * 1.6)) put(sx, sy);
-            }
+            if (near > 0.72) blob(sx, sy, big * 2);
+            else if (near > 0.34) blob(sx, sy, big);
+            else if (dither(sx, sy, 0.22 + near * 1.6)) put(sx, sy);
 
             /* The streak, drawn back along the line to the vanishing point —
                forwards it trails behind, coming home it points the way in. */
@@ -874,7 +995,7 @@
                  out as a row of dots strung across the screen rather than as
                  the streak it is. */
               const reach = Math.hypot(dx, dy);
-              const len = Math.min(9, Math.round(reach));
+              const len = Math.min(9 * big, Math.round(reach));
               for (let s = 1; s <= len; s++) {
                 put(Math.round(sx + dx / reach * s), Math.round(sy + dy / reach * s));
               }
