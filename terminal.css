@@ -360,7 +360,7 @@ html, body, .bar, .panel, .tile-figure {
   left: 50%;
   top: calc(var(--boot-mark-top, 0px) - var(--boot-mark-bottom, 0px) - var(--u) * 1.5);
   margin: 0;
-  transform: translate(-50%, -170%);
+  transform: translate(-50%, -280%);
 }
 
 /* Answered. The picture dissolves away underneath — pixel-fx does that on its
@@ -620,7 +620,12 @@ html.is-booting .bar-scroll { display: none; }
   to { max-height: 8rem; opacity: 1; }
 }
 
-#info-row.is-in { overflow: hidden; animation: bar-unfold .3s ease; }
+/* Both of these clip only while the sequence is running. Left on, the drawer's
+   overflow: hidden swallowed every filter menu in the bar — the value lists are
+   absolutely positioned and hang out below the drawer by design, so clipping it
+   made them invisible and unclickable, which is a working control that silently
+   stops working. The class is dropped once the animation is over. */
+html.is-entering #info-row.is-in { overflow: hidden; animation: bar-unfold .3s ease; }
 .bar-progress span {
   display: block;
   height: 100%;
@@ -652,7 +657,7 @@ html.is-booting .bar-scroll { display: none; }
   to { max-height: 3rem; opacity: 1; }
 }
 
-.bar-drawer.is-open { overflow: hidden; animation: bar-unfold-thin .3s ease; }
+html.is-entering .bar-drawer.is-open { overflow: hidden; animation: bar-unfold-thin .3s ease; }
 
 /* Touch is the exception — there the bar spans the page, so the row folds
    away behind the tab and the works keep the screen. */

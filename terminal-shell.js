@@ -253,6 +253,12 @@
            by the time there is nothing in front of it, it is already the shape
            it is going to stay. */
         root.classList.remove("is-booting");
+        /* Only for as long as the unfold takes. The rules that clip the rows
+           to their animated height have to stop applying afterwards, or the
+           drawer keeps an overflow: hidden that swallows the filter menus
+           hanging out below it for the rest of the session. */
+        root.classList.add("is-entering");
+        setTimeout(() => root.classList.remove("is-entering"), 420);
         if (options.onParams) options.onParams();
 
         setTimeout(() => {
