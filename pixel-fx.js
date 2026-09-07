@@ -764,13 +764,18 @@
     const themeWatch = new MutationObserver(readPalette);
     themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-    return function stop() {
-      stopped = true;
-      cancelAnimationFrame(raf);
-      clearTimeout(resizeTimer);
-      window.removeEventListener("resize", onResize);
-      themeWatch.disconnect();
-      host.textContent = "";
+    return {
+      /* Asked to leave. A scene may answer it — the gate dissolves — and one
+         that does not simply carries on until it is stopped. */
+      part: function (ms) { if (scene && scene.part) scene.part(ms); },
+      stop: function () {
+        stopped = true;
+        cancelAnimationFrame(raf);
+        clearTimeout(resizeTimer);
+        window.removeEventListener("resize", onResize);
+        themeWatch.disconnect();
+        host.textContent = "";
+      },
     };
   }
 
@@ -1518,6 +1523,12 @@
       let flash = 0, beat = -1, beatT = 0;
       let nextStrike = reduceMotion ? Infinity : 1.6 + Math.random() * 3.5;
       let t = 0, cloakT = 0, cloakFrame = 0;
+      /* Leaving. The picture is taken away with the same ordered dither that
+         builds every tone in it — ink drops out cell by cell until only the
+         name is left standing on paper — rather than by fading the canvas,
+         which would take the name with it and would be a dissolve in the wrong
+         medium besides. */
+      let partMs = 0, partT = 0, dissolve = 0;
 
       function strike() {
         bolt.fill(0);
@@ -1563,12 +1574,20 @@
          drawn name rather than centred in the screen. Written on the boot
          element rather than on this one: a custom property inherits down, and
          the statement is this host's sibling, not its child. */
-      (host.parentElement || host).style.setProperty("--boot-mark-bottom",
+      const owner = host.parentElement || host;
+      owner.style.setProperty("--boot-mark-top",
+        Math.round(info.offsetTop + markY * info.scale) + "px");
+      owner.style.setProperty("--boot-mark-bottom",
         Math.round(info.offsetTop + markBottom * info.scale) + "px");
 
       return {
+        part: function (ms) { partMs = Math.max(1, ms); partT = 0; nextStrike = Infinity; },
         render: function (dt, bits) {
           t += dt;
+          if (partMs) {
+            partT += dt * 1000;
+            dissolve = Math.min(1, partT / partMs);
+          }
 
           /* The sky. Cleared and relaid every frame at whole-cell positions —
              a cloud that moves by a third of a pixel is a cloud that has
@@ -1847,6 +1866,9 @@
               if (o === 1) bit = lit ? 0 : 1;
               else if (o === 2) bit = 0;
               if (boltOn && bolt[i]) bit = lit ? 0 : 1;
+              /* Taken away before the name is stamped back over it, so the
+                 name is the one thing the dissolve cannot reach. */
+              if (dissolve > 0 && bit && dither(x, y, dissolve)) bit = 0;
               if (halo[i]) bit = mark[i] ? (lit ? 0 : 1) : (lit ? 1 : 0);
               bits[i] = bit;
             }
@@ -1898,6 +1920,9 @@
 
       let t = 0;
 
+      /* No part() here. The warp is not a door being opened — it lands, and
+         the screen it lands on is the one you were going to. Only the gate has
+         anything to dissolve. */
       return {
         render: function (dt, bits) {
           t += dt;

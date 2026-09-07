@@ -23,14 +23,21 @@
   "use strict";
 
   const BOOT_MS = 2400;          // how long the bar takes to fill on the gate
-  const WELCOME_MS = 450;        // how long WELCOME holds before the row goes
   const DEAL_MS = 45;            // gap between works arriving
   const IDLE_MS = 20000;         // idle before the screensaver takes over
   const TYPE_MS = 22;            // ms per character
   const TYPE_LINE_MS = 110;      // extra pause at the end of each line
   const TYPE_MS_REDUCED = 6;     // still types, just briskly
-  const WELCOME_HOLD_MS = 650;   // how long the welcome message stands alone
   const RUSH_MS = 320;           // what is left of the bar once the gate opens
+
+  /* Answering the door, in three beats and about a second and a third. The
+     picture dissolves out from under the name, the name stands on white with
+     WELCOME TO over it while the bar flashes WELCOME, and then that goes too
+     and the catalogue is underneath. Quick: it is a door being opened, not a
+     curtain call. */
+  const PART_MS = 380;           // the scene dissolving away
+  const WHITE_MS = 620;          // the name alone on paper
+  const LEAVE_MS = 260;          // and the boot screen itself going
 
   /* What the loading row says. PRESS covers all three ways in without naming
      any of them: a tap on a phone, a click on a laptop, Enter or space on a
@@ -124,8 +131,12 @@
        this point in the page. It reads the class when it does. */
     root.classList.add("kc-off");
 
-    /* While the boot screen is up the bar is only a loading row, and it does
-       not need the width it holds a whole catalogue's parameters in. */
+    /* The bar keeps its shape for the whole sequence. It used to be shrunk
+       while the boot screen was up — narrower, tighter padding, smaller label,
+       shorter progress bar — and then let go at the end, and the snap back to
+       full size was the ugliest moment on the site. It is a panel that is
+       there from the first frame to the last; only what is inside it changes.
+       The class stays because other rules hang off it. */
     root.classList.add("is-booting");
 
     let sceneReady = false;
@@ -203,38 +214,58 @@
       requestAnimationFrame(frame);
     };
 
-    /* Four beats, in order, because a machine coming up does one thing at a
-       time: the bar fills, it says WELCOME, the bar assembles itself around
-       the loading row, and only then are the works dealt in. Showing the INFO
-       row while the bar was still filling gave the sequence away. */
+    /* Three beats, in order, because a machine coming up does one thing at a
+       time. Showing the INFO row while the bar was still filling gave the
+       sequence away, so it arrives at the end with the rest of the bar. */
     function end() {
       if (ended) return;
       ended = true;
       loadingFill.style.width = "100%";
-      /* The prompt has been answered, so it stops blinking before it is
-         replaced — WELCOME is stated once, not flashed. */
       setPrompt(false);
       loadingLabel.textContent = "WELCOME";
+      /* And it flashes. The prompt asked and has been answered; this is the
+         answer, and the one thing still moving once the picture has gone. */
+      loadingRow.classList.add("is-welcome");
 
+      /* Beat one: the picture dissolves out from under the name, the line
+         KRITOR was saying goes with it, and WELCOME TO comes up over the top.
+         The name itself is drawn into the scene's own grid and the dissolve is
+         written not to reach it, so it is left standing on white. */
       const welcome = document.getElementById("boot-welcome");
-      if (welcome) welcome.hidden = false;
+      if (welcome) {
+        welcome.textContent = gate ? "WELCOME TO" : "WELCOME.";
+        welcome.hidden = false;
+      }
+      scene.part(PART_MS);
+      requestAnimationFrame(() => boot.classList.add("is-parting"));
 
+      /* Beat two: the name alone, and the bar flashing under it. */
       setTimeout(() => {
-        infoRow.hidden = false;                    // the bar arrives
+        /* Beat three: the bar's parameters fade up as the loading row folds
+           away — both eased, so the panel settles rather than jumps — and the
+           boot screen fades off whatever is already behind it. */
+        infoRow.hidden = false;
+        infoRow.classList.add("is-in");
+        loadingRow.classList.add("is-gone");
+        boot.classList.add("is-leaving");
+        /* The bar assembles itself while the door is still fading over the top
+           of it, so whatever settling it has to do happens behind something —
+           by the time there is nothing in front of it, it is already the shape
+           it is going to stay. */
+        root.classList.remove("is-booting");
+        if (options.onParams) options.onParams();
+
         setTimeout(() => {
-          loadingRow.classList.add("is-gone");     // and the loading row goes
           boot.classList.add("is-done");
           scene.stop();                            // nothing animates underneath
           /* By now cursor.js has run, and resume() puts the cursor back under
              the pointer rather than waiting for it to be moved. */
-          root.classList.remove("is-booting");
           if (window.KritorCursor) window.KritorCursor.resume();
           else root.classList.remove("kc-off");
 
-          if (options.onParams) options.onParams();
           deal();
-        }, WELCOME_MS);
-      }, WELCOME_HOLD_MS);
+        }, LEAVE_MS);
+      }, PART_MS + WHITE_MS);
     }
 
     /* Works arrive one at a time, in order, the way rows come back from a

@@ -342,6 +342,42 @@ html, body, .bar, .panel, .tile-figure {
   margin-top: calc(var(--u) * 2);
   font-size: clamp(10px, 1.1vw, 15px);
   letter-spacing: .08em;
+  text-indent: .08em;
+  opacity: 0;
+  transition: opacity .3s ease .1s;
+}
+
+/* On the door it goes above the name rather than below it — the name is drawn
+   into the picture, so this is hung off the top of it the same way the line
+   underneath is hung off the bottom.
+
+   The offset is a difference rather than a position: this sits inside the core,
+   and the core is already parked at the bottom of the name, so an absolute top
+   here resolves against that and not against the screen. Measured from the
+   screen it landed a whole wordmark's height too low. */
+.boot[data-mode="gate"] .boot-welcome {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--boot-mark-top, 0px) - var(--boot-mark-bottom, 0px) - var(--u) * 1.5);
+  margin: 0;
+  transform: translate(-50%, -170%);
+}
+
+/* Answered. The picture dissolves away underneath — pixel-fx does that on its
+   own grid, and leaves the name standing — while the line KRITOR was saying
+   goes out and WELCOME TO comes up over the top. Quick, and in that order. */
+.boot.is-parting .boot-welcome { opacity: 1; }
+
+.boot.is-parting .boot-voice {
+  animation: none;
+  opacity: 0;
+  transition: opacity .24s ease;
+}
+
+/* And then the whole door, off whatever is already behind it. */
+.boot.is-leaving {
+  opacity: 0;
+  transition: opacity .26s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -511,8 +547,18 @@ html[data-view="list"] .bar-scale-mark { left: calc(100% - var(--u) * .5); }
 
 /* The loading bar does not fly anywhere: it is already in the bar's slot, as
    a row below INFO, and retracts once it has said WELCOME. */
-.bar-loading { display: block; padding: calc(var(--u) * 1.5); }
-.bar-loading.is-gone { display: none; }
+.bar-loading {
+  display: block;
+  padding: calc(var(--u) * 1.5);
+  overflow: hidden;
+  max-height: 12rem;
+  /* Folded away faster than the rows replacing it unfold. Given the same
+     third of a second, for a moment all of them have height at once and the
+     panel bulges past where it is going before dropping back to it. Out
+     quickly and in slowly, and the height only ever climbs. */
+  transition: max-height .16s ease, opacity .14s ease;
+}
+.bar-loading.is-gone { max-height: 0; opacity: 0; }
 .bar-loading-label { display: block; margin-bottom: var(--u); font-size: 10px; }
 
 /* The bar full, the door still shut. Everything else on this screen is either
@@ -528,28 +574,53 @@ html[data-view="list"] .bar-scale-mark { left: calc(100% - var(--u) * .5); }
   animation: bar-prompt 1.1s steps(1, end) infinite;
 }
 
+/* And the same blink for the answer. PRESS TO ENTER asks; WELCOME is what the
+   machine says back, and it is the one thing still moving on a screen that has
+   just been emptied of everything else. */
+.bar-loading.is-welcome .bar-loading-label {
+  animation: bar-prompt .9s steps(1, end) infinite;
+}
+
 @keyframes bar-prompt { 0%, 64% { opacity: 1; } 64.01%, 100% { opacity: 0; } }
 
 .bar-progress { height: calc(var(--u) * 2); border: var(--border) solid var(--ink); padding: 2px; }
 
-/* While the boot screen is up the bar is only this row, and it was still
-   holding the width it needs for a catalogue's worth of parameters — a wide
-   panel in the corner of an otherwise almost empty screen. It takes only what
-   it needs until the machine is up. */
-/* Only where the bar is a panel in the corner. On a phone it spans the width
-   by design, and pinning a 300px box to the left edge there is not smaller,
-   only lopsided. */
-@media (min-width: 900px) {
-  html.is-booting .bar { width: 300px; }
-}
-/* The parameters are part of the sequence, not chrome that was always there —
-   they arrive with the rest of the bar once the machine says WELCOME. Standing
-   open behind the door they were three empty filter titles doing nothing. */
+/* The bar does not change shape. It used to be shrunk while the boot screen
+   was up — 300px wide, tighter padding, an 8px label, a shorter progress
+   bar — on the reasoning that a loading row does not need the width a
+   catalogue's parameters do. Which is true, and it did not matter: what the
+   eye got was a small panel that snapped out to a large one at the exact
+   moment it was being asked to look at something else, and a thing that
+   changes size on its own is read as a thing going wrong. It is one panel,
+   there from the first frame; only its contents change.
+
+   The parameters are still part of the sequence rather than chrome that was
+   always there — they arrive with the rest of the bar once the machine says
+   WELCOME — but they arrive by fading up, not by appearing. */
 html.is-booting .bar-drawer,
 html.is-booting .bar-scroll { display: none; }
-html.is-booting .bar-loading { padding: var(--u); }
-html.is-booting .bar-loading-label { margin-bottom: calc(var(--u) * .5); font-size: 8px; }
-html.is-booting .bar-progress { height: calc(var(--u) * 1.25); padding: 1px; }
+
+/* The parameter row and the drawer under it do not appear, they unfold — and
+   they unfold over the same third of a second the loading row takes to fold
+   away, so the panel's height only ever travels in one direction. Given
+   different rates it went up past where it was going and then came back down,
+   and a panel that overshoots and settles reads as a panel that is broken.
+
+   An animation rather than a transition, because both of these come out of
+   display: none and a transition has nothing to start from there — the first
+   attempt used one and the row sprang open at full height on the frame it was
+   revealed. Everything here is border-box, so a max-height of zero takes the
+   padding with it.
+
+   The ceilings are a little over what each actually needs. Set far above it
+   the box reaches its real height in the first few frames and the easing is
+   spent on nothing. */
+@keyframes bar-unfold {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 8rem; opacity: 1; }
+}
+
+#info-row.is-in { overflow: hidden; animation: bar-unfold .3s ease; }
 .bar-progress span {
   display: block;
   height: 100%;
@@ -570,6 +641,18 @@ html.is-booting .bar-progress { height: calc(var(--u) * 1.25); padding: 1px; }
    resting position there — but the store opens with them folded, and an empty
    rule under the row reads as something that failed to load. */
 .bar-drawer:not(.is-open) { display: none; }
+
+/* And the same unfold, so the drawer arriving with the parameters is part of
+   the one movement rather than a second jump after it. Its own ceiling,
+   because it is a fraction of the height of the row above it and on the row's
+   ceiling it was fully open in the first few frames — which is what was left
+   of the bulge. */
+@keyframes bar-unfold-thin {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 3rem; opacity: 1; }
+}
+
+.bar-drawer.is-open { overflow: hidden; animation: bar-unfold-thin .3s ease; }
 
 /* Touch is the exception — there the bar spans the page, so the row folds
    away behind the tab and the works keep the screen. */

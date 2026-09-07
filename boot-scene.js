@@ -97,25 +97,29 @@
     if (el) el.textContent = text;
   }
 
-  /* Returns { mode, ready, stop }. `ready` resolves when the screen is done
-     asking: on the click, or when the flight lands. `stop` is called once the
-     boot screen is dismissed, so the animation is not left running underneath
-     the catalogue. */
+  /* Returns { mode, ready, part, stop }. `ready` resolves when the screen is
+     done asking: on the click, or when the flight lands. `part` tells the
+     scene to take itself away over the given number of milliseconds — the
+     gate dissolves and leaves the name behind. `stop` is called once the boot
+     screen is dismissed, so nothing is left animating underneath the
+     catalogue. */
   function mount(page) {
     const boot = document.getElementById("boot");
     const mode = modeFor(page);
     rememberPage(page);
 
-    if (!boot) return { mode: mode, ready: Promise.resolve(), stop: function () {} };
+    if (!boot) return {
+      mode: mode, ready: Promise.resolve(), part: function () {}, stop: function () {},
+    };
 
     boot.dataset.mode = mode;
     setText("boot-sub", SUB[mode]);
     setText("boot-voice", pick(VOICE[mode]));
 
     const stage = document.getElementById("boot-fx");
-    let stopFx = function () {};
+    let fx = { stop: function () {}, part: function () {} };
     if (stage && window.KritorFX) {
-      stopFx = mode === "gate"
+      fx = mode === "gate"
         ? window.KritorFX.terrain(stage)
         : window.KritorFX.starfield(stage, { direction: mode === "back" ? "back" : "forward" });
     }
@@ -163,7 +167,8 @@
     return {
       mode: mode,
       ready: ready,
-      stop: function () { cleanupGate(); stopFx(); },
+      part: function (ms) { fx.part(ms); },
+      stop: function () { cleanupGate(); fx.stop(); },
     };
   }
 
