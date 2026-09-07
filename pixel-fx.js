@@ -9,28 +9,31 @@
    in: the works are pixels, the icons are pixels, and the door was text
    pretending.
 
-     gate   a low sun over water, four ranks of cloud crossing at their own
-            speeds, a range with ruins on two of its tops, an aqueduct and a
-            keep and a fallen colonnade along the far shore, one figure on the
-            near ridge with a fire beside him, a tree over the right of the
-            frame with a bird sitting in it, and the ground cut open under all
-            of it. Lightning every few seconds. The wordmark is cut into the
-            same grid as the rest, so the lightning reaches it.
+     gate   a man on a ridge, which is what the screen is about and what
+            everything else is arranged around: behind him an aqueduct, a keep
+            and a fallen colonnade massed to the left of the frame, two ranges
+            behind those with a ruin on each summit, a sun, three ranks of
+            cloud crossing at their own speeds, and a tree over the right.
+            A fire beside him. Lightning every few seconds. The wordmark is
+            cut into the same grid as the rest, so the lightning reaches it.
      warp   the flight between the catalogue and the store, forwards on the way
             out and backwards on the way home.
+
+   The composition is three planes and they are kept apart by tone, not by
+   drawing: everything on the near ridge is solid ink, the cut stone across the
+   water is solid too but small, and the ranges behind are emptied out with a
+   stipple until they are barely there. The water to the right of the shore is
+   left empty on purpose — it is what he is standing against, and a colonnade
+   behind him sent his silhouette straight back into the middle distance.
 
    On the gate nothing holds still. The clouds cross, the water runs — two
    stroke layers pulled past each other, each row at its own rate — the mist
    drifts along the shore, the grass and the branches lean into the same gusts,
-   leaves come off the tree and cross the whole screen, the bird looks around,
-   the fire never repeats, its smoke climbs and thins out of the dither, and
-   there is something still alive in the soil. Getting on for half the canvas
-   changes every three seconds; the version of this screen with a fixed dither
-   gradient for a sky changed about a fortieth, and looked it.
+   leaves come off the tree and cross the whole screen, the fire never repeats
+   and its smoke climbs and thins out of the dither.
 
-   Nothing in the gate is a fixed-size sprite. The letters, the ruins, the
-   figure and the bird are shapes — polygons and rectangles in their own
-   coordinates — rasterised into whatever grid the screen turns out to give;
+   Nothing in the gate is a fixed-size sprite. The letters, the ruins and the
+   figure are shapes — polygons and rectangles in their own coordinates — rasterised into whatever grid the screen turns out to give;
    the clouds are unions of circles built at the size they are needed; the
    range, the aqueduct, the colonnade and everything under the ground are
    generated. A bitmap sprite would have had to be drawn twice, once for a
@@ -46,17 +49,14 @@
    it never moves, and at this size it buries anything drawn behind it.
 
    Everywhere else, tone is the point. Solid ink against paper and nothing in
-   between is a cut-out: the far shore had the same weight as the ridge six
-   feet away, and the whole picture read as two flat plates. So distance is
-   dithered — the range is emptied out with only its skyline left solid and is
-   shaded on the flanks the sun is not on, mist eats into the far shore and the
-   feet of the ruins, a stipple eats into the near ridge under its crest, smoke
-   thins as it climbs, and the name itself opens from solid at the caps into a
-   stipple at the drips. The foreground was a quarter of the picture spent on
-   solid black, so the ground is cut open: below the turf it is a section, and
-   ink in there is what you draw with rather than what the ground is made of.
-   Between the white of the water and the black of what is left there is a
-   middle now, and things can stand in it.
+   between is a cut-out. So distance is dithered — the ranges are emptied out
+   with only their skylines left solid and are shaded on the flanks the sun is
+   not on, mist drifts along the shore, a stipple eats into the near ridge
+   under its crest, smoke thins as it climbs, and the name itself opens from
+   solid at the caps into a light stipple at the drips. The mist is an
+   atmosphere and knows what it belongs on: not the cut stone, which has to
+   stay solid or it takes the same grey as the mountain behind it, and not the
+   near ridge, which is six feet away.
 
    One bit, not one colour. Everything below produces a buffer of 0 and 1 and
    the driver paints 1 as --ink and 0 as --bg, so both scenes are correct in
@@ -69,8 +69,9 @@
    they can be pulled past forever and meet themselves — and a frame is a pass
    over those arrays into an ImageData. The tree is the exception and is laid
    out and drawn every frame, several hundred quads of it, which is why there
-   is a filler here that cannot allocate. Under six milliseconds at the largest
-   grid this hands out, against a frame budget of forty at the rate it runs. */
+   is a filler here that cannot allocate. About five milliseconds at the
+   largest grid this hands out, against a frame budget of forty at the rate it
+   runs. */
 (function () {
   "use strict";
 
@@ -252,80 +253,127 @@
      through the O rather than a hole being painted in it afterwards. */
   const GLYPHS = {
     K: {
-      w: 66,
+      w: 70,
       shapes: [
-        [[[4, 0], [26, 0], [26, 100], [4, 100]]],                       // stem
-        [[[26, 58], [40, 58], [66, 0], [52, 0]]],                       // arm
-        [[[26, 42], [40, 42], [66, 100], [50, 100]]],                   // leg
-        [[[8, 100], [15, 100], [11, 119]]],                             // drips
-        [[[53, 100], [60, 100], [57, 113]]],
+        [[[3, -2], [31, 1], [30, 99], [4, 101]]],                       // stem
+        [[[28, 60], [46, 61], [70, -2], [54, -2]]],                     // arm
+        [[[28, 40], [46, 39], [70, 101], [51, 101]]],                   // leg
+        [[[7, 100], [16, 100], [12, 123]]],                             // drips
+        [[[55, 100], [63, 100], [59, 112]]],
       ],
     },
     R: {
-      w: 58,
+      w: 62,
       shapes: [
-        [[[4, 0], [26, 0], [26, 100], [4, 100]]],
+        [[[3, -1], [31, 1], [30, 100], [4, 99]]],
         [
-          [[22, 0], [46, 0], [58, 12], [58, 34], [46, 46], [22, 46]],   // bowl
-          [[30, 10], [42, 10], [48, 17], [48, 29], [42, 36], [30, 36]], // counter
+          [[24, -2], [48, 0], [62, 13], [61, 35], [47, 48], [24, 47]],  // bowl
+          [[34, 12], [43, 12], [50, 19], [49, 29], [42, 35], [34, 34]], // counter
         ],
-        [[[28, 42], [42, 42], [58, 100], [44, 100]]],                   // leg
-        [[[8, 100], [15, 100], [11, 116]]],
-        [[[46, 100], [53, 100], [50, 111]]],
+        [[[30, 40], [47, 41], [62, 101], [45, 100]]],                   // leg
+        [[[7, 99], [16, 100], [11, 118]]],
+        [[[47, 100], [55, 100], [51, 109]]],
       ],
     },
     I: {
-      w: 34,
+      w: 38,
       shapes: [
-        [[[11, 0], [23, 0], [23, 100], [11, 100]]],
-        [[[1, 0], [33, 0], [33, 12], [1, 12]]],
-        [[[1, 88], [33, 88], [33, 100], [1, 100]]],
-        [[[14, 100], [21, 100], [17, 115]]],
+        [[[10, 0], [27, 1], [26, 100], [11, 99]]],
+        [[[0, -2], [38, 0], [37, 14], [1, 13]]],
+        [[[1, 87], [37, 86], [38, 100], [0, 101]]],
+        [[[14, 100], [23, 100], [18, 116]]],
       ],
     },
     T: {
-      w: 64,
+      w: 68,
       shapes: [
-        [[[0, 0], [64, 0], [64, 14], [0, 14]]],
-        [[[25, 14], [41, 14], [41, 100], [25, 100]]],
-        [[[17, 88], [49, 88], [49, 100], [17, 100]]],
-        [[[29, 100], [37, 100], [33, 120]]],
+        [[[-1, -2], [68, 0], [67, 17], [0, 15]]],
+        [[[24, 15], [45, 16], [44, 100], [25, 99]]],
+        [[[15, 86], [53, 87], [52, 101], [14, 100]]],
+        [[[28, 100], [38, 100], [33, 124]]],
       ],
     },
     O: {
-      w: 64,
+      w: 68,
       shapes: [
         [
-          [[2, 22], [16, 2], [48, 2], [62, 22], [62, 78], [48, 98], [16, 98], [2, 78]],
-          [[18, 28], [26, 16], [38, 16], [46, 28], [46, 72], [38, 84], [26, 84], [18, 72]],
+          [[1, 22], [17, 0], [51, 1], [67, 23], [66, 78], [50, 99], [17, 98], [2, 77]],
+          [[20, 30], [29, 18], [40, 18], [48, 30], [47, 70], [39, 82], [28, 81], [20, 69]],
         ],
-        [[[24, 94], [31, 94], [27, 117]]],
-        [[[48, 90], [54, 90], [51, 105]]],
+        [[[23, 94], [32, 95], [27, 120]]],
+        [[[49, 88], [57, 89], [53, 106]]],
       ],
     },
   };
 
   const WORD = "KRITOR";
-  const WORD_GAP = 8;                       // in glyph units
+  const WORD_GAP = 6;                       // in glyph units
   const WORD_UNITS = (function () {
     let w = 0;
     for (let i = 0; i < WORD.length; i++) w += GLYPHS[WORD[i]].w + (i ? WORD_GAP : 0);
     return w;
   })();
-  const WORD_DEPTH = 120;                   // baseline is 100; the drips reach here
+  const WORD_DEPTH = 126;                   // baseline is 100; the drips reach here
 
   function wordWidth(capHeight) { return Math.round(WORD_UNITS * capHeight / 100); }
   function wordDepth(capHeight) { return Math.round(WORD_DEPTH * capHeight / 100); }
 
+  /* Rough it up. The outlines are geometry and geometry is not what is in the
+     notebook — that is a marker, held at an angle, going too fast. So every
+     edge is walked in short steps and each step is pushed off the line by a
+     hair, which gives the stroke a wobble that reads as a hand rather than as
+     a font. Small steps and a small push: any more and the counters close up
+     and the letters turn to mud. */
+  function roughen(pts, amp, seed) {
+    const out = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const n = Math.max(1, Math.round(Math.hypot(dx, dy) / 9));
+      for (let k = 0; k < n; k++) {
+        const u = k / n;
+        out.push([
+          a[0] + dx * u + (hash2(i * 37 + k, seed, 9001) - 0.5) * amp,
+          a[1] + dy * u + (hash2(i * 37 + k, seed, 4409) - 0.5) * amp,
+        ]);
+      }
+    }
+    return out;
+  }
+
   function drawWord(buf, W, H, x, y, capHeight, value) {
     const s = capHeight / 100;
-    let cx = x;
+    let pen = x;
     for (let i = 0; i < WORD.length; i++) {
       const g = GLYPHS[WORD[i]];
+      /* And set by hand. Six letters at one size on one baseline is type; a
+         little tilt, a little rise and fall, a little bigger and smaller is
+         somebody writing it. */
+      const tilt = (hash2(i, 1, 313) - 0.5) * 0.15;
+      const lift = (hash2(i, 2, 313) - 0.5) * 9;
+      const size = 0.95 + hash2(i, 3, 313) * 0.11;
+      const ct = Math.cos(tilt), st = Math.sin(tilt);
+      const gx = g.w * 0.5, gy = 52;
       for (let k = 0; k < g.shapes.length; k++) {
-        fillShapeAt(buf, W, H, g.shapes[k], cx, y, s, s, value);
+        const shape = g.shapes[k];
+        const rings = [];
+        for (let r = 0; r < shape.length; r++) {
+          /* Counters get half the wobble. At full amplitude the inside of an O
+             wanders into its own wall and the letter fills in. */
+          const rough = roughen(shape[r], r ? 1.7 : 3.0, i * 977 + k * 61 + r);
+          const ring = new Array(rough.length);
+          for (let p = 0; p < rough.length; p++) {
+            const ux = (rough[p][0] - gx) * size, uy = (rough[p][1] - gy) * size;
+            ring[p] = [
+              pen + (gx + ux * ct - uy * st) * s,
+              y + (gy + ux * st + uy * ct + lift) * s,
+            ];
+          }
+          rings.push(ring);
+        }
+        fillShape(buf, W, H, rings, value);
       }
-      cx += (g.w + WORD_GAP) * s;
+      pen += (g.w + WORD_GAP) * s;
     }
   }
 
@@ -404,39 +452,76 @@
     return m;
   }
 
-  /* An aqueduct, which is the one Roman thing that still reads at forty cells
-     across: a row of arches on piers, stepped down as it goes so it looks like
-     it is carrying water somewhere, and broken off at one end. */
+  /* An aqueduct, and the arches are the whole of it. The first attempt stepped
+     the tops of its openings in twice and called it an arch, which at this size
+     is a doorway with the corners knocked off — you have to actually carve the
+     half-circle, springing from the top of the pier, or the eye reads a wall
+     with holes in it.
+
+     Two tiers, because that is the silhouette everybody knows: a few tall
+     arches carrying a long row of short ones, and the channel along the top.
+     Built solid and then cut, which is also how it was built. */
+  function archway(m, w, h, x0, x1, top, bottom) {
+    const r = (x1 - x0) / 2;
+    const cx = (x0 + x1) / 2;
+    const spring = top + r;
+    const a = Math.max(0, Math.round(x0)), b = Math.min(w - 1, Math.round(x1) - 1);
+    for (let y = Math.max(0, Math.round(top)); y < Math.min(h, bottom); y++) {
+      const row = y * w;
+      for (let x = a; x <= b; x++) {
+        if (y >= spring) { m[row + x] = 2; continue; }
+        const dx = x + 0.5 - cx, dy = y + 0.5 - spring;
+        if (dx * dx + dy * dy <= r * r) m[row + x] = 2;
+      }
+    }
+  }
+
   function buildAqueduct(w, h, seed) {
     const rnd = rng(seed);
     const m = new Uint8Array(w * h);
-    const bays = 5 + Math.floor(rnd() * 3);
-    const bay = w / bays;
-    const pier = Math.max(1, Math.round(bay * 0.24));
-    const deck = Math.max(2, Math.round(h * 0.14));
-    const standing = Math.max(2, bays - 1 - Math.floor(rnd() * 2));
-    for (let i = 0; i < bays; i++) {
-      const x = i * bay;
-      /* The run falls away as it goes, and the last bay or two are gone. */
-      const dropTop = Math.round(h * (0.10 + i * 0.05));
-      if (i >= standing) {
-        /* A broken pier, standing on its own with nothing on top. */
-        if (rnd() < 0.75) {
-          rect(m, w, h, x, dropTop + deck + Math.round(h * (0.1 + rnd() * 0.3)), x + pier, h, 1);
-        }
-        continue;
-      }
-      rect(m, w, h, x, dropTop, x + bay + pier, dropTop + deck, 1);   // the channel
-      rect(m, w, h, x, dropTop, x + pier, h, 1);                      // the pier
-      /* The arch: square shoulders stepped in twice, because a curve four
-         cells across is a mistake, not a curve. */
-      const step = Math.max(1, Math.round(h * 0.04));
-      const aTop = dropTop + deck + step * 2;
-      rect(m, w, h, x + pier, aTop, x + bay, h - Math.max(1, Math.round(h * 0.05)), 2);
-      rect(m, w, h, x + pier + step, aTop - step, x + bay - step, aTop, 2);
-      rect(m, w, h, x + pier + step * 2, aTop - step * 2, x + bay - step * 2, aTop - step, 2);
+    rect(m, w, h, 0, 0, w, h, 1);
+
+    const deck = Math.max(1, Math.round(h * 0.055));      // the channel and the cornices
+    const tier = Math.round(h * 0.40);                    // where the upper tier ends
+    const foot = Math.max(1, Math.round(h * 0.03));
+
+    /* Lower tier: a few tall arches on heavy piers. */
+    const lowN = Math.max(2, Math.round(w / (h * 0.62)));
+    const lowBay = w / lowN;
+    const lowPier = Math.max(2, lowBay * 0.26);
+    for (let i = 0; i < lowN; i++) {
+      const x0 = i * lowBay + lowPier * 0.5;
+      const x1 = (i + 1) * lowBay - lowPier * 0.5;
+      if (x1 - x0 < 3) continue;
+      archway(m, w, h, x0, x1, tier + deck, h - foot);
     }
-    rect(m, w, h, 0, h - Math.max(1, Math.round(h * 0.05)), w, h, 1);  // the footing
+
+    /* Upper tier: twice as many, half as tall, and the channel over them. */
+    const upN = lowN * 2;
+    const upBay = w / upN;
+    const upPier = Math.max(1, upBay * 0.30);
+    for (let i = 0; i < upN; i++) {
+      const x0 = i * upBay + upPier * 0.5;
+      const x1 = (i + 1) * upBay - upPier * 0.5;
+      if (x1 - x0 < 3) continue;
+      archway(m, w, h, x0, x1, deck * 2, tier - deck);
+    }
+
+    /* And it stops. The last bay or two have come down to the piers, which is
+       what makes it a ruin rather than a viaduct. */
+    const gone = Math.round(w * (0.14 + rnd() * 0.12));
+    for (let x = w - gone; x < w; x++) {
+      const fall = (x - (w - gone)) / gone;
+      const eat = Math.round(h * (0.30 + fall * 0.75));
+      for (let y = 0; y < Math.min(h, eat); y++) m[y * w + x] = 0;
+    }
+    for (let k = 0; k < 3; k++) {
+      const bx = Math.round(w * rnd() * 0.85);
+      const bw = Math.max(1, Math.round(w * 0.02));
+      for (let x = bx; x < bx + bw && x < w; x++) {
+        for (let y = 0; y < Math.round(deck * (1 + rnd() * 2)); y++) m[y * w + x] = 0;
+      }
+    }
     return m;
   }
 
@@ -445,22 +530,24 @@
   function buildColumns(w, h, seed) {
     const rnd = rng(seed);
     const m = new Uint8Array(w * h);
-    const drum = Math.max(1, Math.round(h * 0.09));
-    const wide = Math.max(2, Math.round(h * 0.15));
+    const drum = Math.max(2, Math.round(h * 0.13));
+    const gap = Math.max(1, Math.round(h * 0.022));
+    const wide = Math.max(2, Math.round(h * 0.11));
     let x = Math.round(w * 0.04);
     while (x < w - wide) {
-      const tall = Math.round(h * (0.18 + rnd() * 0.72));
+      const tall = Math.round(h * (0.22 + rnd() * 0.76));
       const topY = h - tall;
-      /* Stacked drums with a gap between them, so the shaft reads as
-         something assembled rather than as a post. */
-      for (let y = h - drum; y > topY; y -= drum + 1) {
+      /* Stacked drums with a course of air between them, so a shaft reads as
+         something assembled out of pieces rather than as a fence post. */
+      for (let y = h - drum; y > topY; y -= drum + gap) {
         rect(m, w, h, x, Math.max(topY, y - drum), x + wide, y, 1);
       }
-      /* A capital on the ones still tall enough to have kept it. */
-      if (tall > h * 0.6 && rnd() < 0.7) {
-        rect(m, w, h, x - 1, topY - Math.max(1, Math.round(h * 0.05)), x + wide + 1, topY, 1);
+      /* A capital on the ones still standing high enough to have kept one. */
+      if (tall > h * 0.55 && rnd() < 0.8) {
+        const cap = Math.max(1, Math.round(h * 0.05));
+        rect(m, w, h, x - cap, topY - cap * 2, x + wide + cap, topY - cap, 1);
       }
-      x += wide + Math.max(2, Math.round(h * (0.10 + rnd() * 0.25)));
+      x += wide + Math.max(2, Math.round(h * (0.09 + rnd() * 0.22)));
     }
     /* And the fallen ones, lying in a line of drums along the ground. */
     const lying = 1 + Math.floor(rnd() * 3);
@@ -473,151 +560,6 @@
       }
     }
     return m;
-  }
-
-  /* ── Under the ground ────────────────────────────────────────────────────── */
-
-  /* The near ridge was the largest solid thing on the screen and it was solid
-     all the way down, which is a quarter of the picture spent on nothing. So
-     it is cut open: below a wavy line the soil becomes a section — grain, the
-     roots hanging out of the turf above, stones, and what is left of whatever
-     used to walk about up there.
-
-     Everything in here is drawn into the same knockout the mist uses. Inside
-     the cut the ground has been knocked to paper, so ink is what you draw WITH
-     and paper is what you draw ON — which is why a bone is a hollow outline
-     and a stone is a ring rather than a dot. */
-
-  function segDist(px, py, x0, y0, x1, y1) {
-    const dx = x1 - x0, dy = y1 - y0;
-    const L2 = dx * dx + dy * dy || 1;
-    let u = ((px - x0) * dx + (py - y0) * dy) / L2;
-    u = u < 0 ? 0 : u > 1 ? 1 : u;
-    const cx = x0 + dx * u, cy = y0 + dy * u;
-    return Math.hypot(px - cx, py - cy);
-  }
-
-  /* A bone: a shaft with a knuckle at each end, hollow, so it reads as
-     something with an edge rather than as a smear. */
-  function bone(hz, land, W, H, x0, y0, x1, y1, rEnd, rMid, th) {
-    const lo = Math.max(0, Math.floor(Math.min(y0, y1) - rEnd - 1));
-    const hi = Math.min(H - 1, Math.ceil(Math.max(y0, y1) + rEnd + 1));
-    const le = Math.max(0, Math.floor(Math.min(x0, x1) - rEnd - 1));
-    const ri = Math.min(W - 1, Math.ceil(Math.max(x0, x1) + rEnd + 1));
-    for (let y = lo; y <= hi; y++) {
-      const row = y * W;
-      for (let x = le; x <= ri; x++) {
-        if (!land[row + x]) continue;
-        const dA = Math.hypot(x - x0, y - y0), dB = Math.hypot(x - x1, y - y1);
-        const dS = segDist(x, y, x0, y0, x1, y1);
-        if (!(dA <= rEnd || dB <= rEnd || dS <= rMid)) continue;
-        const inner = dA <= rEnd - th || dB <= rEnd - th || dS <= rMid - th;
-        hz[row + x] = inner ? 1 : 0;
-      }
-    }
-  }
-
-  function ring(hz, land, W, H, cx, cy, rx, ry, th, hollow) {
-    const lo = Math.max(0, Math.floor(cy - ry)), hi = Math.min(H - 1, Math.ceil(cy + ry));
-    const le = Math.max(0, Math.floor(cx - rx)), ri = Math.min(W - 1, Math.ceil(cx + rx));
-    for (let y = lo; y <= hi; y++) {
-      const row = y * W;
-      const dy = (y - cy) / ry;
-      for (let x = le; x <= ri; x++) {
-        if (!land[row + x]) continue;
-        const dx = (x - cx) / rx;
-        const d = dx * dx + dy * dy;
-        if (d > 1) continue;
-        const inner = (dx * rx / (rx - th)) * (dx * rx / (rx - th))
-          + (dy * ry / (ry - th)) * (dy * ry / (ry - th));
-        hz[row + x] = (hollow && inner <= 1) ? 1 : 0;
-      }
-    }
-  }
-
-  function carveUnder(hz, land, W, H, cutTop, sceneH, seed) {
-    const rnd = rng(seed);
-    const unit = Math.max(1, Math.round(sceneH * 0.012));
-
-    /* Open the section, and grain it. The grain thickens downward, so the
-       floor of the cut is darker than the turf line and the thing does not
-       read as a hole with nothing in it. */
-    for (let x = 0; x < W; x++) {
-      const c = cutTop[x];
-      for (let y = c; y < H; y++) {
-        const i = y * W + x;
-        if (!land[i]) continue;
-        const depth = (y - c) / Math.max(1, H - c);
-        hz[i] = dither(x, y, 0.10 + depth * 0.16) ? 0 : 1;
-      }
-    }
-
-    /* Roots out of the turf. They fork once or twice and taper away, and they
-       are what ties the section to the grass growing on top of it. */
-    for (let k = 0; k < Math.round(W / 26); k++) {
-      let rx = Math.round(rnd() * W);
-      if (rx < 1 || rx >= W - 1) continue;
-      let ry = cutTop[rx];
-      const runs = [{ x: rx, y: ry, dx: (rnd() - 0.5) * 0.7, len: unit * (5 + rnd() * 9), w: 1 }];
-      while (runs.length) {
-        const r = runs.pop();
-        let px = r.x, py = r.y, drift = r.dx;
-        for (let n = 0; n < r.len; n++) {
-          drift += (rnd() - 0.5) * 0.22;
-          drift = Math.max(-0.9, Math.min(0.9, drift));
-          px += drift; py += 1;
-          const ix = Math.round(px), iy = Math.round(py);
-          if (ix < 0 || ix >= W || iy < 0 || iy >= H) break;
-          for (let w = 0; w < r.w; w++) {
-            const jx = ix + w;
-            if (jx < W && land[iy * W + jx]) hz[iy * W + jx] = 0;
-          }
-          if (r.w > 0 && n > r.len * 0.35 && runs.length < 4 && rnd() < 0.045) {
-            runs.push({ x: px, y: py, dx: -drift * 1.6, len: r.len * 0.5, w: r.w });
-          }
-        }
-      }
-    }
-
-    /* Stones, and the odd pocket of air. */
-    for (let k = 0; k < Math.round(W / 20); k++) {
-      const x = rnd() * W;
-      const c = cutTop[Math.max(0, Math.min(W - 1, Math.round(x)))];
-      const y = c + unit * 2 + rnd() * Math.max(1, H - c - unit * 2);
-      const r = unit * (0.7 + rnd() * 1.1);
-      ring(hz, land, W, H, x, y, r * (0.9 + rnd() * 0.5), r, Math.max(1, r * 0.42), rnd() < 0.65);
-    }
-
-    /* And the bones. One skull with a socket in it, a scatter of long bones,
-       and a short run of ribs — enough to be read as an animal without being
-       laid out like a museum case. */
-    const sx = W * (0.30 + rnd() * 0.34);
-    const sc = cutTop[Math.max(0, Math.min(W - 1, Math.round(sx)))];
-    const sy = sc + (H - sc) * (0.42 + rnd() * 0.3);
-    const sr = unit * 2.4;
-    ring(hz, land, W, H, sx, sy, sr * 1.25, sr, Math.max(1, sr * 0.34), true);
-    ring(hz, land, W, H, sx - sr * 1.35, sy + sr * 0.25, sr * 0.7, sr * 0.45,
-      Math.max(1, sr * 0.3), true);                                   // the snout
-    ring(hz, land, W, H, sx - sr * 0.25, sy - sr * 0.2,
-      Math.max(1, sr * 0.30), Math.max(1, sr * 0.30), 99, false);     // the socket
-
-    for (let k = 0; k < 4; k++) {
-      const bx = W * (0.14 + rnd() * 0.72);
-      const bc = cutTop[Math.max(0, Math.min(W - 1, Math.round(bx)))];
-      const by = bc + (H - bc) * (0.35 + rnd() * 0.55);
-      const a = rnd() * Math.PI;
-      const L = unit * (3.5 + rnd() * 4);
-      bone(hz, land, W, H, bx - Math.cos(a) * L, by - Math.sin(a) * L * 0.5,
-        bx + Math.cos(a) * L, by + Math.sin(a) * L * 0.5,
-        Math.max(1.4, unit * 0.95), Math.max(1, unit * 0.55), Math.max(1, unit * 0.42));
-    }
-
-    const rbx = sx + sr * 3.2, rby = sy + sr * 0.8;
-    for (let k = 0; k < 5; k++) {
-      const off = k * unit * 1.5;
-      bone(hz, land, W, H, rbx + off, rby - sr * 1.1, rbx + off + unit * 0.8, rby + sr * 1.2,
-        Math.max(1, unit * 0.5), Math.max(0.8, unit * 0.4), Math.max(1, unit * 0.34));
-    }
   }
 
   /* ── The figure ──────────────────────────────────────────────────────────── */
@@ -648,39 +590,18 @@
 
   /* ── The sun ─────────────────────────────────────────────────────────────── */
 
-  /* Low in the top left, and drawn as a ring with a stipple inside it rather
-     than as a disc: a solid circle in this system is a hole punched in the
-     sky, and the one thing the sun must not look like is an absence. The
-     stipple thickens toward the lower right, away from itself, so it has a
-     side — which is also the side every mountain below it is shaded on.
-
-     Its rays breathe. Nothing else up there is on a count that slow. */
-  function drawSun(buf, W, H, cx, cy, r, t) {
-    const inner = r - Math.max(1, Math.round(r * 0.13));
-    const y0 = Math.max(0, cy - r), y1 = Math.min(H - 1, cy + r);
-    const x0 = Math.max(0, cx - r), x1 = Math.min(W - 1, cx + r);
-    for (let y = y0; y <= y1; y++) {
+  /* A circle. It had a stippled middle and a ring of rays that breathed, and it
+     was the busiest thing in an otherwise empty sky — one clean outline says
+     sun and then stops asking to be looked at. */
+  function drawSun(buf, W, H, cx, cy, r) {
+    const inner = r - Math.max(1, Math.round(r * 0.16));
+    for (let y = Math.max(0, cy - r); y <= Math.min(H - 1, cy + r); y++) {
       const dy = y - cy;
       const row = y * W;
-      for (let x = x0; x <= x1; x++) {
+      for (let x = Math.max(0, cx - r); x <= Math.min(W - 1, cx + r); x++) {
         const dx = x - cx;
         const d = Math.sqrt(dx * dx + dy * dy);
-        if (d > r) continue;
-        if (d >= inner) { buf[row + x] = 1; continue; }
-        const lean = 0.5 + (dx + dy) / (2.6 * r);
-        if (dither(x, y, 0.06 + 0.26 * lean)) buf[row + x] = 1;
-      }
-    }
-    const spokes = 12;
-    const gap = Math.max(2, Math.round(r * 0.22));
-    for (let i = 0; i < spokes; i++) {
-      const a = (i / spokes) * Math.PI * 2;
-      const ca = Math.cos(a), sa = Math.sin(a);
-      const len = r * (0.20 + 0.20 * (0.5 + 0.5 * Math.sin(t * 0.85 + i * 1.9)));
-      for (let k = 0; k <= len; k++) {
-        const x = Math.round(cx + ca * (r + gap + k));
-        const y = Math.round(cy + sa * (r + gap + k));
-        if (x >= 0 && x < W && y >= 0 && y < H) buf[y * W + x] = 1;
+        if (d <= r && d >= inner) buf[row + x] = 1;
       }
     }
   }
@@ -760,28 +681,6 @@
     QX[3] = x + ca * mid - sa * wid; QY[3] = y + sa * mid + ca * wid;
     fillQuad(buf, W, H, value);
   }
-
-  /* ── The bird ────────────────────────────────────────────────────────────── */
-
-  /* Perched, and doing what a perched bird does, which is almost nothing and
-     then a very fast small thing. The head is held apart from the body so it
-     can turn without the rest of it moving — that is the whole animation, and
-     it is more alive than making the body sway would be.
-
-     Feet at 100, crown at 0, looking left out over the water. */
-  const BIRD_BODY = [
-    [[[12, 42], [40, 34], [58, 48], [56, 68], [40, 80], [20, 78], [8, 60]]],  // body
-    [[[52, 50], [86, 60], [82, 74], [50, 68]]],                               // tail
-    [[[24, 76], [29, 76], [29, 100], [24, 100]]],                             // legs
-    [[[38, 76], [43, 76], [43, 100], [38, 100]]],
-  ];
-  const BIRD_HEAD = [
-    [[[22, 16], [38, 12], [44, 32], [36, 48], [22, 46], [18, 28]]],           // neck
-    [[[14, 0], [34, -2], [42, 10], [36, 24], [18, 24], [10, 12]]],            // head
-    [[[-16, 8], [12, 4], [12, 16]]],                                          // beak
-  ];
-  const BIRD_EYE = [[[19, 5], [26, 5], [26, 12], [19, 12]]];
-  const BIRD_W = 94;
 
   /* ── The driver ──────────────────────────────────────────────────────────── */
 
@@ -1031,7 +930,12 @@
          and the screen's spare height becomes more sky above it and more
          ground below — which is what a title screen letterboxed onto a tall
          display should look like. */
-      const sceneH = Math.min(H, Math.max(Math.round(W * 0.60), Math.round(H * 0.55)));
+      /* On a tall frame the landscape keeps its own shape and the spare height
+         becomes sky above and ground below. Two thirds rather than a little
+         over half: at the smaller figure the scene was squeezed into the
+         bottom of a phone, which made everything in it — him most of all —
+         too small to read, and left a third of the screen as blank paper. */
+      const sceneH = Math.min(H, Math.max(Math.round(W * 0.60), Math.round(H * 0.66)));
       const top = Math.round((H - sceneH) * 0.72);
       const hy = top + Math.round(sceneH * 0.66);          // the horizon
       const ridgeY = top + Math.round(sceneH * 0.74);      // crest of the near ridge
@@ -1062,11 +966,14 @@
          the foot — the drips end up as the lightest thing in it, which is
          where a drip should be going. */
       const mark = new Uint8Array(N);
-      const shadeTop = markY + Math.round(capH * 0.30);
+      const shadeTop = markY + Math.round(capH * 0.42);
       const shadeRun = Math.max(1, markY + wordDepth(capH) - shadeTop);
       for (let y = 0; y < H; y++) {
         const t = Math.min(1, Math.max(0, (y - shadeTop) / shadeRun));
-        const weight = 1 - Math.pow(t, 1.25) * 0.42;
+        /* Slight. Taken down to a bit over half, the feet of the letters broke
+           into a checkerboard and read as damage rather than as weight coming
+           off them; three quarters is a shade, and the drips survive it. */
+        const weight = 1 - Math.pow(t, 1.2) * 0.26;
         const row = y * W;
         for (let x = 0; x < W; x++) {
           if (solid[row + x] && dither(x, y, weight)) mark[row + x] = 1;
@@ -1107,64 +1014,89 @@
 
          Kept light on purpose — the stipple that empties them out is laid in
          with the mist further down, and only their skyline stays solid. */
-      const mtnH = Math.round(sceneH * 0.20);
+      /* Two ridges, not one. A single profile at one tone is a cut-out however
+         pale you make it; a far range with a lower one lapped in front of it, a
+         shade heavier, is a distance. Both are emptied out with a stipple
+         further down — only their skylines stay solid — and both stop before
+         they reach the man, because a grey mountain directly behind him is
+         exactly where his silhouette needed sky. */
       const mtnTop = new Int32Array(W);
-      const mtnLit = new Float32Array(W);
-      /* Which cells are actually rock. Everything standing on the shore is
-         landscape too, and stippling by row rather than by what is there
-         emptied out the aqueduct and the keep along with the range — the whole
-         middle distance came back as one grey smear with no objects in it. */
       const mtnMask = new Uint8Array(N);
-      (function () {
+      const mtnKeep = new Float32Array(N);
+      const mtnCrust = new Uint8Array(N);
+      /* Cut stone, as opposed to rock and ground. The mist is an atmosphere and
+         it belongs on the range and the shore; laid over the buildings too it
+         ate the piers of the aqueduct into lace and left the keep looking shot
+         at, and — worse — gave the stonework the same grey as the mountain
+         behind it, so the two read as one plane. */
+      const stone = new Uint8Array(N);
+      const crust = Math.max(1, Math.round(sceneH * 0.008));
+
+      function range(seed, hMax, count, tone, endAt) {
+        const rr = rng(seed);
         const peaks = [];
-        const n = 5 + Math.floor(rnd() * 3);
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < count; i++) {
           peaks.push({
-            x: W * ((i + 0.5) / n + (rnd() - 0.5) * 0.5),
-            h: mtnH * (0.42 + rnd() * 0.58),
-            w: W * (0.12 + rnd() * 0.22),
+            x: W * endAt * 1.3 * ((i + 0.5) / count + (rr() - 0.5) * 0.4),
+            h: hMax * (0.62 + rr() * 0.38),
+            w: W * (0.09 + rr() * 0.15),
           });
         }
+        const prof = new Int32Array(W);
         for (let x = 0; x < W; x++) {
           let rise = 0;
           for (let i = 0; i < peaks.length; i++) {
             const p = peaks[i];
             const d = Math.abs(x - p.x) / p.w;
             if (d >= 1) continue;
-            /* Straight flanks with a rounded shoulder, which is a mountain;
-               a gaussian gives a hill and a triangle gives a tent. */
-            const v = p.h * Math.pow(1 - d, 1.35);
+            /* Nearly straight flanks with a rounded shoulder — a gaussian
+               gives a hill and a triangle gives a tent. */
+            const v = p.h * Math.pow(1 - d, 1.12);
             if (v > rise) rise = v;
           }
-          /* A cell or two of broken rock on the skyline. */
-          rise += (hash2(x, 5, 7717) - 0.4) * sceneH * 0.012;
-          mtnTop[x] = hy - Math.max(0, Math.round(rise));
+          rise += (hash2(x, seed & 255, 7717) - 0.4) * sceneH * 0.014;
+          const fade = 1 - Math.max(0, Math.min(1, (x / W - endAt) / 0.14));
+          prof[x] = hy - Math.max(0, Math.round(rise * fade));
         }
-        /* Which side of each slope the sun is on. The light is in the top
-           left, so a flank that climbs to the right is lit and one that falls
-           away to the right is in shadow, and the range gets a form instead of
-           being a flat cut-out. */
         for (let x = 0; x < W; x++) {
-          const a = mtnTop[Math.max(0, x - 2)], b = mtnTop[Math.min(W - 1, x + 2)];
-          mtnLit[x] = Math.max(0, Math.min(1, 0.5 + (b - a) * 0.09));
+          /* No ceiling on them. Held below the name they came back as a mesa
+             with a flat top, which is the one thing a mountain is not; the
+             name is cut out of whatever is behind it anyway, so the range is
+             free to stand up through it. */
+          /* Which way the slope runs, so the flanks the sun is not on carry a
+             little more of the stipple and the range has a form. */
+          const a = prof[Math.max(0, x - 2)], b = prof[Math.min(W - 1, x + 2)];
+          const lit = Math.max(0, Math.min(1, 0.5 + (b - a) * 0.09));
+          const span = Math.max(1, hy - prof[x]);
+          for (let y = Math.max(0, prof[x]); y <= hy && y < H; y++) {
+            const i = y * W + x;
+            land[i] = 1;
+            mtnMask[i] = 1;
+            mtnCrust[i] = y < prof[x] + crust ? 1 : 0;
+            mtnKeep[i] = tone * (0.3 + 0.9 * lit + 0.5 * ((y - prof[x]) / span));
+          }
+          if (prof[x] < mtnTop[x]) mtnTop[x] = prof[x];
         }
-      })();
-      for (let x = 0; x < W; x++) {
-        for (let y = Math.max(0, mtnTop[x]); y <= hy && y < H; y++) {
-          land[y * W + x] = 1;
-          mtnMask[y * W + x] = 1;
-        }
+        return prof;
       }
 
-      /* And a ruin on two of the tops, because a skyline with a broken
-         silhouette on it is read as somewhere people have been. */
-      for (let k = 0; k < 2; k++) {
-        const px = Math.round(W * (0.16 + k * 0.46 + rnd() * 0.12));
-        if (px < 0 || px >= W) continue;
-        const ph = Math.max(5, Math.round(sceneH * 0.045));
-        const pw = Math.round(ph * 2.0);
+      for (let x = 0; x < W; x++) mtnTop[x] = hy;
+      const farProf = range(9137, sceneH * 0.46, 4, 0.16, 0.44);
+      const nearProf = range(4421, sceneH * 0.24, 5, 0.30, 0.52);
+
+      /* And a ruin on the top of each range. Solid, against rock that is not:
+         a broken silhouette on a skyline is what says somebody was up there,
+         and it is also the cheapest possible read on how far away the skyline
+         is. Placed on the summits themselves rather than at a guessed x, or
+         they end up standing in mid-air on the flat. */
+      [farProf, nearProf].forEach(function (prof, k) {
+        let px = 0;
+        for (let x = 4; x < W - 4; x++) if (prof[x] < prof[px]) px = x;
+        if (prof[px] >= hy - 2) return;
+        const ph = Math.max(5, Math.round(sceneH * (k ? 0.055 : 0.045)));
+        const pw = Math.round(ph * 2.2);
         const peak = buildRuin(pw, ph, 771 + k * 97);
-        const py = mtnTop[Math.min(W - 1, Math.max(0, px))] - ph + 2;
+        const py = prof[px] - ph + 2;
         for (let y = 0; y < ph; y++) {
           const ty = py + y;
           if (ty < 0 || ty >= H) continue;
@@ -1174,10 +1106,11 @@
             const tx = px - (pw >> 1) + x;
             if (tx < 0 || tx >= W) continue;
             land[ty * W + tx] = v === 1 ? 1 : 0;
-            mtnMask[ty * W + tx] = 0;              // stone, not rock: keep it solid
+            mtnMask[ty * W + tx] = 0;
+            stone[ty * W + tx] = v === 1 ? 1 : 0;
           }
         }
-      }
+      });
 
       /* The far shore, just under the horizon. Two long waves and a short one,
          so it has headlands rather than being a rule drawn across the page —
@@ -1194,7 +1127,7 @@
       /* The ruin, across the plain from the figure. Held to a fifth of the
          scene's height so it never stands up into the line KRITOR is
          speaking, and given the width to be a ruin rather than a bump. */
-      const ruinH = Math.max(10, Math.min(Math.round(sceneH * 0.165), hy - markBottom - 2));
+      const ruinH = Math.max(10, Math.min(Math.round(sceneH * 0.145), hy - markBottom - 2));
 
       /* Everything standing on the far shore, laid out left to right so the
          eye is walked across it: the aqueduct running off the edge of the
@@ -1213,6 +1146,7 @@
             if (tx < 0 || tx >= W) continue;
             land[ty * W + tx] = v === 1 ? 1 : 0;
             mtnMask[ty * W + tx] = 0;
+            stone[ty * W + tx] = v === 1 ? 1 : 0;
           }
         }
       }
@@ -1220,22 +1154,33 @@
       /* Sized off the width and set well apart. Sized off each other and
          packed against the left they ran together into one long wall, and
          three ruins that touch are one ruin. */
-      const aqW = Math.round(W * 0.27);
-      const aqH = Math.max(8, Math.min(Math.round(aqW / 3.5), ruinH));
-      stand(buildAqueduct(aqW, aqH, 5501), aqW, aqH, Math.round(W * -0.03));
+      /* The tallest thing on the shore, because it is the one with the arches
+         in it and the arches are what the shore is for. */
+      /* All of it kept to the left of the frame. The right of the shore is the
+         water he is standing against, and it has to stay empty — with a
+         colonnade behind him his silhouette went straight back into the
+         middle distance and he stopped being the thing you look at. */
+      const aqW = Math.round(W * 0.28);
+      const aqH = Math.max(14, Math.round(sceneH * 0.22));
+      stand(buildAqueduct(aqW, aqH, 5501), aqW, aqH, Math.round(W * -0.05));
 
       const ruinW = Math.round(ruinH * 2.1);
       if (ruinH > 8) stand(buildRuin(ruinW, ruinH, 20260906),
-        ruinW, ruinH, Math.round(W * 0.37 - ruinW / 2));
+        ruinW, ruinH, Math.round(W * 0.30 - ruinW / 2));
 
       const colW = Math.round(W * 0.11);
-      const colH = Math.max(6, Math.round(colW * 0.62));
-      stand(buildColumns(colW, colH, 8123), colW, colH, Math.round(W * 0.55));
+      const colH = Math.max(8, Math.round(colW * 0.85));
+      stand(buildColumns(colW, colH, 8123), colW, colH, Math.round(W * 0.42));
 
       /* The near ridge: one long mound with the figure on its crest, and a
          smaller one behind it on the other side of the frame so the eye has
          somewhere to go after it has crossed. */
-      const peakX = Math.round(W * 0.70);
+      /* He stands clear of the tree, not at a fixed fraction of the width. The
+         crown's reach is set by the trunk length and the frame's width, so on
+         a phone — narrow frame, tall scene — a peak at seven tenths put him
+         directly under the canopy and he vanished into it. */
+      const crownReach = Math.min(sceneH * 0.42, W * 0.32);
+      const peakX = Math.round(Math.min(W * 0.70, W * 0.905 - crownReach));
       const spread = Math.max(6, W * 0.26);
       const backX = Math.round(W * 0.14);
       const backSpread = Math.max(5, W * 0.18);
@@ -1248,19 +1193,25 @@
            function has a smooth edge, and nothing else here does. */
         nearTop[x] = Math.round(gy - rise) - (hash2(x, 3, 5501) < 0.34 ? 1 : 0);
       }
+      /* The near ridge, and everything standing on it, is the one plane the
+         mist must not touch: it is six feet away. Left in the band, the haze
+         stippled his cloak like a mountainside and he stopped reading as the
+         nearest thing in the picture. */
+      const fore = new Uint8Array(N);
       for (let x = 0; x < W; x++) {
-        for (let y = Math.max(0, nearTop[x]); y < H; y++) land[y * W + x] = 1;
+        for (let y = Math.max(0, nearTop[x]); y < H; y++) { land[y * W + x] = 1; fore[y * W + x] = 1; }
       }
 
       /* Him. Feet on the crest, and tall enough to break the horizon — the
          whole composition is that he is on this side of it and the ruin is on
          the other. */
-      const figH = Math.max(10, Math.round(sceneH * 0.15));
+      const figH = Math.max(12, Math.round(sceneH * 0.20));
       const figS = figH / 100;
       const figX = peakX - Math.round(FIGURE_W * figS * 0.5);
       const figY = nearTop[Math.min(W - 1, Math.max(0, peakX))] - figH + Math.round(figH * 0.06);
       for (let i = 0; i < FIGURE.length; i++) {
         fillShapeAt(land, W, H, FIGURE[i], figX, figY, figS, figS, 1);
+        fillShapeAt(fore, W, H, FIGURE[i], figX, figY, figS, figS, 1);
       }
 
       for (let y = 0; y < H; y++) {
@@ -1333,7 +1284,7 @@
       const sunR = Math.max(4, Math.round(sceneH * 0.055));
       const sunX = Math.round(W * 0.115);
       const sunY = Math.max(sunR + 2, Math.round(markY * 0.34));
-      const sunBox = Math.round(sunR * 1.85);
+      const sunBox = sunR + 2;
 
       /* And the same trick on the near ridge, the other way round. It is the
          largest single shape on the screen and it was a flat black plate:
@@ -1347,16 +1298,12 @@
          the ones it is not, and lighter again the further the range is from
          the water. Left solid, the mountains were a black wall across the
          whole picture and everything in front of them stopped reading. */
-      const crust = Math.max(1, Math.round(sceneH * 0.006));
       const mtnHaze = new Uint8Array(N);
-      for (let x = 0; x < W; x++) {
-        const mt = mtnTop[x];
-        for (let y = Math.max(0, mt + crust); y < hy && y < H; y++) {
+      for (let y = 0; y < hy && y < H; y++) {
+        for (let x = 0; x < W; x++) {
           const i = y * W + x;
-          if (!mtnMask[i]) continue;
-          const depth = (y - mt) / Math.max(1, hy - mt);
-          const keep = 0.06 + 0.20 * mtnLit[x] + 0.15 * depth;
-          if (!dither(x, y, keep)) { haze[i] = 1; mtnHaze[i] = 1; }
+          if (!mtnMask[i] || mtnCrust[i]) continue;
+          if (!dither(x, y, mtnKeep[i])) { haze[i] = 1; mtnHaze[i] = 1; }
         }
       }
 
@@ -1370,32 +1317,6 @@
         }
       }
 
-      /* Where the ground is cut open. The line wanders, and it is always held
-         a good depth below the turf so there is soil between the grass and the
-         section — the cut is deepest under the crown of the mound, which is
-         where there is most ground to be inside of. */
-      const cutTop = new Int32Array(W);
-      const cutBase = H - Math.round(H * 0.16);
-      const soil = Math.max(3, Math.round(sceneH * 0.055));
-      for (let x = 0; x < W; x++) {
-        const wob = Math.sin(x * 0.021) * 0.5 + Math.sin(x * 0.0073 + 1.3) * 0.5;
-        cutTop[x] = Math.max(nearTop[x] + soil, Math.round(cutBase + wob * H * 0.028));
-      }
-      carveUnder(haze, land, W, H, cutTop, sceneH, 33107);
-
-      /* Two things still alive down there. Everything else in the section is
-         bones and stone, and a section with nothing moving in it is a diagram. */
-      const worms = [];
-      for (let k = 0; k < 2; k++) {
-        const wx = W * (0.30 + k * 0.34);
-        const wc = cutTop[Math.max(0, Math.min(W - 1, Math.round(wx)))];
-        worms.push({
-          x: wx, y: wc + (H - wc) * (0.5 + k * 0.22),
-          len: Math.max(4, Math.round(sceneH * 0.045)),
-          rate: 1.3 + k * 0.6, phase: k * 2.1, crawl: (k ? -1 : 1) * W * 0.006,
-        });
-      }
-
       /* ── The foreground ──────────────────────────────────────────────── */
 
       /* Grass along the whole crest, and a flower on some of it. It is the one
@@ -1405,7 +1326,7 @@
          gusts pushing the sky. */
       /* The fire, downhill of him. Far enough off that the smoke clears the
          ridge before it is worth looking at, close enough to be his. */
-      const fireX = Math.max(4, peakX - Math.round(W * 0.17));
+      const fireX = Math.max(4, peakX - Math.round(W * 0.12));
       const fireBase = nearTop[Math.min(W - 1, fireX)];
       const fireW = Math.max(4, Math.round(sceneH * 0.060));
       const fireH = Math.max(5, Math.round(sceneH * 0.080));
@@ -1421,8 +1342,10 @@
         for (let k = 0; k < n; k++) {
           const bx = x + Math.round(hash2(x, k + 2, 3313) * bladeGap);
           if (bx < 1 || bx >= W - 1) continue;
-          /* And nothing growing in the fire. */
+          /* And nothing growing in the fire, or around him — he is what the
+             screen is about and he had got lost in his own grass. */
           if (Math.abs(bx - fireX) < fireW * 1.6) continue;
+          if (Math.abs(bx - peakX) < W * 0.045) continue;
           blades.push({
             x: bx,
             h: Math.max(2, Math.round(sceneH * (0.020 + hash2(bx, k, 617) * 0.045))),
@@ -1454,7 +1377,7 @@
          alone it stayed the same height on a phone, where the scene is tall
          and the frame is narrow, and the crown then reached more than halfway
          across the screen and sat on the name. */
-      const treeLen = Math.min(sceneH * 0.42, W * 0.36);
+      const treeLen = Math.min(sceneH * 0.42, W * 0.32);
       const treeGirth = Math.max(1.8, treeLen * 0.081);
       const tx0 = new Float32Array(tree.length), ty0 = new Float32Array(tree.length);
       const tx1 = new Float32Array(tree.length), ty1 = new Float32Array(tree.length);
@@ -1475,28 +1398,6 @@
           ty1[i] = by - Math.cos(wa) * L;
         }
       }
-
-      /* A branch to sit on, chosen off a still layout: the most level one high
-         in the crown and well inside the tree, so he is standing on something
-         rather than clinging to the last twig out over the water — which is
-         where picking purely by angle put him. */
-      layoutTree(0, 0);
-      let perch = -1, perchScore = Infinity;
-      for (let i = 1; i < tree.length; i++) {
-        /* A first fork, not a twig. The crown is dense the whole way across —
-           there is no branch end up there with sky behind it — but the limbs
-           below it are bare, because the fronds all hang off their children
-           further out. So he sits under the canopy, which is where you
-           actually see a bird in a tree. */
-        if (tree[i].depth !== 1) continue;
-        if (tx1[i] < perchScore) { perchScore = tx1[i]; perch = i; }
-      }
-      if (perch < 0) perch = Math.min(1, tree.length - 1);
-      /* And nothing grows on the branch he is standing on. */
-      tree[perch].frond = false;
-      const birdH = Math.max(9, Math.round(treeLen * 0.27));
-      const birdS = birdH / 100;
-      let birdLook = 0, birdNext = 1.4, birdDip = 0;
 
       /* Leaves off it, crossing the whole screen on the same wind as the
          clouds. Each keeps a flutter of its own so they do not fall in
@@ -1561,13 +1462,10 @@
          fastest — the near rank crosses in about ten seconds and the high one
          takes a minute, which is the parallax and is meant to be noticed. */
       const RANKS = [
-        /* Small ones a long way off, sitting behind the ruin and hardly
-           moving. They are what stops the band between the name and the
-           horizon being a white void, and they are round rather than drawn
-           out — a distant cloud squashed into a streak reads as a wire strung
-           across the picture, which is what the first attempt at this rank
-           looked like. */
-        { n: 5, span: 1.6, speed: 0.030, squash: 1.4,  sky: [0.55, 0.60], w: [0.06, 0.11], hw: 0.34 },
+        /* There used to be a rank of small ones down by the horizon, to fill the
+           band between the name and the shore. The range fills it now, and they
+           were sitting behind the aqueduct and coming through its arches as
+           black lumps — an arch has to have sky in it. */
         { n: 5, span: 2.6, speed: 0.050, squash: 1.5,  band: [0.26, 0.46], w: [0.10, 0.18], hw: 0.30 },
         { n: 5, span: 2.6, speed: 0.110, squash: 1.25, band: [0.56, 0.74], w: [0.14, 0.24], hw: 0.28 },
         { n: 4, span: 2.6, speed: 0.200, squash: 1.1,  band: [0.82, 0.97], w: [0.20, 0.32], hw: 0.26 },
@@ -1761,7 +1659,7 @@
               still[row + x] = 0;
             }
           }
-          drawSun(still, W, H, sunX, sunY, sunR, t);
+          drawSun(still, W, H, sunX, sunY, sunR);
 
           /* The mist over the far shore, drifting the same way as everything
              else and slower than any of it. */
@@ -1775,7 +1673,8 @@
             const src = r * WT, dst = y * W;
             for (let x = 0; x < W; x++) {
               let ix = x + off; if (ix >= WT) ix -= WT;
-              haze[dst + x] = (mistTex[src + ix] || mtnHaze[dst + x]) ? 1 : 0;
+              const at = dst + x;
+              haze[at] = (!stone[at] && !fore[at] && (mistTex[src + ix] || mtnHaze[at])) ? 1 : 0;
             }
           }
 
@@ -1876,43 +1775,6 @@
             }
           }
 
-          /* Him, on the branch. The perch moves with the wind and he moves with
-             it, which is most of what sells it; the rest is that every second
-             or two he looks somewhere else. */
-          birdNext -= dt;
-          if (birdNext <= 0) {
-            birdNext = 1.1 + Math.random() * 2.6;
-            birdLook = Math.round((Math.random() - 0.5) * 5);
-            birdDip = Math.random() < 0.3 ? 2 : 0;
-          }
-          {
-            /* Out at the end of the branch, where the sky is. */
-            const px2 = tx0[perch] + (tx1[perch] - tx0[perch]) * 0.86;
-            const py2 = ty0[perch] + (ty1[perch] - ty0[perch]) * 0.86;
-            const bx = px2 - BIRD_W * birdS * 0.42;
-            const by = py2 - birdH + 1;
-            const hx = bx + birdLook * birdS, hy2 = by + birdDip * birdS;
-            /* Cut out of the paper first, on the same principle as the leaves:
-               he is standing in a tree, and ink on ink is not a bird. */
-            const halo = birdS * 1.30;
-            const ox = bx - BIRD_W * (halo - birdS) * 0.5;
-            const oy = by - 100 * (halo - birdS) * 0.92;
-            for (let k = 0; k < BIRD_BODY.length; k++) {
-              fillShapeAt(over, W, H, BIRD_BODY[k], ox, oy, halo, halo, 2);
-            }
-            for (let k = 0; k < BIRD_HEAD.length; k++) {
-              fillShapeAt(over, W, H, BIRD_HEAD[k],
-                ox + birdLook * birdS, oy + birdDip * birdS, halo, halo, 2);
-            }
-            for (let k = 0; k < BIRD_BODY.length; k++) {
-              fillShapeAt(over, W, H, BIRD_BODY[k], bx, by, birdS, birdS, 1);
-            }
-            for (let k = 0; k < BIRD_HEAD.length; k++) {
-              fillShapeAt(over, W, H, BIRD_HEAD[k], hx, hy2, birdS, birdS, 1);
-            }
-            fillShapeAt(over, W, H, BIRD_EYE[0], hx, hy2, birdS, birdS, 2);
-          }
-
           /* And what comes off it. They cross the frame on the same wind as the
              sky, spinning as they go — the flutter is a leaf turning edge-on,
              so it is drawn narrow at the turn rather than simply moving. */
@@ -1929,22 +1791,6 @@
             const wid = Math.max(0.5, lv.len * 0.28 * Math.abs(turn));
             leaf(over, W, H, lv.x, lv.y, lv.phase * 0.5, lv.len + 2, wid + 1, 2);
             leaf(over, W, H, lv.x, lv.y, lv.phase * 0.5, lv.len, wid, 1);
-          }
-
-          for (let k = 0; k < worms.length; k++) {
-            const wm = worms[k];
-            wm.x += wm.crawl * dt;
-            if (wm.x < W * 0.12) wm.crawl = Math.abs(wm.crawl);
-            if (wm.x > W * 0.88) wm.crawl = -Math.abs(wm.crawl);
-            for (let n = 0; n <= wm.len; n++) {
-              const f = n / wm.len;
-              const x = Math.round(wm.x + n - wm.len * 0.5);
-              const y = Math.round(wm.y + Math.sin(t * wm.rate + wm.phase + f * 5.2) * wm.len * 0.16);
-              if (x < 0 || x >= W || y < 0 || y >= H) continue;
-              if (y < cutTop[x] || !land[y * W + x]) continue;
-              over[y * W + x] = 1;
-              if (y + 1 < H && land[(y + 1) * W + x]) over[(y + 1) * W + x] = 1;
-            }
           }
 
           drawFlame(over, W, H, fireX, fireBase, fireW, fireH, t);

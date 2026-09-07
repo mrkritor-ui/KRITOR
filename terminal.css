@@ -328,8 +328,8 @@ html, body, .bar, .panel, .tile-figure {
      over the ruin on a narrow screen, and through the half-second when the
      lightning turns the whole sky to ink. */
   text-shadow:
-    2px 0 var(--bg), -2px 0 var(--bg), 0 2px var(--bg), 0 -2px var(--bg),
-    2px 2px var(--bg), -2px 2px var(--bg), 2px -2px var(--bg), -2px -2px var(--bg);
+    3px 0 var(--bg), -3px 0 var(--bg), 0 3px var(--bg), 0 -3px var(--bg),
+    3px 3px var(--bg), -3px 3px var(--bg), 3px -3px var(--bg), -3px -3px var(--bg);
 }
 
 @keyframes boot-flash {
