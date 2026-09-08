@@ -879,6 +879,19 @@ html.is-entering .bar-drawer.is-open { overflow: hidden; animation: bar-unfold-t
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   image-rendering: pixelated;
+  /* And it develops. A work is dealt into the grid as a block of the paper
+     colour and comes up out of it, which is the same move the page makes on
+     arrival — only per work and timed by the deal, so the catalogue fills in
+     one rendition at a time rather than seventeen of them being switched on.
+     The animation is deliberately not filled forwards: it ends on exactly the
+     colour the rule above already sets, so once it is over the ink is the
+     stylesheet's again and a later theme change is handled the ordinary way. */
+  animation: bits-develop 620ms ease;
+}
+
+@keyframes bits-develop {
+  from { background-color: var(--bg); }
+  to   { background-color: var(--ink); }
 }
 
 /* The real photograph, revealed on hover. It sits over the bitmap rather than
@@ -1532,4 +1545,6 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   /* The block still moves to the stop, it just arrives there. */
   .bar-scale-mark { transition: none; }
   html, body, .bar, .panel, .tile-figure { transition: none; }
+  /* Present from the first frame instead of developing. */
+  .tile-bits { animation: none; }
 }
