@@ -154,7 +154,44 @@
     grid.textContent = "";
     if (view === "list") grid.appendChild(listHead());
     visibleWorks().forEach((w, i) => grid.appendChild(entryFor(w, i)));
+    keepOneLit();
   }
+
+  /* ── The one in colour ─────────────────────────────────────────────────── */
+
+  /* Exactly one work on the page is in its real colours at any time, and it is
+     the last one the pointer crossed. The colour is left behind rather than
+     carried: come off a work and it stays lit until another takes it, so the
+     grid is never entirely renditions and there is always somewhere for the
+     eye to land. Which also means it survives a filter, a re-order and a view
+     change — hence keepOneLit, called after anything that rebuilds the grid. */
+  let litId = null;
+
+  function lightWork(tile) {
+    if (!tile || tile.classList.contains("is-lit")) return;
+    const was = grid.querySelector(".tile.is-lit");
+    if (was) was.classList.remove("is-lit");
+    tile.classList.add("is-lit");
+    litId = tile.dataset.workId || null;
+  }
+
+  function keepOneLit() {
+    if (grid.querySelector(".tile.is-lit")) return;
+    /* The one that was lit before, if it is still on the page; otherwise the
+       first thing there is. */
+    const again = litId && grid.querySelector('.tile[data-work-id="' + litId + '"]');
+    lightWork(again || grid.querySelector("a.tile"));
+  }
+
+  grid.addEventListener("pointerover", e => {
+    const tile = e.target.closest("a.tile");
+    if (tile) lightWork(tile);
+  });
+  /* And by keyboard, so tabbing through the grid lights what is focused. */
+  grid.addEventListener("focusin", e => {
+    const tile = e.target.closest("a.tile");
+    if (tile) lightWork(tile);
+  });
 
   /* Randomise displaces the works within the grid they are already in — it
      does not clear and re-deal them. Nothing is destroyed and nothing is
@@ -457,6 +494,7 @@
     onDeal: (work, i) => {
       if (i === 0 && view === "list") grid.appendChild(listHead());
       grid.appendChild(entryFor(work, i));
+      keepOneLit();
     },
   });
 

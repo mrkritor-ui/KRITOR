@@ -45,11 +45,22 @@
   line-gap-override: 0%;
 }
 
+/* Registered, so they can be animated. A custom property is a string as far as
+   the engine is concerned unless it has been given a type, and a string cannot
+   be interpolated — which is the whole mechanism the theme change below rests
+   on: the ink is snapped to the background colour and then let go, and it
+   travels back out to itself. */
+@property --ink { syntax: "<color>"; inherits: true; initial-value: #555555; }
+@property --dim { syntax: "<color>"; inherits: true; initial-value: #555555; }
+
 :root {
   --u: 8px;                     /* the pixel unit everything is a multiple of */
-  --bg: #ffffff;
-  --ink: #000000;
-  --dim: #000000;               /* secondary text — in light it is still black */
+  /* Not black on white. Paper is a warm-grey card and the ink is a soft
+     charcoal — at full contrast a screen of 1-bit renditions is a page of
+     barcodes, and the work has to be able to sit on it. */
+  --bg: #e3e3e3;
+  --ink: #555555;
+  --dim: #555555;               /* secondary text — in light it is still the ink */
   --face: "pix Chicago", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* The pair. Everything is the terminal face except a work's own name, set in
@@ -90,12 +101,40 @@ html[data-page="store"] {
    synthetic bold since it was set and that is the weight it was chosen at. */
 html[data-page="store"] .panel-title { font-weight: 400; }
 
+/* And dark is not a phosphor terminal any more: a near-black with the green
+   still in it, and a bone grey on top. The green was the loudest thing on the
+   site and the paintings were competing with it. */
 html[data-theme="dark"] {
-  --bg: #0a1f12;
-  --ink: #4ff08a;
-  --dim: #2c8c52;
+  --bg: #1c2318;
+  --ink: #c9cac3;
+  --dim: #8f9189;
   color-scheme: dark;
 }
+
+/* The shopfront has no dark mode and no bitmap. It is a room with work on the
+   walls and the walls are white — the 1-bit rendition is the archive's way of
+   holding a work at arm's length, and a page asking to be bought from cannot
+   afford it. Declared after the theme so it wins on either setting. */
+html[data-page="store"],
+html[data-page="store"][data-theme="dark"] {
+  --bg: #ffffff;
+  --ink: #1b1b1b;
+  --dim: #4c4c4c;
+  color-scheme: light;
+}
+
+/* So neither switch is offered there. */
+html[data-page="store"] .bar-modes,
+html[data-page="store"] #eye-btn { display: none; }
+
+/* The colour change, and the only thing it animates. The background arrives at
+   once and the ink comes up out of it — everything that is not the page itself
+   is the ink, so the type, the rules, the bar and the renditions all develop
+   out of the paper rather than being swapped for a different set. --bg is
+   deliberately not in here: if it travelled too, the two would cross somewhere
+   in the middle and it would read as a dissolve between two pictures instead
+   of one picture appearing. */
+html.is-emerging { transition: --ink 620ms ease, --dim 620ms ease; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -858,6 +897,14 @@ html.is-entering .bar-drawer.is-open { overflow: hidden; animation: bar-unfold-t
   html[data-reveal="on"] .tile:hover .tile-real,
   html[data-reveal="on"] .tile:focus-visible .tile-real { opacity: 1; }
 }
+
+/* One work is always in its real colours, and it is the last one the pointer
+   was on — so the page is never entirely a set of renditions, and moving
+   across the grid leaves the colour behind you rather than taking it with
+   you. Nothing here is a hover state: the class is moved by hand, and where
+   there is no pointer at all it simply stays on whichever work it started on. */
+.tile.is-lit .tile-real { opacity: 1; }
+.tile.is-lit .tile-bits { visibility: hidden; }
 
 /* The eye: every work in its real colours at once, filters cleared. The
    bitmap is the catalogue's language, and this is the switch that drops it. */

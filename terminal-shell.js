@@ -60,19 +60,50 @@
 
   /* ── Theme ─────────────────────────────────────────────────────────────── */
 
-  function setTheme(theme) {
+  const EMERGE_MS = 620;         // matches the transition in the stylesheet
+
+  /* The colour change, and the arrival on a page, are the same move: the
+     background is already whatever it is going to be, the ink is snapped to
+     sit exactly on top of it — so for one frame there is nothing on the screen
+     but paper — and then let go, and everything comes back up out of it at
+     once. Type, rules, the bar, the renditions: all of them are the ink, so
+     all of them develop rather than being swapped.
+
+     It has to be done in two steps with a flush between them. Set the ink to
+     the background and release it in the same tick and the browser coalesces
+     the two into no change at all; forcing a layout read in between is what
+     makes the first state real enough to animate away from. */
+  function emerge() {
+    if (reduceMotion) return;
+    const bg = getComputedStyle(root).getPropertyValue("--bg").trim();
+    if (!bg) return;
+    root.classList.remove("is-emerging");
+    root.style.setProperty("--ink", bg);
+    root.style.setProperty("--dim", bg);
+    void root.offsetWidth;
+    root.classList.add("is-emerging");
+    root.style.removeProperty("--ink");
+    root.style.removeProperty("--dim");
+    clearTimeout(emerge.timer);
+    emerge.timer = setTimeout(() => root.classList.remove("is-emerging"), EMERGE_MS + 80);
+  }
+
+  function setTheme(theme, animate) {
     root.dataset.theme = theme;
     document.querySelectorAll("[data-theme-btn]").forEach(b =>
       b.setAttribute("aria-pressed", String(b.dataset.themeBtn === theme)));
     try { localStorage.setItem("kritor-theme", theme); } catch (e) {}
+    /* After the attribute, never before: emerge reads the background it is
+       coming out of, and that is the one the new theme has just set. */
+    if (animate) emerge();
   }
 
   function initTheme() {
     let saved = null;
     try { saved = localStorage.getItem("kritor-theme"); } catch (e) {}
-    setTheme(saved === "dark" ? "dark" : "light");
+    setTheme(saved === "dark" ? "dark" : "light", false);
     document.querySelectorAll("[data-theme-btn]").forEach(b =>
-      b.addEventListener("click", () => setTheme(b.dataset.themeBtn)));
+      b.addEventListener("click", () => setTheme(b.dataset.themeBtn, true)));
   }
 
   /* ── Typing ────────────────────────────────────────────────────────────── */
@@ -248,6 +279,13 @@
         infoRow.classList.add("is-in");
         loadingRow.classList.add("is-gone");
         boot.classList.add("is-leaving");
+        /* And the page behind it arrives the same way a theme change does:
+           everything that is not the paper is put back to the colour of the
+           paper and then let go, so it comes up out of it. Started here, under
+           the fade, rather than once the door has gone — run afterwards the
+           bar was already fully inked when it was revealed, then blinked out
+           and came back, which is a flicker rather than an arrival. */
+        emerge();
         /* The bar assembles itself while the door is still fading over the top
            of it, so whatever settling it has to do happens behind something —
            by the time there is nothing in front of it, it is already the shape
@@ -662,7 +700,7 @@
 
   window.KritorTerminal = {
     reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot,
-    mountBar, filterColumn, revealWork, startScreensaver, flash, FLASH_MS,
+    mountBar, filterColumn, revealWork, startScreensaver, flash, FLASH_MS, emerge,
     mountPanelNav, walkLabel,
     /* Touch has no hover and needs the bar left closed until asked for. */
     isTouch: touch,
