@@ -590,14 +590,17 @@ html[data-view="list"] .bar-scale-mark { left: calc(100% - var(--u) * .5); }
   display: block;
   padding: calc(var(--u) * 1.5);
   overflow: hidden;
-  max-height: 12rem;
-  /* Folded away faster than the rows replacing it unfold. Given the same
-     third of a second, for a moment all of them have height at once and the
-     panel bulges past where it is going before dropping back to it. Out
-     quickly and in slowly, and the height only ever climbs. */
-  transition: max-height .16s ease, opacity .14s ease;
 }
-.bar-loading.is-gone { max-height: 0; opacity: 0; }
+
+/* Once it has said WELCOME it is simply not there. It used to fold itself
+   away on a max-height, which had two problems: a max-height of zero cannot
+   take a box below its own padding, so the spent row left a 24px band of
+   nothing under the top row of every bar for the rest of the session — and
+   folding it against the other rows unfolding meant two curves of different
+   shapes racing, which is what made the panel stand taller than where it was
+   going and then drop back. The bar animates its own height now, so this row
+   only has to stop existing. */
+.bar-loading.is-gone { display: none; }
 .bar-loading-label { display: block; margin-bottom: var(--u); font-size: 10px; }
 
 /* The bar full, the door still shut. Everything else on this screen is either
@@ -639,32 +642,21 @@ html[data-view="list"] .bar-scale-mark { left: calc(100% - var(--u) * .5); }
 html.is-booting .bar-drawer,
 html.is-booting .bar-scroll { display: none; }
 
-/* The parameter row and the drawer under it do not appear, they unfold — and
-   they unfold over the same third of a second the loading row takes to fold
-   away, so the panel's height only ever travels in one direction. Given
-   different rates it went up past where it was going and then came back down,
-   and a panel that overshoots and settles reads as a panel that is broken.
+/* The rows do not size themselves in. Three boxes each animating its own
+   max-height against the loading row folding away is three curves of different
+   shapes racing, and the sum of them is what the panel's height actually is:
+   it went up past where it was going and came back down, and a panel that
+   overshoots and settles reads as a panel that is broken. The height is now
+   one measured travel on the bar itself, from what it was to what it is — see
+   settleBar in terminal-shell.js — and all these rows do is fade up inside it.
 
    An animation rather than a transition, because both of these come out of
-   display: none and a transition has nothing to start from there — the first
-   attempt used one and the row sprang open at full height on the frame it was
-   revealed. Everything here is border-box, so a max-height of zero takes the
-   padding with it.
+   display: none and a transition has nothing to start from there. Scoped to
+   the entering class so it plays once on arrival and not every time the
+   drawer is opened afterwards. */
+@keyframes bar-arrive { from { opacity: 0; } }
 
-   The ceilings are a little over what each actually needs. Set far above it
-   the box reaches its real height in the first few frames and the easing is
-   spent on nothing. */
-@keyframes bar-unfold {
-  from { max-height: 0; opacity: 0; }
-  to { max-height: 8rem; opacity: 1; }
-}
-
-/* Both of these clip only while the sequence is running. Left on, the drawer's
-   overflow: hidden swallowed every filter menu in the bar — the value lists are
-   absolutely positioned and hang out below the drawer by design, so clipping it
-   made them invisible and unclickable, which is a working control that silently
-   stops working. The class is dropped once the animation is over. */
-html.is-entering #info-row.is-in { overflow: hidden; animation: bar-unfold .3s ease; }
+html.is-entering #info-row.is-in { animation: bar-arrive .28s ease; }
 .bar-progress span {
   display: block;
   height: 100%;
@@ -686,17 +678,12 @@ html.is-entering #info-row.is-in { overflow: hidden; animation: bar-unfold .3s e
    rule under the row reads as something that failed to load. */
 .bar-drawer:not(.is-open) { display: none; }
 
-/* And the same unfold, so the drawer arriving with the parameters is part of
-   the one movement rather than a second jump after it. Its own ceiling,
-   because it is a fraction of the height of the row above it and on the row's
-   ceiling it was fully open in the first few frames — which is what was left
-   of the bulge. */
-@keyframes bar-unfold-thin {
-  from { max-height: 0; opacity: 0; }
-  to { max-height: 3rem; opacity: 1; }
-}
-
-html.is-entering .bar-drawer.is-open { overflow: hidden; animation: bar-unfold-thin .3s ease; }
+/* And the drawer fades up with it, so the parameters arriving are part of the
+   one movement rather than a second jump after it. No overflow here: the value
+   lists are absolutely positioned and hang out below the drawer by design, and
+   clipping it once made every filter menu in the bar invisible and
+   unclickable. */
+html.is-entering .bar-drawer.is-open { animation: bar-arrive .28s ease; }
 
 /* Touch is the exception — there the bar spans the page, so the row folds
    away behind the tab and the works keep the screen. */
@@ -1441,6 +1428,18 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
      icons; at 390px the single row overflowed its own box. */
   .bar-views { flex-basis: 100%; order: 3; margin: 0; justify-content: space-between; }
 
+  /* Except on the store, where the same slot holds one link back to the
+     catalogue rather than three view buttons — and where the eye and the mode
+     switch are not on the bar at all. A whole 44px line was being spent on a
+     single word next to a row that was half empty; INFO, CATALOGUE and the bag
+     fit across a phone with room to spare. */
+  html[data-page="store"] .bar-views {
+    flex-basis: auto;
+    order: 0;
+    margin: 0 auto;
+  }
+  html[data-page="store"] .bar-views > div { width: auto; padding-right: 0; }
+
   /* Two rows of 44px targets is as short as the bar can honestly be, so what
      comes off is everything around them: the padding halves, the gap tightens,
      and the printed rule under the views goes. On a phone the bar was 143px —
@@ -1523,8 +1522,11 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   }
 
   .bar-tab { width: calc(var(--u) * 9); height: calc(var(--u) * 3.5); }
-  .filter-title { min-height: 52px; }
-  .filter-clear { min-width: 52px; }
+  /* One touch target, not one and a fifth. 52 was a number rather than a
+     measure — the drawer is the deepest thing on a phone's bar after the
+     controls, and 44 is already a full target. */
+  .filter-title { min-height: 44px; }
+  .filter-clear { min-width: 44px; }
   .filter-list { gap: 0; padding: 0; }
   .filter-list .bar-btn { align-self: stretch; justify-content: flex-start; padding: 0 calc(var(--u) * 2); }
   /* Ruled to the width of the work rather than floating under it as a square:

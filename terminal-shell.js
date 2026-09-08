@@ -29,6 +29,7 @@
   const TYPE_LINE_MS = 110;      // extra pause at the end of each line
   const TYPE_MS_REDUCED = 6;     // still types, just briskly
   const RUSH_MS = 320;           // what is left of the bar once the gate opens
+  const SETTLE_MS = 320;         // the bar's one travel from boot height to full
 
   /* Answering the door, in three beats and about a second and a third. The
      picture dissolves out from under the name, the name stands on white with
@@ -275,6 +276,11 @@
         /* Beat three: the bar's parameters fade up as the loading row folds
            away — both eased, so the panel settles rather than jumps — and the
            boot screen fades off whatever is already behind it. */
+        /* Measured before anything changes, because this is the height the
+           panel has to travel from. */
+        const bar = infoRow.closest(".bar");
+        const from = bar ? bar.getBoundingClientRect().height : 0;
+
         infoRow.hidden = false;
         infoRow.classList.add("is-in");
         loadingRow.classList.add("is-gone");
@@ -291,13 +297,15 @@
            by the time there is nothing in front of it, it is already the shape
            it is going to stay. */
         root.classList.remove("is-booting");
-        /* Only for as long as the unfold takes. The rules that clip the rows
-           to their animated height have to stop applying afterwards, or the
-           drawer keeps an overflow: hidden that swallows the filter menus
-           hanging out below it for the rest of the session. */
+        /* Only for as long as the arrival takes: the fade on the rows is meant
+           to play once, on the way in, and not every time the drawer is opened
+           for the rest of the session. */
         root.classList.add("is-entering");
         setTimeout(() => root.classList.remove("is-entering"), 420);
         if (options.onParams) options.onParams();
+        /* Last, once every row that is going to be there is there — the panel
+           is now at its final height and has never been drawn at it. */
+        settleBar(bar, from);
 
         setTimeout(() => {
           boot.classList.add("is-done");
@@ -310,6 +318,36 @@
           deal();
         }, LEAVE_MS);
       }, PART_MS + WHITE_MS);
+    }
+
+    /* One travel, measured. The panel's height is the sum of whatever rows it
+       is currently showing, and on arrival that set changes completely: the
+       loading row goes and three others take its place. Animating each of them
+       separately meant several curves of different shapes racing, and the
+       height is their sum — so it climbed past where it was going and dropped
+       back, which is the one thing a panel must not do. Instead the rows are
+       swapped in a single frame, both ends are measured, and the bar is told
+       to travel between them. Nothing has to be guessed and nothing has to
+       agree: a phone, a desktop and the store all get the same one move.
+
+       It runs behind the boot screen's own fade, so what is on screen for its
+       duration is a panel already at the size it will keep. */
+    function settleBar(bar, from) {
+      if (!bar || !from || reduceMotion) return;
+      const to = bar.getBoundingClientRect().height;
+      if (!to || Math.abs(to - from) < 2) return;
+      /* Clipped only while it is short of its content, and released with the
+         height — the filter menus hang out below the bar by design. */
+      bar.style.overflow = "hidden";
+      bar.style.height = from + "px";
+      void bar.offsetWidth;                   // or the two collapse into no change
+      bar.style.transition = "height " + SETTLE_MS + "ms ease";
+      bar.style.height = to + "px";
+      setTimeout(() => {
+        bar.style.transition = "";
+        bar.style.height = "";
+        bar.style.overflow = "";
+      }, SETTLE_MS + 60);
     }
 
     /* Works arrive one at a time, in order, the way rows come back from a
