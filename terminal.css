@@ -978,7 +978,7 @@ html.is-entering .bar-drawer.is-open { animation: bar-arrive .28s ease; }
    is the same grid with more of them — the two are a pair of densities, not
    an action and its opposite, which is what the old names implied. */
 .grid.view-zoom { --cols: 4; }
-.grid.view-grid { --cols: 5; }
+.grid.view-grid { --cols: 8; }
 
 /* LIST is not a one-column grid — it is the archive as a table. */
 .grid.view-list {
