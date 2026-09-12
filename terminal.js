@@ -480,7 +480,12 @@
     w.id === location.pathname.replace(/\/+$/, "").split("/").pop());
 
   T.runBoot({
-    page: "catalogue",
+    /* Set by the page, not hard-coded here — the architecture stub loads
+       this same file against an empty ARTWORKS and asks for its own scene
+       (the signal) rather than the catalogue's (the mosaic), and everything
+       else in this file — the views, the filters, the empty grid — is
+       already correct for zero items without a second code path. */
+    page: window.KRITOR_BOOT_PAGE || "catalogue",
     preload: works.map(w => bitsUrl(w.image)),
     items: visibleWorks(),
     /* The bar's parameters are part of the sequence, not chrome that was

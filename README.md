@@ -48,12 +48,14 @@ index.html          the landing door — the bar and its three options
 landing.css/.js     the door's own layout and its click-to-loading-to-
                     navigate behaviour; the rest it borrows from terminal.css
 art/index.html      the catalogue
-architecture/index.html  a stub, not linked from the door until there is
-                    work to put behind it
+architecture/index.html  the same catalogue rule system — views, filters,
+                    the bar — wired against an empty ARTWORKS, since there
+                    is no work to show here yet. Its own boot scene (the
+                    signal) instead of the catalogue's (the mosaic).
 store/index.html    the shopfront
 checkout/index.html the checkout — Stripe, its own CSP
 
-terminal-shell.js   the chrome both pages share: theme, bar, boot
+terminal-shell.js   the chrome every terminal page shares: theme, bar, boot
                     sequence, typing, screensaver
 terminal.js         the catalogue: views, filters, the work panel
 terminal-store.js   the store: tiles, the bag, add to bag

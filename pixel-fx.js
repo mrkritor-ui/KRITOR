@@ -2147,5 +2147,167 @@
     });
   }
 
-  window.KritorFX = { terrain: terrain, starfield: starfield, mosaic: mosaic, reduceMotion: reduceMotion };
+  /* ── The signal: architecture, not tuned in yet ──────────────────────────── */
+
+  /* One letter of KRITOR's own name, huge, standing in for a channel that
+     has not arrived. No new glyphs were drawn for this — K, R, I, T and O
+     are the whole alphabet this site owns, and a section with nothing in it
+     yet borrowing the name's own letters reads as the same signal trying to
+     resolve, not as a different typeface wandering in. */
+  function drawGlyphAt(buf, W, H, letter, x, y, capHeight, value, seed) {
+    const g = GLYPHS[letter];
+    if (!g) return;
+    const s = capHeight / 100;
+    const tilt = (hash2(seed, 1, 313) - 0.5) * 0.16;
+    const ct = Math.cos(tilt), st = Math.sin(tilt);
+    const gx = g.w * 0.5, gy = 52;
+    for (let k = 0; k < g.shapes.length; k++) {
+      const shape = g.shapes[k];
+      const rings = [];
+      for (let r = 0; r < shape.length; r++) {
+        const rough = roughen(shape[r], r ? 1.7 : 3.0, seed * 977 + k * 61 + r);
+        const ring = new Array(rough.length);
+        for (let p = 0; p < rough.length; p++) {
+          const ux = rough[p][0] - gx, uy = rough[p][1] - gy;
+          ring[p] = [x + (gx + ux * ct - uy * st) * s, y + (gy + ux * st + uy * ct) * s];
+        }
+        rings.push(ring);
+      }
+      fillShape(buf, W, H, rings, value);
+    }
+  }
+
+  /* Separable box blur, in place via one scratch row/column buffer allocated
+     once outside the frame loop — this runs on the small native grid (see
+     run(), which is what makes any of this affordable), so a blur here is a
+     few hundred cells wide rather than a screen's worth of pixels. */
+  function boxBlur(buf, tmp, W, H, radius) {
+    const norm = 1 / (radius * 2 + 1);
+    for (let y = 0; y < H; y++) {
+      const row = y * W;
+      let sum = 0;
+      for (let x = -radius; x <= radius; x++) sum += buf[row + Math.max(0, Math.min(W - 1, x))];
+      for (let x = 0; x < W; x++) {
+        tmp[row + x] = sum * norm;
+        sum += buf[row + Math.min(W - 1, x + radius + 1)] - buf[row + Math.max(0, x - radius)];
+      }
+    }
+    for (let x = 0; x < W; x++) {
+      let sum = 0;
+      for (let y = -radius; y <= radius; y++) sum += tmp[Math.max(0, Math.min(H - 1, y)) * W + x];
+      for (let y = 0; y < H; y++) {
+        buf[y * W + x] = sum * norm;
+        sum += tmp[Math.min(H - 1, y + radius + 1) * W + x] - tmp[Math.max(0, y - radius) * W + x];
+      }
+    }
+  }
+
+  function signal(host) {
+    return run(host, reduceMotion ? 10 : 20, function (W, H) {
+      const letters = Object.keys(GLYPHS);
+      let cur = { letter: "K", x: 0, y: 0, cap: 0 };
+
+      function pickNew(seed) {
+        const cap = Math.round(H * (0.62 + hash2(seed, 4, 71) * 0.22));
+        const letter = letters[Math.floor(hash2(seed, 5, 71) * letters.length)];
+        const w = Math.round(GLYPHS[letter].w * cap / 100);
+        cur = {
+          letter: letter,
+          cap: cap,
+          seed: seed,
+          x: Math.round(W * (0.5 - 0.5 * hash2(seed, 6, 71)) - w * 0.15),
+          y: Math.round(H * (0.06 + hash2(seed, 7, 71) * 0.14)),
+        };
+      }
+      let seed = Math.floor(Math.random() * 1e6);
+      pickNew(seed);
+
+      /* Held long enough to almost read, gone before it does — a channel
+         between stations, not one that ever lands on a picture. */
+      let holdT = 1.8 + Math.random() * 2.2;
+      let glitchT = 0;
+
+      const coverage = new Float32Array(W * H);
+      const scratch = new Float32Array(W * H);
+      const blurRadius = Math.max(1, Math.round(W * 0.012));
+
+      let partMs = 0, partT = 0, dissolve = 0;
+
+      return {
+        part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
+        render: function (dt, bits) {
+          holdT -= dt;
+          if (holdT <= 0) {
+            seed += 1;
+            pickNew(seed);
+            holdT = 1.8 + Math.random() * 2.6;
+            glitchT = 0.16 + Math.random() * 0.14;
+          }
+          if (glitchT > 0) glitchT -= dt;
+
+          coverage.fill(0);
+          /* Two faint echoes first, a hair off in either direction, then the
+             letter itself drawn solid on top of them — the ghost only shows
+             where it falls outside the real stroke, which is the trailing
+             edge a signal that has not settled leaves behind it. */
+          drawGlyphAt(coverage, W, H, cur.letter, cur.x + 3, cur.y + 2, cur.cap, 0.4, cur.seed * 3 + 1);
+          drawGlyphAt(coverage, W, H, cur.letter, cur.x - 3, cur.y - 2, cur.cap, 0.4, cur.seed * 3 + 2);
+          drawGlyphAt(coverage, W, H, cur.letter, cur.x, cur.y, cur.cap, 1, cur.seed * 3);
+
+          boxBlur(coverage, scratch, W, H, blurRadius);
+
+          for (let i = 0, n = W * H; i < n; i++) {
+            bits[i] = dither(i % W, (i / W) | 0, coverage[i]);
+          }
+
+          /* The tracking glitch: a handful of rows torn sideways for the
+             brief window right after a new letter is chosen — the moment a
+             channel change actually looks like one. */
+          if (glitchT > 0) {
+            const bands = 2 + Math.floor(Math.random() * 3);
+            for (let b = 0; b < bands; b++) {
+              const y = Math.floor(Math.random() * H);
+              const shift = Math.round((Math.random() - 0.5) * W * 0.1);
+              const row = y * W;
+              if (shift > 0) {
+                for (let x = W - 1; x >= shift; x--) bits[row + x] = bits[row + x - shift];
+                for (let x = 0; x < shift; x++) bits[row + x] = 0;
+              } else if (shift < 0) {
+                const sh = -shift;
+                for (let x = 0; x < W - sh; x++) bits[row + x] = bits[row + x + sh];
+                for (let x = W - sh; x < W; x++) bits[row + x] = 0;
+              }
+            }
+          }
+
+          /* A little grain, the same restrained amount the mosaic settled
+             on — blocks with some grit on them, not static with a picture
+             buried in it. */
+          const flips = Math.round(W * H * 0.008);
+          for (let k = 0; k < flips; k++) {
+            const i = (Math.random() * W * H) | 0;
+            bits[i] = bits[i] ? 0 : 1;
+          }
+
+          if (partMs) {
+            partT += dt * 1000;
+            dissolve = Math.min(1, partT / partMs);
+            if (dissolve > 0) {
+              for (let y = 0; y < H; y++) {
+                const row = y * W;
+                for (let x = 0; x < W; x++) {
+                  const i = row + x;
+                  if (bits[i] && dither(x, y, dissolve)) bits[i] = 0;
+                }
+              }
+            }
+          }
+        },
+      };
+    });
+  }
+
+  window.KritorFX = {
+    terrain: terrain, starfield: starfield, mosaic: mosaic, signal: signal, reduceMotion: reduceMotion,
+  };
 })();

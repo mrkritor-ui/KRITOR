@@ -1,32 +1,153 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-page="landing">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Architecture — KRITOR</title>
   <link rel="canonical" href="/architecture/">
-  <meta name="robots" content="noindex">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-title" content="KRITOR">
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="/icon.png">
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- The site face, served from this origin. Preloaded rather than left to
+       the stylesheet to discover: it is 4 KB, and font-display: block means
+       nothing is painted in it until it lands. -->
   <link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
+
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
-  <link rel="stylesheet" href="/landing.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
   <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
 </head>
 <body>
 
-  <!-- The way back to the directory — the same tab every other room has. -->
+  <!-- The way back to the directory. Above the boot screen, not inside it —
+       it is one of the two fixed things on this page now, not part of the
+       door's ceremony. -->
   <a class="home-tab" href="/" aria-label="Back to KRITOR">HOME</a>
 
-  <!-- Not linked from the door yet — there is no work to put behind it.
-       Exists so the address is real the day there is. -->
-  <main class="landing">
-    <p class="soon-note">ARCHITECTURE<br>IN PROGRESS.</p>
-  </main>
+  <!-- Same optics as the catalogue's own gate — see art/index.html for the
+       full account of why this is an SVG filter and not a CSS one. Each
+       page that wants the CRT skin carries its own copy: a url(#id) filter
+       reference only resolves within the document that declares it. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feComponentTransfer in="SourceGraphic" result="bright">
+        <feFuncR type="linear" slope="3" intercept="-1.6"/>
+        <feFuncG type="linear" slope="3" intercept="-1.6"/>
+        <feFuncB type="linear" slope="3" intercept="-1.6"/>
+      </feComponentTransfer>
+      <feGaussianBlur in="bright" stdDeviation="0.8" result="bloom"/>
+      <feBlend in="SourceGraphic" in2="bloom" mode="screen" result="bloomed"/>
 
+      <feColorMatrix in="bloomed" type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rChan"/>
+      <feOffset in="rChan" dx="-0.6" dy="0" result="rShift"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gChan"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bChan"/>
+      <feOffset in="bChan" dx="0.6" dy="0" result="bShift"/>
+      <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="bShift" mode="screen"/>
+    </filter>
+  </svg>
+
+  <!-- Boot. The mode boot-scene.js writes here is "arch", not "gate" — its
+       own scene (the signal: one huge letter of KRITOR's own name, not
+       settled) and its own silence, but the same CRT skin and the same
+       click-to-enter the catalogue's door uses. -->
+  <div class="boot" id="boot">
+    <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
+    <div class="boot-crt" aria-hidden="true"></div>
+    <div class="boot-statement">
+      <div class="boot-core">
+        <p class="boot-mark">KRITOR</p>
+        <p class="boot-sub" id="boot-sub"></p>
+        <p class="boot-voice" id="boot-voice"></p>
+        <p class="boot-welcome" id="boot-welcome" hidden>WELCOME.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- The bar. Identical rule system to the catalogue's — the views, the
+       filters, the drawer — wired against an empty ARTWORKS instead of a
+       real one, at the bottom of the page. -->
+  <div class="bar" id="bar">
+    <button class="bar-tab" id="bar-tab" type="button" aria-label="Show filters"><svg class="ico" viewBox="0 0 7 4" width="14" height="8" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/></svg></button>
+
+    <div class="bar-row" id="info-row" hidden>
+      <button class="bar-btn" id="info-btn" type="button" aria-pressed="false"><svg class="ico" data-info="off" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg><svg class="ico" data-info="on" hidden viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg> INFO</button>
+      <div class="bar-views">
+        <div>
+          <button class="bar-btn" data-view="zoom" type="button">LARGE</button>
+          <button class="bar-btn" data-view="grid" type="button">SMALL</button>
+          <button class="bar-btn" data-view="list" type="button">LIST</button>
+          <span class="bar-scale" aria-hidden="true"><span class="bar-scale-mark"></span></span>
+        </div>
+      </div>
+      <button class="bar-btn" id="shuffle-btn" type="button" aria-label="Randomise the order"><svg class="ico" viewBox="0 0 9 9" width="18" height="18" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/></svg></button>
+        <button class="bar-btn" id="eye-btn" type="button" aria-pressed="false" aria-label="Reveal every work in colour"><svg class="ico" data-eye="shut" viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/></svg><svg class="ico" data-eye="open" hidden viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/></svg></button>
+        <div class="bar-modes">
+        <button class="bar-btn" data-theme-btn="dark" type="button" aria-pressed="false" aria-label="Terminal mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/></svg></button>
+        <button class="bar-btn" data-theme-btn="light" type="button" aria-pressed="true" aria-label="Paper mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/></svg></button>
+      </div>
+    </div>
+
+    <div class="bar-loading" id="loading-row">
+      <span class="bar-loading-label" id="loading-label" aria-live="polite">LOADING</span>
+      <div class="bar-progress"><span id="loading-fill"></span></div>
+    </div>
+
+    <div class="bar-drawer" id="drawer">
+      <div class="filters" id="filters-pane"></div>
+      <div class="info-pane" id="info-pane" hidden>
+        <p>ARCHITECTURE IS NOT YET PUBLISHED. THIS SECTION WILL HOLD KRITOR'S ARCHITECTURAL WORK ONCE THERE IS SOMETHING HERE TO SHOW.</p>
+        <p>CONTACT: <a href="mailto:info@kritor.au">INFO@KRITOR.AU</a></p>
+      </div>
+    </div>
+
+    <div class="bar-scroll"><span id="scroll-fill"></span></div>
+  </div>
+
+  <main class="grid view-grid" id="grid" aria-label="Architecture catalogue"></main>
+  <footer class="foot">
+    <p>KRITOR ARCHITECTURE.<br>NOTHING PUBLISHED YET.</p>
+    <p>ALL RIGHTS RESERVED. &copy; 2026 KRITOR. V1.0</p>
+  </footer>
+
+  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Work">
+    <div class="panel-inner">
+      <div class="panel-art" id="panel-art"></div>
+      <h2 class="panel-title" id="panel-title"></h2>
+      <button class="panel-esc" id="panel-esc" type="button" aria-label="Close"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg></button>
+      <div class="panel-meta" id="panel-meta"></div>
+      <div class="panel-foot" id="panel-foot"></div>
+    </div>
+  </div>
+
+  <!-- No artworks.js, no image-manifest.js, no terminal-manifest.js, no
+       tile-image.js — there is nothing for any of them to describe yet.
+       terminal.js reads every one of those through a typeof guard already
+       (see its bitsEntry/realFor), so their absence is just an empty
+       catalogue rather than an error. KRITOR_BOOT_PAGE is the one thing
+       terminal.js needed taught to it, so this page's boot asks for
+       "architecture" instead of the default "catalogue". -->
+  <script>
+    window.ARTWORKS = [];
+    window.KRITOR_BOOT_PAGE = "architecture";
+  </script>
+  <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
+  <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
+  <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
+  <script src="/terminal.js?v=__ASSET_VERSION__"></script>
+  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
 </body>
 </html>

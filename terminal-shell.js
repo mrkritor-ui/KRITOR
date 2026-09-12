@@ -173,14 +173,15 @@
 
     let sceneReady = false;
 
-    /* The bar is paced to the scene in front of it. On the gate it fills while
-       you read, so by the time the door is answered it is already done and the
-       click costs nothing. On a warp there is nothing to read, so the bar
-       finishes exactly as the flight lands and the two are one beat rather
-       than one after the other. */
-    let fillMs = scene.mode && scene.mode !== "gate"
-      ? (window.KritorBoot ? window.KritorBoot.WARP_MS : BOOT_MS)
-      : BOOT_MS;
+    /* The bar is paced to the scene in front of it. On either gate it fills
+       while you read, so by the time the door is answered it is already done
+       and the click costs nothing. On a warp there is nothing to read, so the
+       bar finishes exactly as the flight lands and the two are one beat
+       rather than one after the other. */
+    const gateLikeScene = scene.mode === "gate" || scene.mode === "arch";
+    let fillMs = gateLikeScene
+      ? BOOT_MS
+      : (window.KritorBoot ? window.KritorBoot.WARP_MS : BOOT_MS);
     const loadingRow = document.getElementById("loading-row");
     const loadingLabel = document.getElementById("loading-label");
     const loadingFill = document.getElementById("loading-fill");
@@ -202,9 +203,9 @@
     const started = performance.now();
     let ended = false;
 
-    /* Only the door asks for anything. A warp lands on its own, so its bar
+    /* Only a door asks for anything. A warp lands on its own, so its bar
        fills and finishes and is never in a position to prompt. */
-    const gate = scene.mode === "gate";
+    const gate = gateLikeScene;
     let prompting = false;
 
     /* Driven from the frame rather than fired once, so it turns itself off the

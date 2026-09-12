@@ -266,10 +266,11 @@ html, body, .bar, .panel, .tile-figure {
 /* ── The glass in front of the gate ──────────────────────────────────────── */
 
 /* Everything below is a skin laid over the canvas, never into it — the
-   mosaic stays flat 1-bit ink and paper, the same as every other bitmap on
-   this site, and the tube is an illusion sitting on top of it. Only over the
-   gate: the store's flights are a window going past at speed, not a screen
-   being looked into, and do not want glass in front of them. */
+   mosaic and the signal both stay flat 1-bit ink and paper, the same as
+   every other bitmap on this site, and the tube is an illusion sitting on
+   top of it. Only over the two gates: the store's flights are a window
+   going past at speed, not a screen being looked into, and do not want
+   glass in front of them. */
 .boot-crt {
   display: none;
   position: absolute;
@@ -278,7 +279,10 @@ html, body, .bar, .panel, .tile-figure {
   pointer-events: none;
 }
 
-.boot[data-mode="gate"] .boot-crt { display: block; }
+.boot[data-mode="gate"] .boot-crt,
+.boot[data-mode="arch"] .boot-crt {
+  display: block;
+}
 
 /* The bloom and the channel fringe: the two moves the reference shader
    makes in HLSL (bright-pass → blur → screen back over the source, then a
@@ -288,7 +292,8 @@ html, body, .bar, .panel, .tile-figure {
    cannot do from outside the canvas: the mesh in front of the phosphor and
    the curve of the glass, both laid on as ordinary CSS over a sibling
    element instead. */
-.boot[data-mode="gate"] .boot-fx-canvas {
+.boot[data-mode="gate"] .boot-fx-canvas,
+.boot[data-mode="arch"] .boot-fx-canvas {
   filter: url(#crt-optics);
 }
 
@@ -383,12 +388,14 @@ html, body, .bar, .panel, .tile-figure {
   text-indent: .12em;
 }
 
-/* On the door the name is in the picture, cut on the picture's own grid, so
-   this one is only left for anything reading the page rather than looking at
-   it. Taken out of the flow rather than out of the tree: display: none would
-   take the name off the screen for a screen reader as well, and the name is
-   the first thing the screen says. */
-.boot[data-mode="gate"] .boot-mark {
+/* Neither gate sets the name in type on screen — the mosaic has no text at
+   all, and the signal's huge letter is one glyph standing in for the whole
+   word, not the word itself — so this one is only left for anything reading
+   the page rather than looking at it. Taken out of the flow rather than out
+   of the tree: display: none would take the name off the screen for a
+   screen reader as well, and the name is the first thing the screen says. */
+.boot[data-mode="gate"] .boot-mark,
+.boot[data-mode="arch"] .boot-mark {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -424,12 +431,14 @@ html, body, .bar, .panel, .tile-figure {
   max-width: min(46ch, 100%);
 }
 
-/* The gate writes nothing over the mosaic — no name, no line of type, not
-   even the flash that used to ask for one. Both of the door's own text
+/* Neither gate writes anything over its scene — no name, no line of type,
+   not even the flash that used to ask for one. Both of the door's own text
    layers are switched off here; the store's two flights still use both
    unscoped rules above and below this one. */
 .boot[data-mode="gate"] .boot-voice,
-.boot[data-mode="gate"] .boot-welcome {
+.boot[data-mode="gate"] .boot-welcome,
+.boot[data-mode="arch"] .boot-voice,
+.boot[data-mode="arch"] .boot-welcome {
   display: none;
 }
 

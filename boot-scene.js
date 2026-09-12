@@ -9,16 +9,23 @@
    the way out and backwards on the way home — because the door is only
    worth closing once.
 
-   Which of the two you get is decided here, from where you were last:
+   Architecture is a third door rather than a third pair of flights — it has
+   no far side to fly to yet, so arriving there is answered the same way the
+   gate is: a scene, silent, waiting on a click. Its own scene is a single
+   letter of KRITOR's own name, huge and not quite settled, standing in for
+   a section that has no picture of its own yet either.
+
+   Which screen you get is decided here, from where you were last:
 
      catalogue, arrived from anywhere but the store  →  the mosaic, and the gate
      catalogue, arrived from the store               →  starfield, flying back
      store                                           →  starfield, flying out
+     architecture, arrived from anywhere              →  the signal, and the gate
 
    The store's two flights still speak — KRITOR in the blackletter, sentence
    case, saying whatever it likes, against the machine's own procedural
-   sub-label set in the terminal face and capitals. The gate used to have
-   both as well; it does not now, on purpose. */
+   sub-label set in the terminal face and capitals. Both gates are silent on
+   purpose — nothing is written over either scene. */
 (function () {
   "use strict";
 
@@ -50,7 +57,7 @@
      painter's archive, and a flight that has to caption which way it is going
      is not flying convincingly. The name, where you are headed, and what
      KRITOR has to say about it. */
-  const SUB = { gate: "", out: "STORE", back: "CATALOGUE" };
+  const SUB = { gate: "", arch: "", out: "STORE", back: "CATALOGUE" };
 
   /* Long enough that the starfield gets to accelerate and mean something,
      short enough that it never feels like it is in the way. The loading bar is
@@ -69,6 +76,7 @@
 
   function modeFor(page) {
     if (page === "store") return "out";
+    if (page === "architecture") return "arch";
     return lastPage() === "store" ? "back" : "gate";
   }
 
@@ -92,24 +100,26 @@
       mode: mode, ready: Promise.resolve(), part: function () {}, stop: function () {},
     };
 
+    /* Both gates are silent — VOICE has no "gate" or "arch" list, and the
+       CSS hides the line either way. Only the store's two flights speak. */
+    const gateLike = mode === "gate" || mode === "arch";
+
     boot.dataset.mode = mode;
     setText("boot-sub", SUB[mode]);
-    /* The gate has nothing to say — VOICE has no "gate" list any more, and
-       the CSS hides the line either way. Only the store's two flights speak. */
-    if (mode !== "gate") setText("boot-voice", pick(VOICE[mode]));
+    if (!gateLike) setText("boot-voice", pick(VOICE[mode]));
 
     const stage = document.getElementById("boot-fx");
     let fx = { stop: function () {}, part: function () {} };
     if (stage && window.KritorFX) {
-      fx = mode === "gate"
-        ? window.KritorFX.mosaic(stage)
+      fx = mode === "gate" ? window.KritorFX.mosaic(stage)
+        : mode === "arch" ? window.KritorFX.signal(stage)
         : window.KritorFX.starfield(stage, { direction: mode === "back" ? "back" : "forward" });
     }
 
     let ready;
     let cleanupGate = function () {};
 
-    if (mode === "gate") {
+    if (gateLike) {
       /* With no ENTER button left to press, the screen itself has to be the
          button in name as well as in behaviour, or the one interaction the
          site insists on is invisible to a keyboard and unannounced to a
