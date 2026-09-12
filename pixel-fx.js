@@ -719,10 +719,21 @@
          what gives nearest-neighbour its uneven columns — some blocks a pixel
          wider than their neighbours — and on a screen made entirely of squares
          that is the one thing you can see from across the room. */
-      canvas.style.width = (W * scale) + "px";
-      canvas.style.height = (H * scale) + "px";
-      canvas.style.marginLeft = Math.round((cssW - W * scale) / 2) + "px";
-      canvas.style.marginTop = Math.round((cssH - H * scale) / 2) + "px";
+      /* The CSS box stays at the canvas's own native size — W by H, not
+         W*scale by H*scale — and a transform does the stretching instead of
+         width/height. A filter (any filter anyone puts on .boot-fx-canvas,
+         gate's CRT skin included) costs what the element's own box costs to
+         rasterise, before a transform is applied to composite it; sized up
+         through width/height, that box IS the full on-screen size and every
+         filter pays for every one of those pixels every repaint. Sized up
+         through transform, the box stays a few hundred cells and the GPU
+         does the stretch for free on the way to the screen — the same
+         nearest-neighbour result, at a small fraction of the cost. */
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+      canvas.style.transformOrigin = "0 0";
+      canvas.style.transform =
+        `translate(${Math.round((cssW - W * scale) / 2)}px, ${Math.round((cssH - H * scale) / 2)}px) scale(${scale})`;
 
       img = ctx.createImageData(W, H);
       px = new Uint32Array(img.data.buffer);
@@ -2003,7 +2014,7 @@
      settle on while the frame itself is still quietly rearranging underneath
      it. */
   function mosaic(host) {
-    return run(host, reduceMotion ? 8 : 14, function (W, H) {
+    return run(host, reduceMotion ? 12 : 30, function (W, H) {
       /* A line of interior cuts for one axis: n-1 positions, each drifting
          toward a target it only picks again once it arrives near enough —
          which is what keeps the motion reading as considered rather than as
@@ -2107,10 +2118,12 @@
             }
           }
 
-          /* The grain. A few percent of the frame, redrawn from scratch every
-             frame rather than decayed from the last one — a fixed set of
-             noisy pixels is a stain, not static. */
-          const flips = Math.round(W * H * 0.045);
+          /* A little grit, not a snowstorm — the frame is meant to read as
+             blocks with some age on them, not as static with blocks buried
+             in it. Redrawn from scratch every frame rather than decayed from
+             the last one, so a fixed set of noisy pixels never sits still
+             long enough to become a stain. */
+          const flips = Math.round(W * H * 0.008);
           for (let k = 0; k < flips; k++) {
             const i = (Math.random() * W * H) | 0;
             bits[i] = bits[i] ? 0 : 1;

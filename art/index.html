@@ -38,14 +38,23 @@
        door's ceremony. -->
   <a class="home-tab" href="/" aria-label="Back to KRITOR">HOME</a>
 
-  <!-- The tube's own optics, run as one SVG filter rather than approximated
-       in CSS: a bright-pass bloom (threshold, blur, screen back over the
-       source) followed by a genuine channel split for the fringe a CRT's
-       three guns leave at any edge — same two moves the reference shader at
-       https://gist.github.com/BenMakesGames/3d00a6072c6ed1f4118d99217891429b
-       makes in HLSL, done here in filter primitives instead because this
-       page has a canvas and a stylesheet, not a render pipeline. Hidden and
-       sized to nothing: it exists only to be pointed at by url(#crt-optics). -->
+  <!-- The tube's own optics: a bright-pass bloom (threshold, blur, screen
+       back over the source) and a genuine channel split for the fringe a
+       CRT's three guns leave at any edge — the same two moves the reference
+       shader at gist.github.com/BenMakesGames/3d00a6072c6ed1f4118d992178
+       91429b makes in HLSL, done here in filter primitives.
+
+       This used to run at the canvas's full on-screen size — a few hundred
+       thousand pixels of Gaussian blur, recomputed every repaint, wide
+       enough to stutter a page. pixel-fx.js now sizes the canvas element
+       itself to its small native grid and scales it up with a CSS transform
+       instead of a width/height, which is the part that actually matters
+       here: a filter costs what the ELEMENT'S OWN box costs to render, not
+       what it is later stretched to on screen, so the blur runs against the
+       same few hundred cells the mosaic is drawn on rather than against a
+       1920-pixel-wide canvas, and the transform's own upscale is a GPU
+       compositing step that costs nothing extra. Hidden and sized to
+       nothing: it exists only to be pointed at by url(#crt-optics). -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
       <feComponentTransfer in="SourceGraphic" result="bright">
@@ -53,17 +62,17 @@
         <feFuncG type="linear" slope="3" intercept="-1.6"/>
         <feFuncB type="linear" slope="3" intercept="-1.6"/>
       </feComponentTransfer>
-      <feGaussianBlur in="bright" stdDeviation="2.4" result="bloom"/>
+      <feGaussianBlur in="bright" stdDeviation="0.8" result="bloom"/>
       <feBlend in="SourceGraphic" in2="bloom" mode="screen" result="bloomed"/>
 
       <feColorMatrix in="bloomed" type="matrix"
         values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rChan"/>
-      <feOffset in="rChan" dx="-1.5" dy="0" result="rShift"/>
+      <feOffset in="rChan" dx="-0.6" dy="0" result="rShift"/>
       <feColorMatrix in="bloomed" type="matrix"
         values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gChan"/>
       <feColorMatrix in="bloomed" type="matrix"
         values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bChan"/>
-      <feOffset in="bChan" dx="1.5" dy="0" result="bShift"/>
+      <feOffset in="bChan" dx="0.6" dy="0" result="bShift"/>
       <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
       <feBlend in="rg" in2="bShift" mode="screen"/>
     </filter>

@@ -227,10 +227,11 @@ html, body, .bar, .panel, .tile-figure {
 
 /* One canvas, a couple of hundred cells across, blown up with
    nearest-neighbour. It is sized in whole blocks and allowed to overhang its
-   box — pixel-fx.js sets the width and the margin that centres it — because
-   letting the browser stretch the grid onto a width that is not a multiple of
-   it is what leaves some columns a pixel wider than their neighbours, and on
-   a screen made entirely of squares you can see that from across the room. */
+   box — pixel-fx.js sets the canvas element to its own native size and
+   scales it up with a transform, rather than with width/height, so a filter
+   on this element (the gate's CRT skin, if nothing else) pays for the small
+   native grid rather than for however many screen pixels it ends up
+   covering. The centring travels with it, in the same transform. */
 .boot-fx-canvas {
   display: block;
   image-rendering: crisp-edges;
