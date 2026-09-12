@@ -2149,31 +2149,33 @@
 
   /* ── The signal: architecture, not tuned in yet ──────────────────────────── */
 
-  /* One letter of KRITOR's own name, huge, standing in for a channel that
-     has not arrived. No new glyphs were drawn for this — K, R, I, T and O
-     are the whole alphabet this site owns, and a section with nothing in it
-     yet borrowing the name's own letters reads as the same signal trying to
-     resolve, not as a different typeface wandering in. */
-  function drawGlyphAt(buf, W, H, letter, x, y, capHeight, value, seed) {
-    const g = GLYPHS[letter];
-    if (!g) return;
-    const s = capHeight / 100;
-    const tilt = (hash2(seed, 1, 313) - 0.5) * 0.16;
-    const ct = Math.cos(tilt), st = Math.sin(tilt);
-    const gx = g.w * 0.5, gy = 52;
-    for (let k = 0; k < g.shapes.length; k++) {
-      const shape = g.shapes[k];
-      const rings = [];
-      for (let r = 0; r < shape.length; r++) {
-        const rough = roughen(shape[r], r ? 1.7 : 3.0, seed * 977 + k * 61 + r);
-        const ring = new Array(rough.length);
-        for (let p = 0; p < rough.length; p++) {
-          const ux = rough[p][0] - gx, uy = rough[p][1] - gy;
-          ring[p] = [x + (gx + ux * ct - uy * st) * s, y + (gy + ux * st + uy * ct) * s];
-        }
-        rings.push(ring);
+  /* A plain bitmap font, not the wordmark's hand-drawn one — a grid tuning
+     into a channel wants a character set that reads as the machine's own,
+     the way a test card's own type never matches the programme it precedes.
+     Five cells wide, seven tall: the smallest grid a Latin letterform still
+     reads correctly in, the same proportions typewriters, dot-matrix
+     printers and the first character-mapped displays all converged on
+     independently. */
+  const BLOCK_COLS = 5, BLOCK_ROWS = 7;
+  const BLOCK_FONT = {
+    A: ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+    K: ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
+    R: ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+    I: ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
+    T: ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    O: ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+    2: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+  };
+
+  function drawBlockChar(buf, W, H, ch, x0, y0, cell, value) {
+    const rows = BLOCK_FONT[ch];
+    if (!rows) return;
+    for (let r = 0; r < BLOCK_ROWS; r++) {
+      const bits = rows[r];
+      for (let c = 0; c < BLOCK_COLS; c++) {
+        if (bits[c] !== "1") continue;
+        rect(buf, W, H, x0 + c * cell, y0 + r * cell, x0 + (c + 1) * cell, y0 + (r + 1) * cell, value);
       }
-      fillShape(buf, W, H, rings, value);
     }
   }
 
@@ -2204,70 +2206,80 @@
 
   function signal(host) {
     return run(host, reduceMotion ? 10 : 20, function (W, H) {
-      const letters = Object.keys(GLYPHS);
-      let cur = { letter: "K", x: 0, y: 0, cap: 0 };
+      const chars = Object.keys(BLOCK_FONT);
 
-      function pickNew(seed) {
-        const cap = Math.round(H * (0.62 + hash2(seed, 4, 71) * 0.22));
-        const letter = letters[Math.floor(hash2(seed, 5, 71) * letters.length)];
-        const w = Math.round(GLYPHS[letter].w * cap / 100);
-        cur = {
-          letter: letter,
-          cap: cap,
-          seed: seed,
-          x: Math.round(W * (0.5 - 0.5 * hash2(seed, 6, 71)) - w * 0.15),
-          y: Math.round(H * (0.06 + hash2(seed, 7, 71) * 0.14)),
-        };
+      /* A wall of characters, edge to edge — the whole frame is the tuning
+         screen, not one letter with paper around it. Sized off the frame so
+         a phone gets a coarser grid rather than the same cell count
+         shrunk. */
+      const cols = Math.max(3, Math.min(6, Math.round(W / 92)));
+      const rows = Math.max(2, Math.min(4, Math.round(H / 100)));
+      const cellCount = cols * rows;
+      const cellW = W / cols, cellH = H / rows;
+      const cell = Math.max(2, Math.floor(Math.min(cellW, cellH) * 0.82 / BLOCK_ROWS));
+
+      const cellChar = new Array(cellCount);
+      const cellWait = new Float32Array(cellCount);
+      /* About one cell in three stays sharp — the rest melt. A wall that
+         melted evenly would read as one blur filter over a picture; a few
+         cells still in focus is what makes the rest read as losing the
+         signal rather than as the camera being out of focus. */
+      const cellSharp = new Uint8Array(cellCount);
+
+      function reroll(i) {
+        cellChar[i] = chars[Math.floor(Math.random() * chars.length)];
+        cellWait[i] = 1.1 + Math.random() * 3.2;
+        cellSharp[i] = Math.random() < 0.32 ? 1 : 0;
       }
-      let seed = Math.floor(Math.random() * 1e6);
-      pickNew(seed);
+      for (let i = 0; i < cellCount; i++) reroll(i);
 
-      /* Held long enough to almost read, gone before it does — a channel
-         between stations, not one that ever lands on a picture. */
-      let holdT = 1.8 + Math.random() * 2.2;
-      let glitchT = 0;
+      function stampCell(target, i, value) {
+        const r = (i / cols) | 0, c = i % cols;
+        const gw = BLOCK_COLS * cell, gh = BLOCK_ROWS * cell;
+        const x0 = Math.round(c * cellW + (cellW - gw) / 2);
+        const y0 = Math.round(r * cellH + (cellH - gh) / 2);
+        drawBlockChar(target, W, H, cellChar[i], x0, y0, cell, value);
+      }
 
       const coverage = new Float32Array(W * H);
       const scratch = new Float32Array(W * H);
-      const blurRadius = Math.max(1, Math.round(W * 0.012));
+      const blurRadius = Math.max(1, Math.round(W * 0.01));
 
+      let glitchT = 0.2;
       let partMs = 0, partT = 0, dissolve = 0;
 
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
-          holdT -= dt;
-          if (holdT <= 0) {
-            seed += 1;
-            pickNew(seed);
-            holdT = 1.8 + Math.random() * 2.6;
-            glitchT = 0.16 + Math.random() * 0.14;
+          let changed = false;
+          for (let i = 0; i < cellCount; i++) {
+            cellWait[i] -= dt;
+            if (cellWait[i] <= 0) { reroll(i); changed = true; }
           }
-          if (glitchT > 0) glitchT -= dt;
+          if (changed) glitchT = 0.1 + Math.random() * 0.12;
+          else if (glitchT > 0) glitchT -= dt;
 
           coverage.fill(0);
-          /* Two faint echoes first, a hair off in either direction, then the
-             letter itself drawn solid on top of them — the ghost only shows
-             where it falls outside the real stroke, which is the trailing
-             edge a signal that has not settled leaves behind it. */
-          drawGlyphAt(coverage, W, H, cur.letter, cur.x + 3, cur.y + 2, cur.cap, 0.4, cur.seed * 3 + 1);
-          drawGlyphAt(coverage, W, H, cur.letter, cur.x - 3, cur.y - 2, cur.cap, 0.4, cur.seed * 3 + 2);
-          drawGlyphAt(coverage, W, H, cur.letter, cur.x, cur.y, cur.cap, 1, cur.seed * 3);
-
+          for (let i = 0; i < cellCount; i++) stampCell(coverage, i, 1);
           boxBlur(coverage, scratch, W, H, blurRadius);
+          /* The sharp third, stamped again on top of their own blurred
+             selves — cheaper than blurring each cell to its own radius, and
+             the result is the same either way: some cells crisp, the rest
+             not. */
+          for (let i = 0; i < cellCount; i++) if (cellSharp[i]) stampCell(coverage, i, 1);
 
           for (let i = 0, n = W * H; i < n; i++) {
             bits[i] = dither(i % W, (i / W) | 0, coverage[i]);
           }
 
           /* The tracking glitch: a handful of rows torn sideways for the
-             brief window right after a new letter is chosen — the moment a
+             brief window right after a cell turns over — the moment a
              channel change actually looks like one. */
           if (glitchT > 0) {
             const bands = 2 + Math.floor(Math.random() * 3);
             for (let b = 0; b < bands; b++) {
               const y = Math.floor(Math.random() * H);
-              const shift = Math.round((Math.random() - 0.5) * W * 0.1);
+              const shift = Math.round((Math.random() - 0.5) * W * 0.08);
               const row = y * W;
               if (shift > 0) {
                 for (let x = W - 1; x >= shift; x--) bits[row + x] = bits[row + x - shift];
@@ -2280,10 +2292,9 @@
             }
           }
 
-          /* A little grain, the same restrained amount the mosaic settled
-             on — blocks with some grit on them, not static with a picture
-             buried in it. */
-          const flips = Math.round(W * H * 0.008);
+          /* Grain across the whole frame, the same restrained amount the
+             mosaic settled on. */
+          const flips = Math.round(W * H * 0.01);
           for (let k = 0; k < flips; k++) {
             const i = (Math.random() * W * H) | 0;
             bits[i] = bits[i] ? 0 : 1;
