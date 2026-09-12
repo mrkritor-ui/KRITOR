@@ -463,6 +463,48 @@ html, body, .bar, .panel, .tile-figure {
 
 .bar.is-hidden { display: none; }
 
+/* ── The way back ────────────────────────────────────────────────────────── */
+
+/* The bar's own comment calls it the only chrome on the page, and until now
+   that held — everywhere it wasn't true a link already lived in the bar
+   (CATALOGUE, ENTER STORE) because there were only ever two rooms to get
+   between. There is a directory now, and more rooms are coming, so a second
+   fixed piece of chrome earns its keep: one constant way back to the front
+   door, in the same place on every page that has one.
+
+   Left rather than tucked into the bar itself, because the bar's whole shape
+   changes page to page — filters here, the bag there — and a link that
+   moves with it is a link that has to be relearned each time. Centred on the
+   edge rather than pinned to the top corner, because the bar spans the full
+   width on a phone and a home tab in that corner would be buried under it;
+   the middle of the edge is clear on every width without a second rule for
+   one. */
+.home-tab {
+  position: fixed;
+  z-index: 450;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border: var(--border) solid var(--ink);
+  border-left: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: calc(var(--u) * 1) calc(var(--u) * 1.25);
+  cursor: var(--cur-arrow);
+}
+
+.home-tab:hover,
+.home-tab:focus-visible {
+  background: var(--ink);
+  color: var(--bg);
+  outline: 0;
+}
+
 /* The pull tab on the top edge. */
 /* On the bottom edge, because that is the edge the drawer opens from —
    a handle at the top pointed away from where the panel was going. */
