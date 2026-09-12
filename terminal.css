@@ -542,7 +542,7 @@ html, body, .bar, .panel, .tile-figure {
 
 .bar-views { display: flex; gap: calc(var(--u) * 2); margin: 0 auto; min-width: 0; }
 
-/* The scale under ZOOM/GRID/LIST. It was a printed rule typed out of pipes
+/* The scale under LARGE/SMALL/LIST. It was a printed rule typed out of pipes
    and dots; it now reads as well as rules — the block sits on the stop for
    whichever view is on and steps across when another is pressed, so the row
    says which of the three you are in even before you look at which button is
@@ -843,7 +843,11 @@ html.is-entering .bar-drawer.is-open { animation: bar-arrive .28s ease; }
   padding: calc(var(--u) * 14) var(--page-pad) calc(var(--u) * 8);
 }
 
-.grid.view-zoom { --cols: 3; }
+/* LARGE is four across on the button that used to be called ZOOM: it never
+   zoomed anything, it just showed fewer, bigger renditions per row, and SMALL
+   is the same grid with more of them — the two are a pair of densities, not
+   an action and its opposite, which is what the old names implied. */
+.grid.view-zoom { --cols: 4; }
 .grid.view-grid { --cols: 5; }
 
 /* LIST is not a one-column grid — it is the archive as a table. */
