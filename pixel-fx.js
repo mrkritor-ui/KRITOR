@@ -2157,30 +2157,123 @@
      printers and the first character-mapped displays all converged on
      independently. */
   const BLOCK_COLS = 5, BLOCK_ROWS = 7;
-  /* I and T's stems were one cell wide against everything else's two — thin
-     enough that a blur radius sized for the rest of the alphabet erased them
-     near to nothing, which is the hole that used to open up in the middle of
-     this wall. Widened to match the weight of every other stroke here. */
+  /* I, T and O have no diagonal in them, so a coarse cell grid draws them
+     exactly as well as anything else would — kept as a plain bitmap. I and
+     T's stems were a single cell wide against everything else's two, thin
+     enough that a blur radius sized for the rest of the alphabet erased
+     them near to nothing (the hole that used to open up in the middle of
+     this wall); widened here to match the weight of every other stroke. */
   const BLOCK_FONT = {
-    A: ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
-    K: ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
-    R: ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
     I: ["11111", "01110", "01110", "01110", "01110", "01110", "11111"],
     T: ["11111", "01110", "01110", "01110", "01110", "01110", "01110"],
     O: ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
-    2: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
   };
 
-  function drawBlockChar(buf, W, H, ch, x0, y0, cell, value, additive) {
+  /* A, K, R and 2 all carry a diagonal, and a diagonal built one grid cell
+     per row is a staircase of separate little squares — fine at a size
+     where the steps disappear into the letter, not at this one, where each
+     step is its own visible block. Drawn as filled polygons instead, in the
+     same 5-by-7 unit box the bitmap letters use, so a diagonal is one
+     continuous slanted edge rather than a run of disconnected cells. Each
+     entry is a list of parts; each part is one or more contours filled
+     together (two contours punches a hole — R's bowl is a ring, the same
+     way an O would be built this way too). */
+  const GLYPH_VECTORS = {
+    A: [
+      [[[1.975, 0], [3.025, 0], [1.075, 7], [0.025, 7]]],
+      [[[1.975, 0], [3.025, 0], [4.975, 7], [3.925, 7]]],
+      [[[0.85, 4.15], [4.15, 4.15], [4.15, 5.05], [0.85, 5.05]]],
+    ],
+    K: [
+      [[[0, 0], [1.05, 0], [1.05, 7], [0, 7]]],
+      [[[0.55, 3.5], [1.55, 3.5], [5, 0], [4, 0]]],
+      [[[0.55, 3.5], [1.55, 3.5], [5, 7], [4, 7]]],
+    ],
+    R: [
+      [[[0, 0], [1.05, 0], [1.05, 7], [0, 7]]],
+      [[[0, 0], [4, 0], [4, 3.2], [0, 3.2]], [[1.05, 0.85], [3, 0.85], [3, 2.35], [1.05, 2.35]]],
+      [[[1.05, 3.2], [2.15, 3.2], [4.85, 7], [3.75, 7]]],
+    ],
+    2: [
+      [[[0.6, 0], [4.4, 0], [4.4, 1], [0.6, 1]]],
+      [[[3.35, 1], [4.4, 1], [4.4, 2.6], [3.35, 2.6]]],
+      [[[2.85, 2.6], [3.9, 2.6], [1.65, 6], [0.6, 6]]],
+      [[[0.4, 6], [4.6, 6], [4.6, 7], [0.4, 7]]],
+    ],
+  };
+
+  function drawGlyph(buf, W, H, ch, x0, y0, cell, value, additive) {
     const rows = BLOCK_FONT[ch];
-    if (!rows) return;
-    for (let r = 0; r < BLOCK_ROWS; r++) {
-      const bits = rows[r];
-      for (let c = 0; c < BLOCK_COLS; c++) {
-        if (bits[c] !== "1") continue;
-        const x0c = x0 + c * cell, y0c = y0 + r * cell, x1c = x0 + (c + 1) * cell, y1c = y0 + (r + 1) * cell;
-        if (additive) maxRect(buf, W, H, x0c, y0c, x1c, y1c, value);
-        else rect(buf, W, H, x0c, y0c, x1c, y1c, value);
+    if (rows) {
+      for (let r = 0; r < BLOCK_ROWS; r++) {
+        const bits = rows[r];
+        for (let c = 0; c < BLOCK_COLS; c++) {
+          if (bits[c] !== "1") continue;
+          const x0c = x0 + c * cell, y0c = y0 + r * cell, x1c = x0 + (c + 1) * cell, y1c = y0 + (r + 1) * cell;
+          if (additive) maxRect(buf, W, H, x0c, y0c, x1c, y1c, value);
+          else rect(buf, W, H, x0c, y0c, x1c, y1c, value);
+        }
+      }
+      return;
+    }
+    const parts = GLYPH_VECTORS[ch];
+    if (!parts) return;
+    for (let p = 0; p < parts.length; p++) {
+      fillGlyphPart(buf, W, H, parts[p], x0, y0, cell, value, additive);
+    }
+  }
+
+  /* Every contour in GLYPH_VECTORS is a plain quad (4 points), and every
+     part is at most two of them (the second punches a hole — R's bowl).
+     One glyph at one moment on screen is drawn up to three times (a melting
+     cell plus its ghosts), fifteen or so cells a frame — enough calls that
+     fillShapeAt's own array-per-contour, array-per-point allocation was
+     worth cutting. Scratch buffers sized for the shape this table actually
+     has (2 contours, 4 points each) instead. */
+  const GLYPH_SX = new Float64Array(8);
+  const GLYPH_SY = new Float64Array(8);
+  const GLYPH_XS = new Float64Array(8);
+
+  function fillGlyphPart(buf, W, H, part, ox, oy, s, value, additive) {
+    const nc = part.length;
+    let minY = Infinity, maxY = -Infinity;
+    for (let c = 0; c < nc; c++) {
+      const pts = part[c], base = c * 4;
+      for (let p = 0; p < 4; p++) {
+        const x = ox + pts[p][0] * s, y = oy + pts[p][1] * s;
+        GLYPH_SX[base + p] = x;
+        GLYPH_SY[base + p] = y;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    const y0 = Math.max(0, Math.round(minY));
+    const y1 = Math.min(H - 1, Math.round(maxY));
+    for (let y = y0; y <= y1; y++) {
+      const cy = y + 0.5;
+      let n = 0;
+      for (let c = 0; c < nc; c++) {
+        const base = c * 4;
+        for (let i = 0; i < 4; i++) {
+          const j = base + ((i + 1) & 3);
+          const ay = GLYPH_SY[base + i], by = GLYPH_SY[j];
+          if ((ay <= cy) === (by <= cy)) continue;
+          GLYPH_XS[n++] = GLYPH_SX[base + i] + (cy - ay) / (by - ay) * (GLYPH_SX[j] - GLYPH_SX[base + i]);
+        }
+      }
+      if (n < 2) continue;
+      for (let a = 1; a < n; a++) {
+        const v = GLYPH_XS[a];
+        let b = a - 1;
+        while (b >= 0 && GLYPH_XS[b] > v) { GLYPH_XS[b + 1] = GLYPH_XS[b]; b--; }
+        GLYPH_XS[b + 1] = v;
+      }
+      const row = y * W;
+      for (let k = 0; k + 1 < n; k += 2) {
+        const sx = Math.max(0, Math.round(GLYPH_XS[k]));
+        const ex = Math.min(W - 1, Math.round(GLYPH_XS[k + 1]) - 1);
+        if (additive) { for (let x = sx; x <= ex; x++) { if (value > buf[row + x]) buf[row + x] = value; } }
+        else { for (let x = sx; x <= ex; x++) buf[row + x] = value; }
       }
     }
   }
@@ -2225,7 +2318,7 @@
 
   function signal(host) {
     return run(host, reduceMotion ? 10 : 20, function (W, H) {
-      const chars = Object.keys(BLOCK_FONT);
+      const chars = Object.keys(BLOCK_FONT).concat(Object.keys(GLYPH_VECTORS));
 
       /* A wall of characters, edge to edge — the whole frame is the tuning
          screen, not one letter with paper around it. Sized off the frame so
@@ -2273,41 +2366,42 @@
       }
       for (let i = 0; i < cellCount; i++) reroll(i);
 
-      function cellOrigin(i) {
-        const r = (i / cols) | 0, c = i % cols;
+      /* Cell position never moves once the grid is laid out — only the
+         glyph, echoes and blur touch it frame to frame — so it's worth
+         computing once here rather than every stampCell call, of which
+         there are up to three per melting cell, every frame. */
+      const cellOriginX = new Float32Array(cellCount);
+      const cellOriginY = new Float32Array(cellCount);
+      {
         const gw = BLOCK_COLS * cell, gh = BLOCK_ROWS * cell;
-        return [
-          Math.round(c * cellW + (cellW - gw) / 2),
-          Math.round(r * cellH + (cellH - gh) / 2),
-        ];
+        for (let i = 0; i < cellCount; i++) {
+          const r = (i / cols) | 0, c = i % cols;
+          cellOriginX[i] = Math.round(c * cellW + (cellW - gw) / 2);
+          cellOriginY[i] = Math.round(r * cellH + (cellH - gh) / 2);
+        }
       }
 
       function stampCell(target, i, value) {
-        const origin = cellOrigin(i);
-        const x0 = origin[0], y0 = origin[1];
+        const x0 = cellOriginX[i], y0 = cellOriginY[i];
         for (let k = 0; k < cellEchoes[i]; k++) {
-          drawBlockChar(target, W, H, cellChar[i], x0 + cellEchoDX[i * 2 + k], y0 + cellEchoDY[i * 2 + k], cell, value * 0.55, true);
+          drawGlyph(target, W, H, cellChar[i], x0 + cellEchoDX[i * 2 + k], y0 + cellEchoDY[i * 2 + k], cell, value * 0.55, true);
         }
-        drawBlockChar(target, W, H, cellChar[i], x0, y0, cell, value, true);
+        drawGlyph(target, W, H, cellChar[i], x0, y0, cell, value, true);
       }
 
       const coverage = new Float32Array(W * H);
       const scratch = new Float32Array(W * H);
       const blurRadius = Math.max(1, Math.round(W * 0.01));
 
-      let glitchT = 0.2;
       let partMs = 0, partT = 0, dissolve = 0;
 
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
-          let changed = false;
           for (let i = 0; i < cellCount; i++) {
             cellWait[i] -= dt;
-            if (cellWait[i] <= 0) { reroll(i); changed = true; }
+            if (cellWait[i] <= 0) reroll(i);
           }
-          if (changed) glitchT = 0.14 + Math.random() * 0.18;
-          else if (glitchT > 0) glitchT -= dt;
 
           coverage.fill(0);
           for (let i = 0; i < cellCount; i++) stampCell(coverage, i, 1);
@@ -2320,26 +2414,6 @@
 
           for (let i = 0, n = W * H; i < n; i++) {
             bits[i] = dither(i % W, (i / W) | 0, coverage[i]);
-          }
-
-          /* The tracking glitch: a handful of rows torn sideways for the
-             brief window right after a cell turns over — the moment a
-             channel change actually looks like one. */
-          if (glitchT > 0) {
-            const bands = 3 + Math.floor(Math.random() * 4);
-            for (let b = 0; b < bands; b++) {
-              const y = Math.floor(Math.random() * H);
-              const shift = Math.round((Math.random() - 0.5) * W * 0.14);
-              const row = y * W;
-              if (shift > 0) {
-                for (let x = W - 1; x >= shift; x--) bits[row + x] = bits[row + x - shift];
-                for (let x = 0; x < shift; x++) bits[row + x] = 0;
-              } else if (shift < 0) {
-                const sh = -shift;
-                for (let x = 0; x < W - sh; x++) bits[row + x] = bits[row + x + sh];
-                for (let x = W - sh; x < W; x++) bits[row + x] = 0;
-              }
-            }
           }
 
           /* Grain across the whole frame, the same restrained amount the
