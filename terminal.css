@@ -357,6 +357,57 @@ html, body, .bar, .panel, .tile-figure {
   .boot-crt::before { animation: none; }
 }
 
+/* ── The glass over the catalogue ────────────────────────────────────────── */
+
+/* The same mesh and curve as the door's, laid over the catalogue itself once
+   it's open — fixed to the screen rather than the page, so it holds still
+   under scroll the way a physical sheet of glass would. Held still in time
+   as well: no crt-roll here, and no #crt-optics filter either. Both of those
+   exist to sell one entrance's worth of tube — a still screen a visitor is
+   meant to actually read from doesn't want to be watched drifting for as
+   long as they leave it open, and a bloom-and-fringe filter that fakes a
+   phosphor glow off a canvas's own soft 1-bit dither does something else
+   entirely to a sharp photograph of real work: it just blurs it. So only the
+   part that never touched the picture underneath comes along — scanlines,
+   the column mask, the tube's curved corners, all sitting on top rather
+   than filtering what's beneath them. */
+.catalogue-crt {
+  position: fixed;
+  inset: 0;
+  z-index: 480;
+  pointer-events: none;
+}
+
+.catalogue-crt::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--ink) 20%, transparent) 0,
+      color-mix(in srgb, var(--ink) 20%, transparent) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ink) 12%, transparent) 0,
+      color-mix(in srgb, var(--ink) 12%, transparent) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+  mix-blend-mode: multiply;
+}
+
+.catalogue-crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 42%, color-mix(in srgb, var(--ink) 40%, transparent) 100%);
+  mix-blend-mode: soft-light;
+}
+
 /* ── The two layers of type ──────────────────────────────────────────────── */
 
 /* Set small. The first cut of this screen was a 88px wordmark over a 42px
