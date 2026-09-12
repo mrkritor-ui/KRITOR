@@ -43,7 +43,13 @@ fs.writeFileSync(p.join(w.id,"index.html"),fs.readFileSync("index.html"))});'
 ## How it fits together
 
 ```
-index.html          the catalogue
+index.html          the landing door — the bar and its three options
+                    (ART, ARCHITECTURE, STORE), no scene behind it
+landing.css/.js     the door's own layout and its click-to-loading-to-
+                    navigate behaviour; the rest it borrows from terminal.css
+art/index.html      the catalogue
+architecture/index.html  a stub, not linked from the door until there is
+                    work to put behind it
 store/index.html    the shopfront
 checkout/index.html the checkout — Stripe, its own CSP
 

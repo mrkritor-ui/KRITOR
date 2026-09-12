@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-page="store">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Store — KRITOR</title>
-  <link rel="canonical" href="/store/">
+  <title>Art — KRITOR</title>
+  <link rel="canonical" href="/art/">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -23,8 +23,8 @@
   <!-- Loaded async: media="print" keeps it out of the critical path, so a slow
        or blocked font host can never delay rendering or script execution. -->
   <link rel="stylesheet" media="print" onload="this.media='all'"
-        href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;family=VT323&amp;display=swap">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;family=VT323&amp;display=swap"></noscript>
+        href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap"></noscript>
 
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
@@ -54,20 +54,39 @@
     </div>
   </div>
 
+  <!-- The bar. Not a header: the only chrome on the page, and one of the only
+       two things on the site that can be clicked. -->
   <div class="bar" id="bar">
-    <button class="bar-tab" id="bar-tab" type="button" aria-label="Show store parameters"><svg class="ico" viewBox="0 0 7 4" width="14" height="8" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/></svg></button>
+    <button class="bar-tab" id="bar-tab" type="button" aria-label="Show filters"><svg class="ico" viewBox="0 0 7 4" width="14" height="8" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/></svg></button>
 
     <div class="bar-row" id="info-row" hidden>
       <button class="bar-btn" id="info-btn" type="button" aria-pressed="false"><svg class="ico" data-info="off" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg><svg class="ico" data-info="on" hidden viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg> INFO</button>
-      <div class="bar-views"><div><a class="bar-btn" href="/art/">CATALOGUE</a></div></div>
-      <button class="bar-btn" id="eye-btn" type="button" aria-pressed="false" aria-label="Reveal every work in colour"><svg class="ico" data-eye="shut" viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/></svg><svg class="ico" data-eye="open" hidden viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/></svg></button>
-        <button class="bar-btn" id="bag-btn" type="button" aria-label="Open bag"><svg class="ico" viewBox="0 0 9 7" width="18" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="8" y="6" width="1" height="1"/></svg> <span id="bag-count">00</span></button>
+      <div class="bar-views">
+        <div>
+          <button class="bar-btn" data-view="zoom" type="button">ZOOM</button>
+          <button class="bar-btn" data-view="grid" type="button">GRID</button>
+          <button class="bar-btn" data-view="list" type="button">LIST</button>
+          <!-- The scale reads as well as rules: the block sits on the stop
+               for whichever view is on. Drawn in CSS rather than typed out of
+               pipes and dots, so it stays on the pixel unit whatever the face
+               does to the width of a full stop. -->
+          <span class="bar-scale" aria-hidden="true"><span class="bar-scale-mark"></span></span>
+        </div>
+      </div>
+      <button class="bar-btn" id="shuffle-btn" type="button" aria-label="Randomise the order"><svg class="ico" viewBox="0 0 9 9" width="18" height="18" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/></svg></button>
+        <button class="bar-btn" id="eye-btn" type="button" aria-pressed="false" aria-label="Reveal every work in colour"><svg class="ico" data-eye="shut" viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/></svg><svg class="ico" data-eye="open" hidden viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/></svg></button>
         <div class="bar-modes">
         <button class="bar-btn" data-theme-btn="dark" type="button" aria-pressed="false" aria-label="Terminal mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/></svg></button>
         <button class="bar-btn" data-theme-btn="light" type="button" aria-pressed="true" aria-label="Paper mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/></svg></button>
       </div>
     </div>
 
+    <!-- Already in the bar's slot: the loading row does not travel here, it
+         retracts from here once it has said WELCOME. It is also where the door
+         asks: once the bar is full and the fire is still waiting, LOADING
+         becomes PRESS TO ENTER and blinks until somebody answers. Announced,
+         because a full bar that has stopped moving tells a screen reader
+         nothing about whose turn it is. -->
     <div class="bar-loading" id="loading-row">
       <span class="bar-loading-label" id="loading-label" aria-live="polite">LOADING</span>
       <div class="bar-progress"><span id="loading-fill"></span></div>
@@ -76,7 +95,8 @@
     <div class="bar-drawer" id="drawer">
       <div class="filters" id="filters-pane"></div>
       <div class="info-pane" id="info-pane" hidden>
-        <p>ORIGINAL WORK AND EDITIONS, SOLD DIRECTLY BY THE ARTIST. EACH PIECE SHIPS FROM MELBOURNE, PACKED FLAT OR ROLLED DEPENDING ON SIZE.</p>
+        <p>KRITOR IS AN ARTIST. THE WORK IS EXPRESSIONIST: MEDIUMS LAYERED UNTIL A PICTURE ARRIVES, THEN LIVED WITH FOR MONTHS, WATCHING IT DEVELOP AND ALLOWING THE PROCESS TO BECOME REFLECTIVE.</p>
+        <p>I OFTEN PLACE MYSELF WITHIN THE WORK, SURROUNDED BY AN EVENT, PLACE, OR MOMENT FROM MY LIFE.</p>
         <p>CONTACT: <a href="mailto:info@kritor.au">INFO@KRITOR.AU</a></p>
       </div>
     </div>
@@ -84,45 +104,32 @@
     <div class="bar-scroll"><span id="scroll-fill"></span></div>
   </div>
 
-  <main class="grid view-grid" id="grid" aria-label="Works for sale"></main>
+  <main class="grid view-grid" id="grid" aria-label="Artwork catalogue"></main>
   <footer class="foot">
-    <p>KRITOR STORE.<br>ORIGINAL WORK AND EDITIONS,<br>SHIPPED FROM MELBOURNE.</p>
+    <p>KRITOR MAKES THINGS.<br>A CHOICE MADE AT 17<br>TO NOT TAKE TIME FOR GRANTED.</p>
     <p>ALL RIGHTS RESERVED. &copy; 2026 KRITOR. V1.0</p>
   </footer>
 
-
-  <!-- The bag. cart.js holds the state; this is the terminal's own drawer,
-       which is why the page deliberately provides no [data-bag-slot]. -->
-  <div class="bag" id="bag" role="dialog" aria-label="Bag">
-    <div class="bag-head">
-      <span>BAG</span><span class="hatch"></span>
-      <button class="bar-btn" id="bag-close" type="button" aria-label="Close bag"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg></button>
-    </div>
-    <div class="bag-lines" id="bag-lines"></div>
-    <div class="bag-foot" id="bag-foot"></div>
-  </div>
-
-  <!-- A work opens over the shopfront rather than navigating to it. -->
+  <!-- The work panel. Opens over the catalogue rather than navigating, but
+       still pushes /work-xx/ so deep links and the built routes survive. -->
   <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Work">
     <div class="panel-inner">
       <div class="panel-art" id="panel-art"></div>
       <h2 class="panel-title" id="panel-title"></h2>
       <button class="panel-esc" id="panel-esc" type="button" aria-label="Close"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg></button>
       <div class="panel-meta" id="panel-meta"></div>
-      <div class="panel-buy" id="panel-buy"></div>
       <div class="panel-foot" id="panel-foot"></div>
     </div>
   </div>
 
-  <script src="/products.js?v=__ASSET_VERSION__"></script>
+  <script src="/artworks.js?v=__ASSET_VERSION__"></script>
   <script src="/image-manifest.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-manifest.js?v=__ASSET_VERSION__"></script>
   <script src="/tile-image.js?v=__ASSET_VERSION__"></script>
-  <script src="/cart.js?v=__ASSET_VERSION__"></script>
   <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
   <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
-  <script src="/terminal-store.js?v=__ASSET_VERSION__"></script>
+  <script src="/terminal.js?v=__ASSET_VERSION__"></script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
 </body>
 </html>

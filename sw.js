@@ -3,6 +3,12 @@ const CACHE_NAME = "works-gallery-__BUILD_VERSION__";
 const APP_FILES = [
   "./",
   "./index.html",
+  /* The door. Its own small stylesheet and script, plus the panel it borrows
+     from the rooms behind it. */
+  "./landing.css",
+  "./landing.js",
+  "./terminal.css",
+  "./art/",
   "./style.css",
   "./script.js",
   "./artworks.js",

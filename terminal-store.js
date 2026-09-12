@@ -335,7 +335,7 @@
     list.appendChild(el);
   }
 
-  filtersPane.appendChild(T.filterColumn("CATALOGUE", list => line(list, "ENTER CATALOGUE", "/")));
+  filtersPane.appendChild(T.filterColumn("CATALOGUE", list => line(list, "ENTER CATALOGUE", "/art/")));
   filtersPane.appendChild(T.filterColumn("AVAILABLE", list => {
     line(list, String(items.filter(i => !soldOut(i)).length).padStart(2, "0") + " FOR SALE");
     line(list, String(items.filter(soldOut).length).padStart(2, "0") + " SOLD OUT");

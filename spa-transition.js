@@ -1,15 +1,20 @@
 (function () {
   "use strict";
 
-  const PAGE_STYLES = { catalogue: "style.css", about: "about.css", store: "store.css" };
+  const PAGE_STYLES = { art: "terminal.css", about: "about.css", store: "store.css" };
   /* Horizontal position of each page. Navigating to a higher index slides the
      new page in from the right (About); to a lower index, in from the left (Store). */
-  const PAGE_AXIS = { store: -1, catalogue: 0, about: 1 };
+  const PAGE_AXIS = { store: -1, art: 0, about: 1 };
   const SCROLL_KEY = "kritorPageScroll";
   let navigating = false;
   /* Tracked separately from location.href: on popstate the URL has already
-     changed, and the direction of the swipe depends on where we came from. */
-  let currentPage = "catalogue";
+     changed, and the direction of the swipe depends on where we came from.
+
+     The landing door at "/" is deliberately not one of this system's pages —
+     it is not fetched and swapped, it is a real navigation in and a real
+     navigation out, so a link to it is left for the browser rather than
+     caught here. */
+  let currentPage = "art";
 
   function siteRoot(path) {
     return new URL(path.replace(/^\//, ""), location.origin + "/").href;
@@ -19,25 +24,29 @@
     const path = new URL(url, location.href).pathname.replace(/\/$/, "");
     if (path.endsWith("/about") || path.endsWith("/about.html")) return "about";
     if (path.endsWith("/store") || path.endsWith("/store.html")) return "store";
-    return "catalogue";
+    return "art";
   }
 
   function cleanUrlFor(url) {
     const u = new URL(url, location.href);
     const path = u.pathname;
-    if (path.endsWith("/index.html")) u.pathname = path.slice(0, -"index.html".length);
+    if (path.endsWith("/art/index.html")) u.pathname = path.slice(0, -"index.html".length);
     else if (path.endsWith("/about.html")) u.pathname = path.slice(0, -"about.html".length) + "about/";
     else if (path.endsWith("/store.html")) u.pathname = path.slice(0, -"store.html".length) + "store/";
     return u.href;
   }
 
+  /* The three rooms behind the door — never the door itself. "/" is a
+     separate, static page and a link to it is left for the browser: fetching
+     it here and rendering it as though it were the art page is exactly the
+     bug that would follow from treating every unmatched path as "art". */
   function isKritorPage(url) {
     const u = new URL(url, location.href);
     if (u.origin !== location.origin) return false;
     const path = u.pathname.replace(/\/$/, "");
     return path.endsWith("/about") || path.endsWith("/about.html") ||
       path.endsWith("/store") || path.endsWith("/store.html") ||
-      path.endsWith("/index.html") || path === "";
+      path.endsWith("/art") || path.endsWith("/art/index.html");
   }
 
   function loadStylesheet(href) {
@@ -122,13 +131,13 @@
     document.title = parsed.title;
     await loadStylesheet(PAGE_STYLES[page]);
     const newBody = parsed.body.cloneNode(true);
-    if (page === "catalogue" && suppressOverlay) {
+    if (page === "art" && suppressOverlay) {
       const overlay = newBody.querySelector("#kritor-gif-overlay");
       if (overlay) overlay.remove();
     }
     document.body.replaceWith(newBody);
     removeOldPageStyles(page);
-    if (page === "catalogue") {
+    if (page === "art") {
       if (typeof ARTWORKS === "undefined") await loadScript("artworks.js");
       if (typeof IMAGE_MANIFEST === "undefined") await loadScript("image-manifest.js");
       if (!window.KritorTileImage) await loadScript("tile-image.js");
@@ -160,13 +169,13 @@
       if (!response.ok) throw new Error(`Navigation failed: ${response.status}`);
       const html = await response.text();
       const targetPage = pageFor(requestedUrl.href);
-      const returningToCatalogue = targetPage === "catalogue" && currentPage !== "catalogue";
+      const returningToCatalogue = targetPage === "art" && currentPage !== "art";
       const restoreTarget = !requestedUrl.searchParams.has("work");
       const direction = PAGE_AXIS[targetPage] > PAGE_AXIS[currentPage] ? "forward" : "backward";
       const historyUrl = cleanUrlFor(requestedUrl.href);
 
       savePosition(currentPage);
-      if (currentPage === "catalogue") window.dispatchEvent(new Event("kritor:cleanup-static-burst"));
+      if (currentPage === "art") window.dispatchEvent(new Event("kritor:cleanup-static-burst"));
 
       const update = async () => {
         /* The grid-to-work zoom is a different transition with its own rules;

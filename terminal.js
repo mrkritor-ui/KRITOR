@@ -456,7 +456,7 @@
     bar.classList.remove("is-hidden");
     barUI.measure();
     document.body.style.overflow = "";
-    if (!pop) history.pushState({}, "", "/");
+    if (!pop) history.pushState({}, "", "/art/");
   }
 
   /* ── Wiring ────────────────────────────────────────────────────────────── */

@@ -1,0 +1,65 @@
+/* KRITOR — the landing door.
+
+   No storm, no starfield: the front door is a blank sheet of paper and one
+   panel of chrome, the same panel every other page uses. ART and STORE are
+   real links — the animation is a courtesy for JS, not a requirement of it,
+   so the site still works with it off. ARCHITECTURE has nothing behind it
+   yet, so it is a disabled button, not a broken promise. */
+
+@view-transition { navigation: auto; }
+
+.landing {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--page-pad, calc(var(--u, 8px) * 2));
+}
+
+.landing .soon-note {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: var(--dim);
+}
+
+.bar-landing .bar-row { justify-content: center; }
+
+#menu-options { gap: calc(var(--u) * 3); }
+
+.bar-btn:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.bar-btn .tag {
+  display: inline-block;
+  margin-left: calc(var(--u) * .75);
+  font-size: 8px;
+  letter-spacing: .06em;
+  opacity: .8;
+}
+
+/* The row that asked leaves the way the boot sequence's own rows do —
+   a fade and a small drop, not a dash off the edge of the screen. */
+#menu-options {
+  transition: opacity .22s ease, transform .22s ease;
+}
+
+#menu-options.is-leaving {
+  opacity: 0;
+  transform: translateY(calc(var(--u) * .75));
+  pointer-events: none;
+}
+
+#loading-row.is-in { animation: landing-loading-in .24s ease; }
+
+@keyframes landing-loading-in {
+  from { opacity: 0; transform: translateY(calc(var(--u) * -0.75)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #menu-options { transition: none; }
+  #loading-row.is-in { animation: none; }
+}
