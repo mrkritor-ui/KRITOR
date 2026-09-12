@@ -279,48 +279,62 @@ html, body, .bar, .panel, .tile-figure {
 
 .boot[data-mode="gate"] .boot-crt { display: block; }
 
-/* The canvas itself, pushed a little past flat — a tube's phosphor runs
-   hotter than the signal that is driving it, which is the other half of why
-   a CRT never quite looks like the picture it was sent. */
+/* The bloom and the channel fringe: the two moves the reference shader
+   makes in HLSL (bright-pass → blur → screen back over the source, then a
+   split-and-shift of one channel each way), run here as one SVG filter
+   defined inline at the top of the page and pointed at by name — see
+   #crt-optics. Everything from here down is the part a fragment shader
+   cannot do from outside the canvas: the mesh in front of the phosphor and
+   the curve of the glass, both laid on as ordinary CSS over a sibling
+   element instead. */
 .boot[data-mode="gate"] .boot-fx-canvas {
-  filter: contrast(1.12) brightness(1.03);
+  filter: url(#crt-optics);
 }
 
-/* Scanlines. A repeating line of the ink at low opacity — multiplied over
-   the picture rather than laid at full strength, so it reads as the mesh in
-   front of the phosphor and not as a second grid competing with the mosaic's
-   own. Drifting by one line over nine seconds: fast enough that the tube
-   never looks like a still photograph of itself, slow enough to sit under
-   the mosaic's own motion rather than beside it. */
+/* Scanlines and the column mask, together: one repeating band across the
+   rows and a second, finer one down the columns, the two gratings a shadow
+   mask actually is. Multiplied over the picture rather than laid at full
+   strength, so it reads as mesh in front of the phosphor and not as a
+   second grid competing with the mosaic's own. The rows drift by one line
+   over nine seconds — fast enough that the tube never looks like a still
+   photograph of itself, slow enough to sit under the mosaic's own motion
+   rather than beside it; the columns hold still, the way an aperture grille
+   actually is fixed to the glass. */
 .boot-crt::before {
   content: "";
   position: absolute;
   inset: -3px;
-  background: repeating-linear-gradient(
-    0deg,
-    color-mix(in srgb, var(--ink) 20%, transparent) 0,
-    color-mix(in srgb, var(--ink) 20%, transparent) 1px,
-    transparent 1px,
-    transparent 3px
-  );
+  background:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--ink) 20%, transparent) 0,
+      color-mix(in srgb, var(--ink) 20%, transparent) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ink) 12%, transparent) 0,
+      color-mix(in srgb, var(--ink) 12%, transparent) 1px,
+      transparent 1px,
+      transparent 2px
+    );
   mix-blend-mode: multiply;
   animation: crt-roll 9s linear infinite;
 }
 
-/* The tube's curve and its bloom, in one pass: paper falls off toward the
-   ink at the corners the way glass does when it is curved and you are not
-   looking at it straight on, and a wash of paper lifts the middle the way
-   phosphor overshoots the signal it was actually sent. Both are the frame's
-   own two colours, blended rather than introduced, so a dark terminal gets a
-   green-black tube and a paper one gets a warm-grey tube without either
-   needing a rule of its own. */
+/* The tube's curve: paper falls off toward the ink at the corners the way
+   glass does when it is curved and you are not looking at it straight on.
+   The frame's own two colours, blended rather than introduced, so a dark
+   terminal gets a green-black tube and a paper one gets a warm-grey tube
+   without either needing a rule of its own. The bloom itself is gone from
+   here — #crt-optics does that one for real, against the actual bright
+   cells, instead of a flat wash guessing at where they are. */
 .boot-crt::after {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse at center, transparent 42%, color-mix(in srgb, var(--ink) 40%, transparent) 100%),
-    radial-gradient(ellipse at center, color-mix(in srgb, var(--bg) 50%, transparent) 0%, transparent 58%);
+  background: radial-gradient(ellipse at center, transparent 42%, color-mix(in srgb, var(--ink) 40%, transparent) 100%);
   mix-blend-mode: soft-light;
 }
 

@@ -38,15 +38,47 @@
        door's ceremony. -->
   <a class="home-tab" href="/" aria-label="Back to KRITOR">HOME</a>
 
+  <!-- The tube's own optics, run as one SVG filter rather than approximated
+       in CSS: a bright-pass bloom (threshold, blur, screen back over the
+       source) followed by a genuine channel split for the fringe a CRT's
+       three guns leave at any edge — same two moves the reference shader at
+       https://gist.github.com/BenMakesGames/3d00a6072c6ed1f4118d99217891429b
+       makes in HLSL, done here in filter primitives instead because this
+       page has a canvas and a stylesheet, not a render pipeline. Hidden and
+       sized to nothing: it exists only to be pointed at by url(#crt-optics). -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feComponentTransfer in="SourceGraphic" result="bright">
+        <feFuncR type="linear" slope="3" intercept="-1.6"/>
+        <feFuncG type="linear" slope="3" intercept="-1.6"/>
+        <feFuncB type="linear" slope="3" intercept="-1.6"/>
+      </feComponentTransfer>
+      <feGaussianBlur in="bright" stdDeviation="2.4" result="bloom"/>
+      <feBlend in="SourceGraphic" in2="bloom" mode="screen" result="bloomed"/>
+
+      <feColorMatrix in="bloomed" type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rChan"/>
+      <feOffset in="rChan" dx="-1.5" dy="0" result="rShift"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gChan"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bChan"/>
+      <feOffset in="bChan" dx="1.5" dy="0" result="bShift"/>
+      <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="bShift" mode="screen"/>
+    </filter>
+  </svg>
+
   <!-- Boot. Covers the page while it loads; the bar sits above it. The mode
        attribute is written by boot-scene.js on the first frame and decides
        everything below: the storm, or the starfield.
 
        Nothing is drawn into the picture and nothing is set over it either —
        the mosaic is the whole screen, with a CRT skin laid over the canvas
-       rather than into it: scanlines, a vignette, a soft bloom off the
-       brightest cells. The <p> tags below are left for anything reading the
-       page rather than looking at it. -->
+       rather than into it: crt-optics above for the bloom and the channel
+       fringe, scanlines and a column mask and a vignette in terminal.css for
+       the mesh and the curve. The <p> tags below are left for anything
+       reading the page rather than looking at it. -->
   <div class="boot" id="boot">
     <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
     <div class="boot-crt" aria-hidden="true"></div>
