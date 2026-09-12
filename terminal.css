@@ -361,14 +361,24 @@ html, body, .bar, .panel, .tile-figure {
    feel like an effect, and this system has no shadows in it anywhere else. */
 .boot[data-mode="gate"] .boot-voice {
   animation: boot-flash 7s ease-in-out infinite;
-  /* Cut out of the sky, not laid on top of it. Eight offsets of the paper
+  /* Cut out of the sky, not laid on top of it. Sixteen offsets of the paper
      colour and no blur — this is the 1-bit outline the works and the icons are
      already drawn with, not a glow — so the line stays readable over cloud,
-     over the ruin on a narrow screen, and through the half-second when the
-     lightning turns the whole sky to ink. */
+     over the range on a narrow screen (which stands up through the name on
+     purpose — see pixel-fx.js — and does not know this sentence is under it
+     too), and through the half-second when the lightning turns the whole sky
+     to ink.
+
+     Eight offsets left gaps at the in-between angles wide enough for the
+     range's own stipple to show through between letters, which read as the
+     line breaking up rather than as a line sitting cleanly on top of
+     something. Sixteen at a hair further out closes those gaps into a ring
+     instead of a cross. */
   text-shadow:
-    3px 0 var(--bg), -3px 0 var(--bg), 0 3px var(--bg), 0 -3px var(--bg),
-    3px 3px var(--bg), -3px 3px var(--bg), 3px -3px var(--bg), -3px -3px var(--bg);
+    4px 0 var(--bg), -4px 0 var(--bg), 0 4px var(--bg), 0 -4px var(--bg),
+    3px 3px var(--bg), -3px 3px var(--bg), 3px -3px var(--bg), -3px -3px var(--bg),
+    4px 2px var(--bg), -4px 2px var(--bg), 4px -2px var(--bg), -4px -2px var(--bg),
+    2px 4px var(--bg), -2px 4px var(--bg), 2px -4px var(--bg), -2px -4px var(--bg);
 }
 
 @keyframes boot-flash {
