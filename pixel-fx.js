@@ -2157,25 +2157,44 @@
      printers and the first character-mapped displays all converged on
      independently. */
   const BLOCK_COLS = 5, BLOCK_ROWS = 7;
+  /* I and T's stems were one cell wide against everything else's two — thin
+     enough that a blur radius sized for the rest of the alphabet erased them
+     near to nothing, which is the hole that used to open up in the middle of
+     this wall. Widened to match the weight of every other stroke here. */
   const BLOCK_FONT = {
     A: ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
     K: ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
     R: ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
-    I: ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
-    T: ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    I: ["11111", "01110", "01110", "01110", "01110", "01110", "11111"],
+    T: ["11111", "01110", "01110", "01110", "01110", "01110", "01110"],
     O: ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
     2: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
   };
 
-  function drawBlockChar(buf, W, H, ch, x0, y0, cell, value) {
+  function drawBlockChar(buf, W, H, ch, x0, y0, cell, value, additive) {
     const rows = BLOCK_FONT[ch];
     if (!rows) return;
     for (let r = 0; r < BLOCK_ROWS; r++) {
       const bits = rows[r];
       for (let c = 0; c < BLOCK_COLS; c++) {
         if (bits[c] !== "1") continue;
-        rect(buf, W, H, x0 + c * cell, y0 + r * cell, x0 + (c + 1) * cell, y0 + (r + 1) * cell, value);
+        const x0c = x0 + c * cell, y0c = y0 + r * cell, x1c = x0 + (c + 1) * cell, y1c = y0 + (r + 1) * cell;
+        if (additive) maxRect(buf, W, H, x0c, y0c, x1c, y1c, value);
+        else rect(buf, W, H, x0c, y0c, x1c, y1c, value);
       }
+    }
+  }
+
+  /* Like rect(), but keeps whatever was already there if it was brighter —
+     for stamping a faint ghost copy of a glyph without ever dimming the
+     real stroke (or an earlier, stronger ghost) that already occupies the
+     same cell. */
+  function maxRect(buf, W, H, x0, y0, x1, y1, value) {
+    const a = Math.max(0, Math.round(x0)), b = Math.min(W - 1, Math.round(x1) - 1);
+    const c = Math.max(0, Math.round(y0)), d = Math.min(H - 1, Math.round(y1) - 1);
+    for (let y = c; y <= d; y++) {
+      const row = y * W;
+      for (let x = a; x <= b; x++) if (value > buf[row + x]) buf[row + x] = value;
     }
   }
 
@@ -2225,20 +2244,51 @@
          cells still in focus is what makes the rest read as losing the
          signal rather than as the camera being out of focus. */
       const cellSharp = new Uint8Array(cellCount);
+      /* The melting third isn't one flat blur either — each of those cells
+         gets its own count of ghost copies (0-2) offset a random distance
+         and direction, stamped in underneath the real stroke before the
+         blur runs. That's what a signal actually losing lock looks like:
+         a double-exposure smear behind the letter, not a uniform softening
+         of it — closer to the reference gif's melt than a single global
+         blur radius could get on its own. */
+      const cellEchoes = new Uint8Array(cellCount);
+      const cellEchoDX = new Float32Array(cellCount * 2);
+      const cellEchoDY = new Float32Array(cellCount * 2);
 
       function reroll(i) {
         cellChar[i] = chars[Math.floor(Math.random() * chars.length)];
-        cellWait[i] = 1.1 + Math.random() * 3.2;
-        cellSharp[i] = Math.random() < 0.32 ? 1 : 0;
+        cellWait[i] = 0.8 + Math.random() * 2.6;
+        cellSharp[i] = Math.random() < 0.3 ? 1 : 0;
+        if (cellSharp[i]) {
+          cellEchoes[i] = 0;
+        } else {
+          cellEchoes[i] = Math.random() < 0.55 ? (Math.random() < 0.4 ? 2 : 1) : 0;
+          for (let k = 0; k < 2; k++) {
+            const a = Math.random() * Math.PI * 2;
+            const d = cell * (0.5 + Math.random() * 1.1);
+            cellEchoDX[i * 2 + k] = Math.cos(a) * d;
+            cellEchoDY[i * 2 + k] = Math.sin(a) * d;
+          }
+        }
       }
       for (let i = 0; i < cellCount; i++) reroll(i);
 
-      function stampCell(target, i, value) {
+      function cellOrigin(i) {
         const r = (i / cols) | 0, c = i % cols;
         const gw = BLOCK_COLS * cell, gh = BLOCK_ROWS * cell;
-        const x0 = Math.round(c * cellW + (cellW - gw) / 2);
-        const y0 = Math.round(r * cellH + (cellH - gh) / 2);
-        drawBlockChar(target, W, H, cellChar[i], x0, y0, cell, value);
+        return [
+          Math.round(c * cellW + (cellW - gw) / 2),
+          Math.round(r * cellH + (cellH - gh) / 2),
+        ];
+      }
+
+      function stampCell(target, i, value) {
+        const origin = cellOrigin(i);
+        const x0 = origin[0], y0 = origin[1];
+        for (let k = 0; k < cellEchoes[i]; k++) {
+          drawBlockChar(target, W, H, cellChar[i], x0 + cellEchoDX[i * 2 + k], y0 + cellEchoDY[i * 2 + k], cell, value * 0.55, true);
+        }
+        drawBlockChar(target, W, H, cellChar[i], x0, y0, cell, value, true);
       }
 
       const coverage = new Float32Array(W * H);
@@ -2256,7 +2306,7 @@
             cellWait[i] -= dt;
             if (cellWait[i] <= 0) { reroll(i); changed = true; }
           }
-          if (changed) glitchT = 0.1 + Math.random() * 0.12;
+          if (changed) glitchT = 0.14 + Math.random() * 0.18;
           else if (glitchT > 0) glitchT -= dt;
 
           coverage.fill(0);
@@ -2276,10 +2326,10 @@
              brief window right after a cell turns over — the moment a
              channel change actually looks like one. */
           if (glitchT > 0) {
-            const bands = 2 + Math.floor(Math.random() * 3);
+            const bands = 3 + Math.floor(Math.random() * 4);
             for (let b = 0; b < bands; b++) {
               const y = Math.floor(Math.random() * H);
-              const shift = Math.round((Math.random() - 0.5) * W * 0.08);
+              const shift = Math.round((Math.random() - 0.5) * W * 0.14);
               const row = y * W;
               if (shift > 0) {
                 for (let x = W - 1; x >= shift; x--) bits[row + x] = bits[row + x - shift];

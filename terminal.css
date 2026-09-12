@@ -241,8 +241,11 @@ html, body, .bar, .panel, .tile-figure {
 /* The storm owns the whole frame — it is a landscape, and a landscape that
    fades out at the top is a vignette of one. The starfield owns the whole
    screen too but falls away at the edges, so the field reads as round rather
-   than as a rectangle of stars. */
-.boot[data-mode="gate"] .boot-fx {
+   than as a rectangle of stars. The signal is the same: nothing is written
+   over it, so it keeps the whole frame too — only the store's two flights
+   (out, back) put type over their canvas and need the hole below. */
+.boot[data-mode="gate"] .boot-fx,
+.boot[data-mode="arch"] .boot-fx {
   top: 0;
   bottom: 0;
 }
@@ -250,7 +253,8 @@ html, body, .bar, .panel, .tile-figure {
 /* A hole, not a vignette: the field is cleared where the type is and thickens
    away from it, so the stars stream past the wordmark instead of through it,
    and it softens again at the very edge of the screen. */
-.boot:not([data-mode="gate"]) .boot-fx {
+.boot[data-mode="out"] .boot-fx,
+.boot[data-mode="back"] .boot-fx {
   top: 0;
   bottom: 0;
   -webkit-mask-image: radial-gradient(ellipse at center, transparent 13%, #000 52%, #000 88%, rgba(0, 0, 0, .5) 100%);
