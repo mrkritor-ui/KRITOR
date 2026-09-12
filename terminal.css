@@ -258,9 +258,80 @@ html, body, .bar, .panel, .tile-figure {
 
 /* No colour is introduced anywhere: the canvas is painted in --ink and --bg and
    nothing else, and every tone between them is ordered dither. In paper mode
-   the storm is ink on white, in terminal mode it is phosphor on black, and
+   the mosaic is ink on white, in terminal mode it is phosphor on black, and
    neither needed a palette of its own — which is also what the catalogue's
    renditions do, one screen earlier. */
+
+/* ── The glass in front of the gate ──────────────────────────────────────── */
+
+/* Everything below is a skin laid over the canvas, never into it — the
+   mosaic stays flat 1-bit ink and paper, the same as every other bitmap on
+   this site, and the tube is an illusion sitting on top of it. Only over the
+   gate: the store's flights are a window going past at speed, not a screen
+   being looked into, and do not want glass in front of them. */
+.boot-crt {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.boot[data-mode="gate"] .boot-crt { display: block; }
+
+/* The canvas itself, pushed a little past flat — a tube's phosphor runs
+   hotter than the signal that is driving it, which is the other half of why
+   a CRT never quite looks like the picture it was sent. */
+.boot[data-mode="gate"] .boot-fx-canvas {
+  filter: contrast(1.12) brightness(1.03);
+}
+
+/* Scanlines. A repeating line of the ink at low opacity — multiplied over
+   the picture rather than laid at full strength, so it reads as the mesh in
+   front of the phosphor and not as a second grid competing with the mosaic's
+   own. Drifting by one line over nine seconds: fast enough that the tube
+   never looks like a still photograph of itself, slow enough to sit under
+   the mosaic's own motion rather than beside it. */
+.boot-crt::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  background: repeating-linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--ink) 20%, transparent) 0,
+    color-mix(in srgb, var(--ink) 20%, transparent) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+  animation: crt-roll 9s linear infinite;
+}
+
+/* The tube's curve and its bloom, in one pass: paper falls off toward the
+   ink at the corners the way glass does when it is curved and you are not
+   looking at it straight on, and a wash of paper lifts the middle the way
+   phosphor overshoots the signal it was actually sent. Both are the frame's
+   own two colours, blended rather than introduced, so a dark terminal gets a
+   green-black tube and a paper one gets a warm-grey tube without either
+   needing a rule of its own. */
+.boot-crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 42%, color-mix(in srgb, var(--ink) 40%, transparent) 100%),
+    radial-gradient(ellipse at center, color-mix(in srgb, var(--bg) 50%, transparent) 0%, transparent 58%);
+  mix-blend-mode: soft-light;
+}
+
+@keyframes crt-roll {
+  from { transform: translateY(0); }
+  to { transform: translateY(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-crt::before { animation: none; }
+}
 
 /* ── The two layers of type ──────────────────────────────────────────────── */
 
@@ -313,18 +384,6 @@ html, body, .bar, .panel, .tile-figure {
   clip-path: inset(50%);
 }
 
-/* And what is left is hung off the bottom of the drawn name — pixel-fx.js
-   publishes where that landed, in real pixels, every time it lays the scene
-   out — rather than centred in the screen, which put the line through the
-   middle of the plain and, on a phone, through the ruin. */
-.boot[data-mode="gate"] .boot-core {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: calc(var(--boot-mark-bottom, 42%) + var(--u) * 1.5);
-  width: min(46ch, 100%);
-}
-
 /* Where the flight is headed, under the name. The text-indent answers the
    letter-spacing, which is applied after every character including the last
    and walks a centred line off centre by half a space. */
@@ -350,41 +409,13 @@ html, body, .bar, .panel, .tile-figure {
   max-width: min(46ch, 100%);
 }
 
-/* On the door it fades out and back. Not a pulse: a pulse never arrives
-   anywhere, it just moves, and the line ends up permanently half-lit and
-   restless. This holds. It comes up over a second and a half, stands there
-   lit long enough to be read twice, goes out over a second and a half, and is
-   gone for a beat before it returns. Nothing moves but the ink — the line
-   keeps its place whether it is there or not, so the screen never reflows.
-
-   No bloom. A glow around the type was the other half of what made the pulse
-   feel like an effect, and this system has no shadows in it anywhere else. */
-.boot[data-mode="gate"] .boot-voice {
-  animation: boot-flash 7s ease-in-out infinite;
-  /* Cut out of the sky, not laid on top of it. Sixteen offsets of the paper
-     colour and no blur — this is the 1-bit outline the works and the icons are
-     already drawn with, not a glow — so the line stays readable over cloud,
-     over the range on a narrow screen (which stands up through the name on
-     purpose — see pixel-fx.js — and does not know this sentence is under it
-     too), and through the half-second when the lightning turns the whole sky
-     to ink.
-
-     Eight offsets left gaps at the in-between angles wide enough for the
-     range's own stipple to show through between letters, which read as the
-     line breaking up rather than as a line sitting cleanly on top of
-     something. Sixteen at a hair further out closes those gaps into a ring
-     instead of a cross. */
-  text-shadow:
-    4px 0 var(--bg), -4px 0 var(--bg), 0 4px var(--bg), 0 -4px var(--bg),
-    3px 3px var(--bg), -3px 3px var(--bg), 3px -3px var(--bg), -3px -3px var(--bg),
-    4px 2px var(--bg), -4px 2px var(--bg), 4px -2px var(--bg), -4px -2px var(--bg),
-    2px 4px var(--bg), -2px 4px var(--bg), 2px -4px var(--bg), -2px -4px var(--bg);
-}
-
-@keyframes boot-flash {
-  0% { opacity: 0; }
-  20%, 60% { opacity: 1; }
-  80%, 100% { opacity: 0; }
+/* The gate writes nothing over the mosaic — no name, no line of type, not
+   even the flash that used to ask for one. Both of the door's own text
+   layers are switched off here; the store's two flights still use both
+   unscoped rules above and below this one. */
+.boot[data-mode="gate"] .boot-voice,
+.boot[data-mode="gate"] .boot-welcome {
+  display: none;
 }
 
 .boot-welcome {
@@ -394,22 +425,6 @@ html, body, .bar, .panel, .tile-figure {
   text-indent: .08em;
   opacity: 0;
   transition: opacity .3s ease .1s;
-}
-
-/* On the door it goes above the name rather than below it — the name is drawn
-   into the picture, so this is hung off the top of it the same way the line
-   underneath is hung off the bottom.
-
-   The offset is a difference rather than a position: this sits inside the core,
-   and the core is already parked at the bottom of the name, so an absolute top
-   here resolves against that and not against the screen. Measured from the
-   screen it landed a whole wordmark's height too low. */
-.boot[data-mode="gate"] .boot-welcome {
-  position: absolute;
-  left: 50%;
-  top: calc(var(--boot-mark-top, 0px) - var(--boot-mark-bottom, 0px) - var(--u) * 1.5);
-  margin: 0;
-  transform: translate(-50%, -280%);
 }
 
 /* Answered. The picture dissolves away underneath — pixel-fx does that on its
@@ -427,12 +442,6 @@ html, body, .bar, .panel, .tile-figure {
 .boot.is-leaving {
   opacity: 0;
   transition: opacity .26s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* Held lit rather than taken away: the line is meant to be read, and the
-     fading is what there is to opt out of. */
-  .boot[data-mode="gate"] .boot-voice { animation: none; opacity: 1; }
 }
 
 /* ── The bar ─────────────────────────────────────────────────────────────── */

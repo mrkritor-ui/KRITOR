@@ -1984,5 +1984,155 @@
     });
   }
 
-  window.KritorFX = { terrain: terrain, starfield: starfield, reduceMotion: reduceMotion };
+  /* ── The mosaic: the catalogue's door, now ───────────────────────────────── */
+
+  /* No storm, no name cut into it, nothing written over it at all — the door
+     is a field of paper and ink that will not sit still, the way a signal
+     with nothing on it does not sit still. An irregular grid rather than a
+     scatter of independent rectangles: a handful of vertical and horizontal
+     cuts divide the frame into cells, and it is the CUTS that drift, not the
+     cells — which is what keeps every cell rectangular and every neighbour
+     still sharing an edge with the ones beside it, however far the layout
+     has wandered from where it started.
+
+     Three motions, three speeds, on purpose:
+       the cuts        drift toward a new position over several seconds
+       a cell's tone   turns over now and then, one or two at a time
+       the grain       is redrawn every frame, the only thing that is
+     Slow, slower, immediate — so the eye always has the fastest layer to
+     settle on while the frame itself is still quietly rearranging underneath
+     it. */
+  function mosaic(host) {
+    return run(host, reduceMotion ? 8 : 14, function (W, H) {
+      /* A line of interior cuts for one axis: n-1 positions, each drifting
+         toward a target it only picks again once it arrives near enough —
+         which is what keeps the motion reading as considered rather than as
+         a thing that never stops adjusting. */
+      function makeLine(n) {
+        const pos = new Float32Array(Math.max(0, n - 1));
+        const target = new Float32Array(pos.length);
+        const wait = new Float32Array(pos.length);
+        for (let i = 0; i < pos.length; i++) {
+          pos[i] = target[i] = (i + 1) / n;
+          wait[i] = 1 + Math.random() * 3;
+        }
+        return { pos: pos, target: target, wait: wait, n: n };
+      }
+
+      function stepLine(line, dt) {
+        const span = 0.9 / line.n;
+        for (let i = 0; i < line.pos.length; i++) {
+          line.wait[i] -= dt;
+          if (line.wait[i] <= 0) {
+            const base = (i + 1) / line.n;
+            line.target[i] = Math.min(base + span, Math.max(base - span, line.target[i] + (Math.random() - 0.5) * span * 2));
+            /* Two and a half to five seconds before this cut moves again —
+               "slow" is the whole brief for this scene. */
+            line.wait[i] = 2.5 + Math.random() * 2.5;
+          }
+          /* Eased rather than stepped: a cut that jumped to its target would
+             read as the cells swapping, not as a line sliding between them. */
+          line.pos[i] += (line.target[i] - line.pos[i]) * Math.min(1, dt * 0.45);
+        }
+      }
+
+      /* Pixel boundaries for one axis, from the line's fractional cuts —
+         clamped monotonic, since two cuts drifting toward each other are
+         allowed to meet but never allowed to pass. */
+      function bounds(line, size) {
+        const b = new Int32Array(line.n + 1);
+        b[line.n] = size;
+        for (let i = 0; i < line.pos.length; i++) {
+          b[i + 1] = Math.max(b[i], Math.round(line.pos[i] * size));
+        }
+        return b;
+      }
+
+      const nCols = Math.max(5, Math.min(11, Math.round(W / 58)));
+      const nRows = Math.max(4, Math.min(9, Math.round(H / 58)));
+      const cols = makeLine(nCols);
+      const rows = makeLine(nRows);
+
+      /* Each cell is paper, ink, or — one cell in perhaps fourteen — a fixed
+         grey, ordered-dithered like everything else on this site rather than
+         given a tone of its own. Recoloured a cell or two at a time rather
+         than all together, so the layout is always mid-turnover somewhere
+         instead of flipping in one clean sweep. */
+      const cellCount = nCols * nRows;
+      const tone = new Uint8Array(cellCount);
+      const shade = new Float32Array(cellCount);
+      function recolour(i) {
+        const roll = Math.random();
+        if (roll < 0.07) { tone[i] = 2; shade[i] = 0.25 + Math.random() * 0.5; }
+        else tone[i] = roll < 0.53 ? 1 : 0;
+      }
+      for (let i = 0; i < cellCount; i++) recolour(i);
+      let recolourWait = 1.2;
+
+      let partMs = 0, partT = 0, dissolve = 0;
+
+      return {
+        /* Answered. There is no scene to hold — the fire dissolves into paper
+           the same dithered way the storm did, and the grid simply stops
+           being told to keep drifting once the boot screen is gone. */
+        part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
+        render: function (dt, bits) {
+          stepLine(cols, dt);
+          stepLine(rows, dt);
+
+          recolourWait -= dt;
+          if (recolourWait <= 0) {
+            const turns = 1 + (Math.random() < 0.35 ? 1 : 0);
+            for (let k = 0; k < turns; k++) recolour(Math.floor(Math.random() * cellCount));
+            recolourWait = 1.4 + Math.random() * 1.6;
+          }
+
+          const colB = bounds(cols, W);
+          const rowB = bounds(rows, H);
+
+          for (let ry = 0; ry < nRows; ry++) {
+            const y0 = rowB[ry], y1 = rowB[ry + 1];
+            for (let cx = 0; cx < nCols; cx++) {
+              const x0 = colB[cx], x1 = colB[cx + 1];
+              const idx = ry * nCols + cx;
+              const t = tone[idx];
+              if (t === 1) {
+                for (let y = y0; y < y1; y++) { const row = y * W; for (let x = x0; x < x1; x++) bits[row + x] = 1; }
+              } else if (t === 0) {
+                for (let y = y0; y < y1; y++) { const row = y * W; for (let x = x0; x < x1; x++) bits[row + x] = 0; }
+              } else {
+                const w = shade[idx];
+                for (let y = y0; y < y1; y++) { const row = y * W; for (let x = x0; x < x1; x++) bits[row + x] = dither(x, y, w); }
+              }
+            }
+          }
+
+          /* The grain. A few percent of the frame, redrawn from scratch every
+             frame rather than decayed from the last one — a fixed set of
+             noisy pixels is a stain, not static. */
+          const flips = Math.round(W * H * 0.045);
+          for (let k = 0; k < flips; k++) {
+            const i = (Math.random() * W * H) | 0;
+            bits[i] = bits[i] ? 0 : 1;
+          }
+
+          if (partMs) {
+            partT += dt * 1000;
+            dissolve = Math.min(1, partT / partMs);
+            if (dissolve > 0) {
+              for (let y = 0; y < H; y++) {
+                const row = y * W;
+                for (let x = 0; x < W; x++) {
+                  const i = row + x;
+                  if (bits[i] && dither(x, y, dissolve)) bits[i] = 0;
+                }
+              }
+            }
+          }
+        },
+      };
+    });
+  }
+
+  window.KritorFX = { terrain: terrain, starfield: starfield, mosaic: mosaic, reduceMotion: reduceMotion };
 })();

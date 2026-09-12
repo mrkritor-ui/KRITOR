@@ -42,13 +42,14 @@
        attribute is written by boot-scene.js on the first frame and decides
        everything below: the storm, or the starfield.
 
-       The name is drawn into the picture rather than set over it — pixel-fx.js
-       cuts KRITOR out of the sky on the same grid as the clouds, so the
-       lightning reaches it — and the <p> below is left for anything reading
-       the page rather than looking at it. What is on screen is the landscape,
-       the name in it, and one line of what KRITOR has to say. -->
+       Nothing is drawn into the picture and nothing is set over it either —
+       the mosaic is the whole screen, with a CRT skin laid over the canvas
+       rather than into it: scanlines, a vignette, a soft bloom off the
+       brightest cells. The <p> tags below are left for anything reading the
+       page rather than looking at it. -->
   <div class="boot" id="boot">
     <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
+    <div class="boot-crt" aria-hidden="true"></div>
     <div class="boot-statement">
       <div class="boot-core">
         <p class="boot-mark">KRITOR</p>

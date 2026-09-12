@@ -1,51 +1,31 @@
 /* KRITOR — the boot scene.
 
    The loading screen is a door, not a progress bar. Arriving at kritor.au you
-   are stopped: a storm stands over a plain with a ruin on the far side of it
-   and one figure on the near ridge looking at the ruin, KRITOR says something,
-   and nothing happens until you answer. Moving between the catalogue and the
-   store you are not stopped — a starfield flies you there, forwards on the way
-   out and backwards on the way home — because the door is only worth closing
-   once.
+   are stopped: a field of paper and ink keeps quietly rearranging itself, and
+   nothing happens until you answer it — no name in it, no line of type over
+   it, nothing to read, just the bar saying LOADING and then, once it has
+   nothing left to report, PRESS TO ENTER. Moving between the catalogue and
+   the store you are not stopped — a starfield flies you there, forwards on
+   the way out and backwards on the way home — because the door is only
+   worth closing once.
 
    Which of the two you get is decided here, from where you were last:
 
-     catalogue, arrived from anywhere but the store  →  the storm, and the gate
+     catalogue, arrived from anywhere but the store  →  the mosaic, and the gate
      catalogue, arrived from the store               →  starfield, flying back
      store                                           →  starfield, flying out
 
-   The text is in two voices and they are set in two faces. The machine speaks
-   in the terminal face, in capitals, and says only procedural things: where you
-   are, what is being asked. KRITOR speaks in the blackletter, in sentence case,
-   and says whatever it likes. Keeping them in one face made the whole screen
-   read as system output and the line about running for your life looked like a
-   status code. */
+   The store's two flights still speak — KRITOR in the blackletter, sentence
+   case, saying whatever it likes, against the machine's own procedural
+   sub-label set in the terminal face and capitals. The gate used to have
+   both as well; it does not now, on purpose. */
 (function () {
   "use strict";
 
   const LAST_PAGE_KEY = "kritor-last-page";
 
-  /* KRITOR's own lines. Sentence case on purpose — they are set in the
-     blackletter, and blackletter capitals are ornament, not reading. */
+  /* KRITOR's own lines, for the two flights only — the gate is silent. */
   const VOICE = {
-    gate: [
-      "Kritor says hello.",
-      "Kritor screams beware.",
-      "Kritor does not know who you really are.",
-      "Kritor tells you to run.",
-      "Kritor has been expecting somebody.",
-      "Kritor counts the ones who turned back.",
-      "Kritor did not put the ruin there.",
-      "Kritor asks what you came here to take.",
-      "Kritor remembers every visitor.",
-      "Kritor would not come in, if Kritor were you.",
-      "Kritor is awake at this hour.",
-      "Kritor doubts you will stay long.",
-      "Kritor left the door open on purpose.",
-      "Kritor swears the floor is solid.",
-      "Kritor has seen your kind before.",
-      "Kritor is not finished with you.",
-    ],
     out: [
       "Kritor counts the coins twice.",
       "Kritor wraps things carefully.",
@@ -114,13 +94,15 @@
 
     boot.dataset.mode = mode;
     setText("boot-sub", SUB[mode]);
-    setText("boot-voice", pick(VOICE[mode]));
+    /* The gate has nothing to say — VOICE has no "gate" list any more, and
+       the CSS hides the line either way. Only the store's two flights speak. */
+    if (mode !== "gate") setText("boot-voice", pick(VOICE[mode]));
 
     const stage = document.getElementById("boot-fx");
     let fx = { stop: function () {}, part: function () {} };
     if (stage && window.KritorFX) {
       fx = mode === "gate"
-        ? window.KritorFX.terrain(stage)
+        ? window.KritorFX.mosaic(stage)
         : window.KritorFX.starfield(stage, { direction: mode === "back" ? "back" : "forward" });
     }
 
