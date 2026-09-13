@@ -413,15 +413,35 @@ html, body, .bar, .panel, .tile-figure {
    only ever shows up where there is a bright edge for it to split; it
    never invents colour over a patch of screen with nothing on it. Moved
    onto the content itself instead — drop-shadow follows an element's own
-   alpha shape rather than its box, so a red copy and a cyan copy offset a
-   pixel either way hug the actual glyphs, icons and borders and nothing
-   else. */
+   alpha shape rather than its box, so a red copy and a cyan copy offset
+   hug the actual glyphs, icons and borders and nothing else.
+
+   Two things wrong with the first version of this. It offset by a whole
+   pixel, which at the bar's own type size is most of a stroke's own
+   width — the two colour copies barely land back on the original glyph at
+   all, so the letter reads as replaced by a red line and a cyan line
+   rather than fringed by them. And it used a flat, fully saturated red and
+   cyan, which is a bright pastel once it sits over paper mode's light
+   background (loud enough to read as the ink's colour changing) and a
+   dark, muted smudge once it sits over terminal mode's dark one (barely
+   there at all) — the same two colours, two very different results.
+
+   Fixed by shrinking the offset below the stroke's own width, so most of
+   each copy still lands under the real glyph and only a sliver shows past
+   it, and by mixing the colour with the page's own ink rather than using
+   it neat — paper mode's dark ink pulls the red and cyan down to a muted
+   tone that doesn't overpower the line it's fringing, terminal mode's pale
+   ink lifts them enough to actually show against the dark ground. The ink
+   stays the primary colour either way; red and cyan are only ever a small
+   push off it, not a replacement for it. */
 .crt-glass .bar,
 .crt-glass .home-tab,
 .crt-glass .foot,
 .crt-glass .bar-btn,
 .crt-glass .ico {
-  filter: drop-shadow(1px 0 0 rgba(255, 45, 45, .45)) drop-shadow(-1px 0 0 rgba(45, 210, 255, .45));
+  filter:
+    drop-shadow(1px 0 0 color-mix(in srgb, red 35%, var(--ink) 65%))
+    drop-shadow(-1px 0 0 color-mix(in srgb, cyan 35%, var(--ink) 65%));
 }
 
 /* The bitmap renditions don't get the same treatment, for two reasons.
