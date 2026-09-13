@@ -2,6 +2,15 @@
 <html lang="en" data-theme="light" data-page="store">
 <head>
   <meta charset="UTF-8">
+  <!-- Read before anything else in <head>, so the browser knows this document
+       is light before it has fetched or parsed a single byte of terminal.css.
+       Without it, arriving here from a dark-themed page (the directory, in
+       terminal mode) leaves the browser's own blank transition frame showing
+       that page's dark scheme for a moment — a flash of black before the
+       shopfront's forced-light CSS below ever gets a chance to paint white.
+       The shopfront has no dark mode (see html[data-page="store"] in
+       terminal.css), so "light" is never wrong here. -->
+  <meta name="color-scheme" content="light">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Store — KRITOR</title>
   <link rel="canonical" href="/store/">
