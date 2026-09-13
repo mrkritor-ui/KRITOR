@@ -2098,19 +2098,22 @@
      independently streaked by a bad vertical hold and settling out of step
      with its neighbours into a flat letterform — a few of them dropping to
      a flat halftone square partway through, the signal losing the shape
-     entirely for a beat before it catches hold again. One direction only:
-     unlike the catalogue's clip this doesn't loop, because a resolve run
-     backwards over and over stops reading as a resolve at all. Playback
-     simply stops advancing once it reaches the reference's own last frame
-     and holds there — not because every cell in it is perfectly settled
-     (a couple aren't, in the footage itself) but because that is where the
-     real clip actually ends, and this scene's whole premise is to show
-     that clip rather than a tidier invention standing in for it. */
+     entirely for a beat before it catches hold again. The clip itself only
+     ever runs one direction, so a loop here is the clip playing again from
+     its own start rather than reversing — every pass holds on the
+     reference's own last frame for a beat first, not because every cell in
+     it is perfectly settled (a couple aren't, in the footage itself) but
+     because that is genuinely where the clip ends, and repeats until the
+     door is answered rather than resolving once and sitting still. */
   const ARCH_TILE_W = 130, ARCH_TILE_H = 85;   // stored per frame, at the
                                                 // reference's own 724:474
   const ARCH_FRAME_COUNT = 36;
   const ARCH_FRAME_MS = 50;            // native pace of the reference clip —
-                                        // 36 frames run once in 1.8s
+                                        // 36 frames run in 1.8s
+  const ARCH_HOLD_MS = 900;            // pause on the resolved last frame
+                                        // before the clip restarts
+  const ARCH_PLAY_MS = ARCH_FRAME_COUNT * ARCH_FRAME_MS;
+  const ARCH_CYCLE_MS = ARCH_PLAY_MS + ARCH_HOLD_MS;
   const ARCH_SHEET_URL = "/architecture-loader-frames.png";
   const archSheet = { frames: null, requested: false };
 
@@ -2140,14 +2143,20 @@
               mix = 0;
             } else {
               t += dt * 1000;
-              const pos = t / ARCH_FRAME_MS;
-              if (pos >= ARCH_FRAME_COUNT - 1) {
+              const cyclePos = t % ARCH_CYCLE_MS;
+              if (cyclePos >= ARCH_PLAY_MS) {
                 i0 = i1 = ARCH_FRAME_COUNT - 1;
                 mix = 0;
               } else {
-                i0 = pos | 0;
-                i1 = i0 + 1;
-                mix = pos - i0;
+                const pos = cyclePos / ARCH_FRAME_MS;
+                if (pos >= ARCH_FRAME_COUNT - 1) {
+                  i0 = i1 = ARCH_FRAME_COUNT - 1;
+                  mix = 0;
+                } else {
+                  i0 = pos | 0;
+                  i1 = i0 + 1;
+                  mix = pos - i0;
+                }
               }
             }
             const frame0 = frames[i0], frame1 = frames[i1];
