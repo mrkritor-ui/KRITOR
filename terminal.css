@@ -675,7 +675,12 @@ html, body, .bar, .panel, .tile-figure {
   width: min(480px, calc(100vw - var(--page-pad) * 2));
   border: var(--border) solid var(--ink);
   background: var(--bg);
-  font-size: 10px;
+  /* 12px, not the 10px this was drawn at — the chromatic fringe below now
+     runs on every page's bar rather than just the catalogue's, and at the
+     original size it softened the type enough to fight its own legibility.
+     Two points back is the whole fix: everything in here that doesn't set
+     its own size follows this one. */
+  font-size: 12px;
   text-transform: uppercase;
   user-select: none;
 }
@@ -709,7 +714,7 @@ html, body, .bar, .panel, .tile-figure {
   background: var(--bg);
   color: var(--ink);
   font: inherit;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: .08em;
   text-transform: uppercase;
   text-decoration: none;
@@ -778,7 +783,7 @@ html, body, .bar, .panel, .tile-figure {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   cursor: var(--cur-arrow);
   white-space: nowrap;
@@ -872,7 +877,7 @@ html[data-view="list"] .bar-scale-mark { left: calc(100% - var(--u) * .5); }
    going and then drop back. The bar animates its own height now, so this row
    only has to stop existing. */
 .bar-loading.is-gone { display: none; }
-.bar-loading-label { display: block; margin-bottom: var(--u); font-size: 10px; }
+.bar-loading-label { display: block; margin-bottom: var(--u); font-size: 12px; }
 
 /* The bar full, the door still shut. Everything else on this screen is either
    burning or holding still, so the one thing being asked for is the one thing
@@ -980,7 +985,7 @@ html.is-entering .bar-drawer.is-open { animation: bar-arrive .28s ease; }
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 10px;
+  font-size: 12px;
   text-align: left;
   text-transform: uppercase;
   cursor: var(--cur-arrow);
@@ -998,7 +1003,7 @@ html.is-entering .bar-drawer.is-open { animation: bar-arrive .28s ease; }
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 10px;
+  font-size: 12px;
   cursor: var(--cur-arrow);
 }
 
@@ -1049,7 +1054,7 @@ html.is-entering .bar-drawer.is-open { animation: bar-arrive .28s ease; }
    bar reads as a menu row, and these are values, not rows. */
 .filter-list .bar-btn { text-align: left; align-self: flex-start; }
 
-.info-pane { padding: calc(var(--u) * 2); font-size: 10px; line-height: 2.1; text-transform: uppercase; }
+.info-pane { padding: calc(var(--u) * 2); font-size: 12px; line-height: 2.1; text-transform: uppercase; }
 .info-pane p { margin: 0 0 calc(var(--u) * 2); }
 .info-pane a { color: var(--ink); }
 
@@ -1662,12 +1667,15 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
    stopping at the final row of works. */
 /* Fine print, and the space around it is what makes it read as fine rather
    than as small: the padding stays where it was while the type comes down to
-   9px and opens up. A statement set large enough to read from across the room
-   is a poster; set at this size in that much air it is a colophon. */
+   11px and opens up. A statement set large enough to read from across the
+   room is a poster; set at this size in that much air it is a colophon.
+   Two points up from where this sat originally — this is also one of the
+   elements the chromatic fringe below runs on, and at 9px that softened
+   edge was most of the letter. */
 .foot {
   padding: calc(var(--u) * 12) var(--page-pad) calc(var(--u) * 8);
   text-align: center;
-  font-size: clamp(8px, .72vw, 9px);
+  font-size: clamp(10px, .72vw, 11px);
   line-height: 2.6;
   letter-spacing: .1em;
   text-transform: uppercase;
