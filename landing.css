@@ -34,6 +34,16 @@
   opacity: .8;
 }
 
+/* A couple of points larger on a mouse-driven screen, where there is room to
+   spare and nothing to touch precisely — the four names are the entire page
+   here, so they carry the size better than the bar does anywhere else. Left
+   alone on touch: the row is already sized against a fingertip there, not a
+   cursor, and this is the one bar on the site with nothing else on the
+   screen to weigh the change against. */
+@media (hover: hover) and (pointer: fine) {
+  .bar-landing .bar-btn { font-size: 12px; }
+}
+
 /* The row that asked leaves the way the boot sequence's own rows do —
    a fade and a small drop, not a dash off the edge of the screen. */
 #menu-options {
