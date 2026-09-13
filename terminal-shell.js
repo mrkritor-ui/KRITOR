@@ -144,11 +144,11 @@
      onDeal    called per item, in order, as the works arrive */
   function runBoot(options) {
     const boot = document.getElementById("boot");
-    /* The scene is the loading screen's face: the mosaic and its gate, or the
-       globe between the catalogue and the store. It runs alongside the bar
-       filling, and on the gate it is also what the sequence waits for — the
-       machine will not finish coming up until somebody has answered the
-       door. */
+    /* The scene is the loading screen's face: the block glitch or the letter
+       grid and their gate, or the globe between the catalogue and the store.
+       It runs alongside the bar filling, and on the gate it is also what the
+       sequence waits for — the machine will not finish coming up until
+       somebody has answered the door. */
     const scene = window.KritorBoot
       ? window.KritorBoot.mount(options.page || "catalogue")
       : { ready: Promise.resolve(), stop: function () {} };

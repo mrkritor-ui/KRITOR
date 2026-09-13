@@ -51,7 +51,7 @@
        instead of a width/height, which is the part that actually matters
        here: a filter costs what the ELEMENT'S OWN box costs to render, not
        what it is later stretched to on screen, so the blur runs against the
-       same few hundred cells the mosaic is drawn on rather than against a
+       same few hundred cells the block glitch is drawn on rather than against a
        1920-pixel-wide canvas, and the transform's own upscale is a GPU
        compositing step that costs nothing extra. Hidden and sized to
        nothing: it exists only to be pointed at by url(#crt-optics). -->
@@ -79,15 +79,16 @@
   </svg>
 
   <!-- Boot. Covers the page while it loads; the bar sits above it. The mode
-       attribute is written by boot-scene.js on the first frame and decides
-       everything below: the storm, or the starfield.
+       attribute boot-scene.js writes here is always "gate" — this page never
+       flies anywhere, it only ever answers the door — and that mode is what
+       decides the block glitch runs in .boot-fx below.
 
        Nothing is drawn into the picture and nothing is set over it either —
-       the mosaic is the whole screen, with a CRT skin laid over the canvas
-       rather than into it: crt-optics above for the bloom and the channel
-       fringe, scanlines and a column mask and a vignette in terminal.css for
-       the mesh and the curve. The <p> tags below are left for anything
-       reading the page rather than looking at it. -->
+       the block glitch is the whole screen, with a CRT skin laid over the
+       canvas rather than into it: crt-optics above for the bloom and the
+       channel fringe, scanlines and a column mask and a vignette in
+       terminal.css for the mesh and the curve. The <p> tags below are left
+       for anything reading the page rather than looking at it. -->
   <div class="boot" id="boot">
     <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
     <div class="boot-crt" aria-hidden="true"></div>

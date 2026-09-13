@@ -756,15 +756,29 @@
       ctx.putImageData(img, 0, 0);
     }
 
-    const interval = 1000 / fps;
+    /* A scene passes Infinity for fps to mean genuinely uncapped — every
+       rAF renders, at whatever cadence the display actually delivers, no
+       skip-check and no interval-scaled clamp. That second part matters on
+       its own: the clamp below exists to protect a scene's own clock from
+       one huge dt after a real stall (a backgrounded tab, a GC pause), not
+       to throttle ordinary frame delivery — but sized off interval*3 the
+       way the capped scenes use it, a high fps meant to uncap the frame
+       rate instead shrinks that guard band far below a single ordinary
+       frame gap, clamping every frame and quietly running the scene's own
+       clock in slow motion on perfectly ordinary hardware. Uncapped scenes
+       get a fixed, generous ceiling instead, sized against a real stall
+       rather than against their own (nonexistent) interval. */
+    const uncapped = !isFinite(fps) || fps <= 0;
+    const interval = uncapped ? 0 : 1000 / fps;
+    const dtClampMs = uncapped ? 250 : interval * 3;
     const frame = now => {
       if (stopped) return;
       raf = requestAnimationFrame(frame);
       if (document.hidden) { last = now; return; }
       const dt = now - last;
-      if (dt < interval) return;
+      if (!uncapped && dt < interval) return;
       last = now;
-      scene.render(Math.min(dt, interval * 3) / 1000, bits);
+      scene.render(Math.min(dt, dtClampMs) / 1000, bits);
       present();
     };
 
@@ -1902,138 +1916,140 @@
     });
   }
 
-  /* ── The mosaic: the catalogue's door, now ───────────────────────────────── */
+  /* ── The block glitch: the catalogue's door, now ─────────────────────────── */
 
   /* No storm, no name cut into it, nothing written over it at all — the door
      is a field of paper and ink that will not sit still, the way a signal
-     with nothing on it does not sit still. An irregular grid rather than a
-     scatter of independent rectangles: a handful of vertical and horizontal
-     cuts divide the frame into cells, and it is the CUTS that drift, not the
-     cells — which is what keeps every cell rectangular and every neighbour
-     still sharing an edge with the ones beside it, however far the layout
-     has wandered from where it started.
+     with nothing on it does not sit still. Where the mosaic this replaced
+     drifted a handful of slow cuts, this one simply throws out a fresh,
+     wholly unrelated arrangement of irregular blocks every quarter-second —
+     a datamoshed signal rather than a sheet of paper being cut, the louder,
+     faster cousin of the same idea. Grain and the odd horizontal scan-glitch
+     run continuously underneath on their own clock, so the screen is never
+     merely waiting between one arrangement and the next. */
+  const GLITCH_CYCLE_MS = 280;         // one fresh block arrangement, this often
+  const GLITCH_SPLIT_MIN = 0.28;       // a partition's own split point never
+  const GLITCH_SPLIT_MAX = 0.72;       // lands closer to an edge than this
+  const GLITCH_MAX_DEPTH = 7;          // recursion limit — how fine the
+                                        // smallest blocks can get
+  const GLITCH_LEAF_MIN_PX = 26;       // stop splitting a block once either
+                                        // side would fall below this
+  const GLITCH_GREY_CHANCE = 0.06;     // odds a leaf dithers grey instead of
+                                        // sitting flat at ink or at paper
+  const GLITCH_GRAIN = 0.02;           // per-frame bit flips — louder than
+                                        // the architecture screen's own, this
+                                        // being static over a signal rather
+                                        // than dust on glass
+  const GLITCH_STREAK_CHANCE = 0.05;   // odds a new scan-glitch streak
+                                        // starts, rolled once per frame
+  const GLITCH_STREAK_MIN_MS = 60;
+  const GLITCH_STREAK_MAX_MS = 160;
+  const GLITCH_STREAK_MAX_ROWS = 2;    // a streak is one or two rows tall
+  const GLITCH_STREAK_MAX_SHIFT = 10;  // native px, either direction
+  const GLITCH_STREAK_POOL = 4;        // streaks live at once, at most
 
-     Three motions, three speeds, on purpose:
-       the cuts        drift toward a new position over several seconds
-       a cell's tone   turns over now and then, one or two at a time
-       the grain       is redrawn every frame, the only thing that is
-     Slow, slower, immediate — so the eye always has the fastest layer to
-     settle on while the frame itself is still quietly rearranging underneath
-     it. */
-  function mosaic(host) {
-    return run(host, reduceMotion ? 12 : 30, function (W, H) {
-      /* A line of interior cuts for one axis: n-1 positions, each drifting
-         toward a target it only picks again once it arrives near enough —
-         which is what keeps the motion reading as considered rather than as
-         a thing that never stops adjusting. */
-      function makeLine(n) {
-        const pos = new Float32Array(Math.max(0, n - 1));
-        const target = new Float32Array(pos.length);
-        const wait = new Float32Array(pos.length);
-        for (let i = 0; i < pos.length; i++) {
-          pos[i] = target[i] = (i + 1) / n;
-          wait[i] = 1 + Math.random() * 3;
-        }
-        return { pos: pos, target: target, wait: wait, n: n };
+  /* One recursive partition of a W×H field into flat-toned leaves, written
+     straight into `tone` (0 paper, 1 ink, 2 dithered grey) rather than kept
+     as a tree — nothing after this build needs the shape of the split, only
+     the tone it left behind in every pixel. Called fresh every cycle rather
+     than eased toward, since the reference this follows is a signal being
+     re-cut, not a layout being rearranged. */
+  function glitchPartition(tone, W, x0, y0, x1, y1, depth) {
+    const w = x1 - x0, h = y1 - y0;
+    const canSplit = depth < GLITCH_MAX_DEPTH &&
+      (w >= GLITCH_LEAF_MIN_PX * 2 || h >= GLITCH_LEAF_MIN_PX * 2);
+    if (!canSplit) {
+      const roll = Math.random();
+      const v = roll < GLITCH_GREY_CHANCE ? 2
+        : roll < GLITCH_GREY_CHANCE + (1 - GLITCH_GREY_CHANCE) * 0.5 ? 1 : 0;
+      for (let y = y0; y < y1; y++) {
+        const row = y * W;
+        for (let x = x0; x < x1; x++) tone[row + x] = v;
       }
+      return;
+    }
+    if (w >= h) {
+      const cut = x0 + Math.max(1, Math.round(w * (GLITCH_SPLIT_MIN + Math.random() * (GLITCH_SPLIT_MAX - GLITCH_SPLIT_MIN))));
+      glitchPartition(tone, W, x0, y0, cut, y1, depth + 1);
+      glitchPartition(tone, W, cut, y0, x1, y1, depth + 1);
+    } else {
+      const cut = y0 + Math.max(1, Math.round(h * (GLITCH_SPLIT_MIN + Math.random() * (GLITCH_SPLIT_MAX - GLITCH_SPLIT_MIN))));
+      glitchPartition(tone, W, x0, y0, x1, cut, depth + 1);
+      glitchPartition(tone, W, x0, cut, x1, y1, depth + 1);
+    }
+  }
 
-      function stepLine(line, dt) {
-        const span = 0.9 / line.n;
-        for (let i = 0; i < line.pos.length; i++) {
-          line.wait[i] -= dt;
-          if (line.wait[i] <= 0) {
-            const base = (i + 1) / line.n;
-            line.target[i] = Math.min(base + span, Math.max(base - span, line.target[i] + (Math.random() - 0.5) * span * 2));
-            /* Two and a half to five seconds before this cut moves again —
-               "slow" is the whole brief for this scene. */
-            line.wait[i] = 2.5 + Math.random() * 2.5;
-          }
-          /* Eased rather than stepped: a cut that jumped to its target would
-             read as the cells swapping, not as a line sliding between them. */
-          line.pos[i] += (line.target[i] - line.pos[i]) * Math.min(1, dt * 0.45);
-        }
-      }
+  function blockGlitch(host) {
+    return run(host, reduceMotion ? 12 : Infinity, function (W, H) {
+      const tone = new Uint8Array(W * H);
+      glitchPartition(tone, W, 0, 0, W, H, 0);
 
-      /* Pixel boundaries for one axis, from the line's fractional cuts —
-         clamped monotonic, since two cuts drifting toward each other are
-         allowed to meet but never allowed to pass. */
-      function bounds(line, size) {
-        const b = new Int32Array(line.n + 1);
-        b[line.n] = size;
-        for (let i = 0; i < line.pos.length; i++) {
-          b[i + 1] = Math.max(b[i], Math.round(line.pos[i] * size));
-        }
-        return b;
-      }
+      /* Frozen under reduced motion by simply never counting down to the
+         next cycle, rather than by branching the render loop apart from the
+         moving version of it — one static arrangement, held. */
+      let cycleWait = GLITCH_CYCLE_MS;
 
-      const nCols = Math.max(5, Math.min(11, Math.round(W / 58)));
-      const nRows = Math.max(4, Math.min(9, Math.round(H / 58)));
-      const cols = makeLine(nCols);
-      const rows = makeLine(nRows);
-
-      /* Each cell is paper, ink, or — one cell in perhaps fourteen — a fixed
-         grey, ordered-dithered like everything else on this site rather than
-         given a tone of its own. Recoloured a cell or two at a time rather
-         than all together, so the layout is always mid-turnover somewhere
-         instead of flipping in one clean sweep. */
-      const cellCount = nCols * nRows;
-      const tone = new Uint8Array(cellCount);
-      const shade = new Float32Array(cellCount);
-      function recolour(i) {
-        const roll = Math.random();
-        if (roll < 0.07) { tone[i] = 2; shade[i] = 0.25 + Math.random() * 0.5; }
-        else tone[i] = roll < 0.53 ? 1 : 0;
-      }
-      for (let i = 0; i < cellCount; i++) recolour(i);
-      let recolourWait = 1.2;
+      /* A small fixed pool rather than an array that grows and shrinks —
+         streaks are few at once and none of them outlive a couple of
+         hundred milliseconds. `left` doubles as the slot's own occupancy
+         flag: at or below zero, the slot is free. */
+      const streakY = new Int32Array(GLITCH_STREAK_POOL);
+      const streakH = new Int32Array(GLITCH_STREAK_POOL);
+      const streakDX = new Int32Array(GLITCH_STREAK_POOL);
+      const streakLeft = new Float32Array(GLITCH_STREAK_POOL);
 
       let partMs = 0, partT = 0, dissolve = 0;
 
       return {
-        /* Answered. There is no scene to hold — the fire dissolves into paper
-           the same dithered way the storm did, and the grid simply stops
-           being told to keep drifting once the boot screen is gone. */
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
-          stepLine(cols, dt);
-          stepLine(rows, dt);
+          if (!reduceMotion) {
+            cycleWait -= dt * 1000;
+            if (cycleWait <= 0) {
+              glitchPartition(tone, W, 0, 0, W, H, 0);
+              cycleWait += GLITCH_CYCLE_MS;
+            }
 
-          recolourWait -= dt;
-          if (recolourWait <= 0) {
-            const turns = 1 + (Math.random() < 0.35 ? 1 : 0);
-            for (let k = 0; k < turns; k++) recolour(Math.floor(Math.random() * cellCount));
-            recolourWait = 1.4 + Math.random() * 1.6;
-          }
-
-          const colB = bounds(cols, W);
-          const rowB = bounds(rows, H);
-
-          for (let ry = 0; ry < nRows; ry++) {
-            const y0 = rowB[ry], y1 = rowB[ry + 1];
-            for (let cx = 0; cx < nCols; cx++) {
-              const x0 = colB[cx], x1 = colB[cx + 1];
-              const idx = ry * nCols + cx;
-              const t = tone[idx];
-              if (t === 1) {
-                for (let y = y0; y < y1; y++) { const row = y * W; for (let x = x0; x < x1; x++) bits[row + x] = 1; }
-              } else if (t === 0) {
-                for (let y = y0; y < y1; y++) { const row = y * W; for (let x = x0; x < x1; x++) bits[row + x] = 0; }
-              } else {
-                const w = shade[idx];
-                for (let y = y0; y < y1; y++) { const row = y * W; for (let x = x0; x < x1; x++) bits[row + x] = dither(x, y, w); }
+            if (Math.random() < GLITCH_STREAK_CHANCE) {
+              for (let s = 0; s < GLITCH_STREAK_POOL; s++) {
+                if (streakLeft[s] > 0) continue;
+                streakY[s] = (Math.random() * H) | 0;
+                streakH[s] = 1 + ((Math.random() * GLITCH_STREAK_MAX_ROWS) | 0);
+                streakDX[s] = ((Math.random() * 2 - 1) * GLITCH_STREAK_MAX_SHIFT) | 0;
+                streakLeft[s] = GLITCH_STREAK_MIN_MS + Math.random() * (GLITCH_STREAK_MAX_MS - GLITCH_STREAK_MIN_MS);
+                break;
               }
+            }
+            for (let s = 0; s < GLITCH_STREAK_POOL; s++) {
+              if (streakLeft[s] > 0) streakLeft[s] -= dt * 1000;
             }
           }
 
-          /* A little grit, not a snowstorm — the frame is meant to read as
-             blocks with some age on them, not as static with blocks buried
-             in it. Redrawn from scratch every frame rather than decayed from
-             the last one, so a fixed set of noisy pixels never sits still
-             long enough to become a stain. */
-          const flips = Math.round(W * H * 0.008);
-          for (let k = 0; k < flips; k++) {
-            const i = (Math.random() * W * H) | 0;
-            bits[i] = bits[i] ? 0 : 1;
+          for (let y = 0; y < H; y++) {
+            const row = y * W;
+            /* At most one streak claims a given row — the pool is small
+               enough, and streaks brief enough, that two ever overlapping
+               the same row is rare enough not to matter which one wins. */
+            let dx = 0;
+            if (!reduceMotion) {
+              for (let s = 0; s < GLITCH_STREAK_POOL; s++) {
+                if (streakLeft[s] > 0 && y >= streakY[s] && y < streakY[s] + streakH[s]) { dx = streakDX[s]; break; }
+              }
+            }
+            for (let x = 0; x < W; x++) {
+              let sx = x + dx;
+              if (sx < 0) sx = 0; else if (sx >= W) sx = W - 1;
+              const v = tone[row + sx];
+              bits[row + x] = v === 2 ? dither(x, y, 0.5) : v;
+            }
+          }
+
+          if (!reduceMotion) {
+            const flips = Math.round(W * H * GLITCH_GRAIN);
+            for (let k = 0; k < flips; k++) {
+              const i = (Math.random() * W * H) | 0;
+              bits[i] = bits[i] ? 0 : 1;
+            }
           }
 
           if (partMs) {
@@ -2054,111 +2070,173 @@
     });
   }
 
-  /* ── The hourglass: architecture's own field ─────────────────────────────── */
+  /* ── The letter grid: architecture's own field ───────────────────────────── */
 
-  /* Two diamonds, one growing from the top edge's centre and one from the
-     bottom's, mirrored into a single bowtie. Distance to whichever tip is
-     nearer is measured on a taxicab-ish grid — horizontal distance from the
-     vertical centreline plus vertical distance from the nearer edge — so the
-     lightest band sits on the two tips and along the centreline the whole
-     height of the frame, and the darkest sits in the four corners, farthest
-     from both. Stepped into a fixed number of bands rather than a smooth
-     ramp, then every band is textured by the same ordered dither the rest of
-     this file already draws every 1-bit picture with, at whatever density
-     that band's step calls for — a halftone screen out of the one dither
-     matrix this file already had, not a second dithering system next to it.
+  /* A grid of cells, each holding the same bold "A" — standing in for a
+     section that has no picture of its own yet, the way the hourglass this
+     replaced did. Every cell starts as a smear, heavily streaked along the
+     vertical axis the way a bad vertical-hold does to a CRT, and settles
+     independently and out of step with its neighbours into a flat, solid
+     letterform. A few cells drop to a flat halftone square partway through
+     — the signal losing the shape entirely for a beat, to grey noise,
+     before it catches hold again. One direction only: nothing here loops,
+     and once every cell has resolved the grid simply holds on its finished
+     shape until the door is answered, the same as the mosaic before it
+     held on its own drifting one. */
+  const LETTER_CELL_TARGET = 92;       // roughly this many native px per
+                                        // cell, before the grid is clamped
+  const LETTER_MIN_COLS = 3, LETTER_MAX_COLS = 9;
+  const LETTER_MIN_ROWS = 2, LETTER_MAX_ROWS = 7;
+  const LETTER_GUTTER_PX = 1;          // the paper seam between cells
+  const LETTER_TOTAL_MS = 1800;        // the whole cascade, first cell to last
+  const LETTER_SETTLE_MIN_MS = 420;    // fastest a single cell can resolve
+  const LETTER_SETTLE_MAX_MS = 900;    // slowest a single cell can resolve
+  const LETTER_BLUR_SPREAD = 0.55;     // vertical smear at its worst, as a
+                                        // fraction of a cell's own height
+  const LETTER_BLUR_SAMPLES = [-1, -0.55, 0, 0.55, 1]; // the smear's own
+                                        // sample offsets, symmetric around 0
+  const LETTER_FLICKER_CHANCE = 0.3;   // odds a given cell drops to flat
+                                        // halftone once on its way to settled
+  const LETTER_FLICKER_SPAN = 0.16;    // that dropout's length, as a fraction
+                                        // of the cell's own settle time
+  const LETTER_GRAIN = 0.012;          // sparse per-frame bit flips, the same
+                                        // restrained amount every other scene
+                                        // on this site already settled on
 
-     A held breathing pulse on the band radii read as barely-there — twelve
-     percent swell over thirteen seconds is motion a grain of static already
-     buries. What actually reads as motion is the rings themselves flowing:
-     each band's own edge continuously travels toward the tips and the
-     centreline rather than holding still and merely resizing, the same
-     distance field re-quantized every frame against a phase that only ever
-     grows. No reset: a growing phase folded back into [0,1) every frame
-     produces the same repeating stack of bands a clock face's hands do —
-     seamless, because nothing about it ever jumps back to a start position,
-     it just keeps counting.
+  /* The glyph itself: two tapered legs and a crossbar, entirely in a cell's
+     own local (u, v) space — u across, 0 to 1, v down, 0 (apex) to 1
+     (base). Every half-width below is a fraction of the cell's own width. */
+  const LETTER_APEX_HALF = 0.03;
+  const LETTER_BASE_HALF = 0.46;
+  const LETTER_LEG_THICK = 0.20;
+  const LETTER_BAR_TOP = 0.58;
+  const LETTER_BAR_BOTTOM = 0.7;
 
-     Every constant that shapes the look is named here, at the top, rather
-     than buried in the maths below. */
-  const HOURGLASS_BANDS = 28;          // discrete steps from tip to corner
-  const HOURGLASS_WAIST = 0.14;        // the pinch's width at the vertical
-                                        // middle, as a fraction of its width
-                                        // at the top and bottom edges
-  const HOURGLASS_GAMMA = 1.7;         // >1 packs more of those steps toward
-                                        // the corners — the dark end covers
-                                        // far more screen area per step than
-                                        // the tips do, so a flat step count
-                                        // reads as bigger, harder blocks
-                                        // exactly where it's darkest
-  const HOURGLASS_FLOW_MS = 1100;      // time for the rings to flow inward by
-                                        // one full band's width — smaller is
-                                        // a faster cascade
-  const HOURGLASS_RANGE = 1.6;         // the distance field's own span, tip to
-                                        // just past the corners — one full
-                                        // cascade wraps every this-many bands'
-                                        // worth of flow, not one band's worth
-  const HOURGLASS_GRAIN = 0.01;          // sparse per-frame bit flips, the same
-                                          // restrained amount every other scene
-                                          // on this site already settled on
-
-  /* pow() is the one call in the render loop expensive enough to matter,
-     called once per pixel every frame — a lookup table built once per
-     build/rebuild (not per frame) turns it into an array read. */
-  const HOURGLASS_GAMMA_LUT_SIZE = 2048;
-  const hourglassGammaLUT = new Float32Array(HOURGLASS_GAMMA_LUT_SIZE);
-  for (let i = 0; i < HOURGLASS_GAMMA_LUT_SIZE; i++) {
-    hourglassGammaLUT[i] = Math.pow(i / (HOURGLASS_GAMMA_LUT_SIZE - 1), HOURGLASS_GAMMA);
+  function letterOuterHalf(v) {
+    return LETTER_APEX_HALF + (LETTER_BASE_HALF - LETTER_APEX_HALF) * v;
   }
 
-  function hourglass(host) {
-    return run(host, reduceMotion ? 10 : 30, function (W, H) {
-      const cx = W / 2, halfW = Math.max(1, W / 2), halfH = Math.max(1, H / 2);
+  /* True inside the "A"'s own ink at this exact (u, v) — no smear, no
+     antialiasing, just the shape. Smearing it is the caller's job, done by
+     averaging this across a handful of v's rather than one. */
+  function letterInside(u, v) {
+    const du = Math.abs(u - 0.5);
+    const wo = letterOuterHalf(v);
+    if (du > wo) return false;
+    if (v >= LETTER_BAR_TOP && v <= LETTER_BAR_BOTTOM) return true;
+    const wi = wo - LETTER_LEG_THICK;
+    return wi <= 0 || du >= wi;
+  }
+
+  /* Coverage at (u, v): the fraction of a handful of samples, spread
+     `spread` either side of v in v alone, that land inside the glyph — a
+     vertical motion blur done by sampling instead of convolving, since the
+     shape is cheap enough to evaluate five times but not cheap enough to
+     blur for real. At spread 0 every sample lands on v itself and this
+     collapses back to a hard, unsmeared edge, which is also why the caller
+     skips the loop entirely once a cell has settled. */
+  function letterCoverage(u, v, spread) {
+    if (spread <= 0.001) return letterInside(u, v) ? 1 : 0;
+    let hit = 0;
+    for (let i = 0; i < LETTER_BLUR_SAMPLES.length; i++) {
+      /* Out-of-range samples count as outside the glyph rather than being
+         clamped back onto the nearest in-range row — clamping piled every
+         sample beyond an edge onto that one row instead, which above the
+         apex (already only 6% of the cell wide) added up to a thin dark
+         spike standing straight up off the point rather than a soft
+         falloff. */
+      const sv = v + LETTER_BLUR_SAMPLES[i] * spread;
+      if (sv >= 0 && sv <= 1 && letterInside(u, sv)) hit++;
+    }
+    return hit / LETTER_BLUR_SAMPLES.length;
+  }
+
+  function letterGrid(host) {
+    return run(host, reduceMotion ? 12 : Infinity, function (W, H) {
+      const cols = Math.max(LETTER_MIN_COLS, Math.min(LETTER_MAX_COLS, Math.round(W / LETTER_CELL_TARGET)));
+      const rows = Math.max(LETTER_MIN_ROWS, Math.min(LETTER_MAX_ROWS, Math.round(H / LETTER_CELL_TARGET)));
+      const n = cols * rows;
+
+      /* Every cell's own schedule, decided once at build time: a delay
+         before it starts moving at all, and a duration for the settle once
+         it does — sized so delay plus duration never runs past the
+         cascade's own total, however unlucky the roll. A minority also get
+         one flat halftone dropout, placed somewhere in the middle third of
+         their own settle so it never reads as the start or the finish. */
+      const delay = new Float32Array(n), dur = new Float32Array(n);
+      const flickerFrom = new Float32Array(n), flickerTo = new Float32Array(n);
+      const flickerTone = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        dur[i] = LETTER_SETTLE_MIN_MS + Math.random() * (LETTER_SETTLE_MAX_MS - LETTER_SETTLE_MIN_MS);
+        delay[i] = Math.random() * Math.max(0, LETTER_TOTAL_MS - dur[i]);
+        if (Math.random() < LETTER_FLICKER_CHANCE) {
+          const at = 0.4 + Math.random() * 0.3;
+          const half = LETTER_FLICKER_SPAN / 2;
+          flickerFrom[i] = Math.max(0, at - half);
+          flickerTo[i] = Math.min(1, at + half);
+          flickerTone[i] = 0.42 + Math.random() * 0.16;
+        } else {
+          flickerFrom[i] = flickerTo[i] = -1;
+        }
+      }
+
       let t = 0;
       let partMs = 0, partT = 0, dissolve = 0;
 
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
-          /* Frozen on a single frame under reduced motion — t simply never
-             advances — rather than just playing the same animation slower,
-             which is still motion. */
+          /* Frozen on the fully-resolved frame under reduced motion — t
+             simply never advances, so every cell's local time stays at or
+             below 0 forever... except that reads as "still smeared", the
+             opposite of what reduced motion asks for here. So instead the
+             cells are drawn resolved outright below, and t is left doing
+             nothing at all. */
           if (!reduceMotion) t += dt * 1000;
-          /* Grows by one band's worth of the field's own range every
-             HOURGLASS_FLOW_MS, forever — never reset, only wrapped below,
-             which is what keeps the cascade seamless. */
-          const phase = (t / HOURGLASS_FLOW_MS) * (HOURGLASS_RANGE / HOURGLASS_BANDS);
 
-          for (let y = 0; y < H; y++) {
-            /* 0 at the top and bottom edge, 1 at the vertical middle — the
-               pinch is where this is largest, not smallest. */
-            const ny = Math.min(y, H - 1 - y) / halfH;
-            const taper = Math.max(HOURGLASS_WAIST, 1 - (1 - HOURGLASS_WAIST) * ny);
-            const row = y * W;
-            for (let x = 0; x < W; x++) {
-              const nx = Math.abs(x - cx) / halfW;
-              const d = nx / taper;
-              /* Adding the phase before wrapping to the field's own range
-                 is what makes a ring's edge travel toward smaller d — toward
-                 the tips and the centreline — as the phase grows: a ring
-                 that would fall below 0 reappears at the far edge and keeps
-                 travelling inward, rather than the whole field only resizing
-                 in place. */
-              let effective = (d + phase) % HOURGLASS_RANGE;
-              if (effective < 0) effective += HOURGLASS_RANGE;
-              /* The gamma curve is applied here, after the phase and the
-                 wrap — it reshapes how finely each ring is cut, not where
-                 the rings themselves sit, so the cascade's own speed is
-                 untouched by it. */
-              const lutIdx = Math.min(HOURGLASS_GAMMA_LUT_SIZE - 1, ((effective / HOURGLASS_RANGE) * (HOURGLASS_GAMMA_LUT_SIZE - 1)) | 0);
-              const norm = hourglassGammaLUT[lutIdx];
-              const band = Math.min(HOURGLASS_BANDS - 1, Math.floor(norm * HOURGLASS_BANDS));
-              const coverage = band / (HOURGLASS_BANDS - 1);
-              bits[row + x] = dither(x, y, coverage);
+          for (let ry = 0; ry < rows; ry++) {
+            const y0 = Math.round((ry / rows) * H), y1 = Math.round(((ry + 1) / rows) * H);
+            for (let cx = 0; cx < cols; cx++) {
+              const x0 = Math.round((cx / cols) * W), x1 = Math.round(((cx + 1) / cols) * W);
+              const idx = ry * cols + cx;
+
+              let spread = 0, flickerActive = false, tone = 0;
+              if (!reduceMotion) {
+                const localT = t - delay[idx];
+                if (localT <= 0) {
+                  spread = LETTER_BLUR_SPREAD;
+                } else {
+                  const p = Math.min(1, localT / dur[idx]);
+                  spread = LETTER_BLUR_SPREAD * (1 - p * p * (3 - 2 * p));
+                  if (flickerFrom[idx] >= 0 && p >= flickerFrom[idx] && p <= flickerTo[idx]) {
+                    flickerActive = true;
+                    tone = flickerTone[idx];
+                  }
+                }
+              }
+
+              const gx0 = x0 + LETTER_GUTTER_PX, gx1 = x1 - LETTER_GUTTER_PX;
+              const gy0 = y0 + LETTER_GUTTER_PX, gy1 = y1 - LETTER_GUTTER_PX;
+              const cw = Math.max(1, x1 - x0), ch = Math.max(1, y1 - y0);
+
+              for (let y = y0; y < y1; y++) {
+                const row = y * W;
+                if (y < gy0 || y >= gy1) {
+                  for (let x = x0; x < x1; x++) bits[row + x] = 0;
+                  continue;
+                }
+                const v = (y - y0) / ch;
+                for (let x = x0; x < x1; x++) {
+                  if (x < gx0 || x >= gx1) { bits[row + x] = 0; continue; }
+                  if (flickerActive) { bits[row + x] = dither(x, y, tone); continue; }
+                  const u = (x - x0) / cw;
+                  bits[row + x] = dither(x, y, letterCoverage(u, v, spread));
+                }
+              }
             }
           }
 
-          const flips = Math.round(W * H * HOURGLASS_GRAIN);
+          const flips = Math.round(W * H * LETTER_GRAIN);
           for (let k = 0; k < flips; k++) {
             const i = (Math.random() * W * H) | 0;
             bits[i] = bits[i] ? 0 : 1;
@@ -2431,6 +2509,6 @@
   }
 
   window.KritorFX = {
-    terrain: terrain, mosaic: mosaic, hourglass: hourglass, globe: globe, reduceMotion: reduceMotion,
+    terrain: terrain, blockGlitch: blockGlitch, letterGrid: letterGrid, globe: globe, reduceMotion: reduceMotion,
   };
 })();

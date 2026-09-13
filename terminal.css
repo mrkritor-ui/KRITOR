@@ -234,9 +234,9 @@ html, body, .bar, .panel, .tile-figure {
 }
 
 /* Every gate and both flights own the whole frame now — the globe writes
-   nothing over itself either, the same as the mosaic and the hourglass, so
-   none of the four needs the hole a canvas with type baked into it used to
-   need cleared for that type to sit in. */
+   nothing over itself either, the same as the block glitch and the letter
+   grid, so none of the four needs the hole a canvas with type baked into it
+   used to need cleared for that type to sit in. */
 .boot[data-mode="gate"] .boot-fx,
 .boot[data-mode="arch"] .boot-fx,
 .boot[data-mode="out"] .boot-fx,
@@ -245,9 +245,9 @@ html, body, .bar, .panel, .tile-figure {
   bottom: 0;
 }
 
-/* The mosaic and the hourglass used to just be there on the first frame —
-   the canvas starts rendering and the whole field is on screen at once,
-   full strength, with nothing easing it in. Faded in instead, canvas and
+/* The block glitch and the letter grid used to just be there on the first
+   frame — the canvas starts rendering and the whole field is on screen at
+   once, full strength, with nothing easing it in. Faded in instead, canvas and
    glass together so the picture and the mesh in front of it arrive as one
    thing rather than the mesh popping in a frame ahead of what it's meshing
    over. Not on the store's two flights: the globe already has its own
@@ -276,18 +276,19 @@ html, body, .bar, .panel, .tile-figure {
 
 /* No colour is introduced anywhere: the canvas is painted in --ink and --bg and
    nothing else, and every tone between them is ordered dither. In paper mode
-   the mosaic is ink on white, in terminal mode it is phosphor on black, and
-   neither needed a palette of its own — which is also what the catalogue's
-   renditions do, one screen earlier. */
+   the block glitch is ink on white, in terminal mode it is phosphor on black,
+   and neither needed a palette of its own — which is also what the
+   catalogue's renditions do, one screen earlier. */
 
 /* ── The glass in front of the gate ──────────────────────────────────────── */
 
 /* Everything below is a skin laid over the canvas, never into it — the
-   mosaic, the hourglass and the globe all stay flat 1-bit ink and paper,
-   the same as every other bitmap on this site, and the tube is an illusion
-   sitting on top of it. Every gate and both flights get it now: the globe
-   is a screen being looked into the same way the mosaic and the hourglass
-   are, not a window going past at speed the way the old starfield was. */
+   block glitch, the letter grid and the globe all stay flat 1-bit ink and
+   paper, the same as every other bitmap on this site, and the tube is an
+   illusion sitting on top of it. Every gate and both flights get it now:
+   the globe is a screen being looked into the same way the block glitch and
+   the letter grid are, not a window going past at speed the way the old
+   starfield was. */
 .boot-crt {
   display: none;
   position: absolute;
@@ -322,11 +323,11 @@ html, body, .bar, .panel, .tile-figure {
    rows and a second, finer one down the columns, the two gratings a shadow
    mask actually is. Multiplied over the picture rather than laid at full
    strength, so it reads as mesh in front of the phosphor and not as a
-   second grid competing with the mosaic's own. The rows drift by one line
-   over nine seconds — fast enough that the tube never looks like a still
-   photograph of itself, slow enough to sit under the mosaic's own motion
-   rather than beside it; the columns hold still, the way an aperture grille
-   actually is fixed to the glass. */
+   second grid competing with whatever the scene underneath is doing. The
+   rows drift by one line over nine seconds — fast enough that the tube
+   never looks like a still photograph of itself, slow enough to sit under
+   the scene's own motion rather than beside it; the columns hold still, the
+   way an aperture grille actually is fixed to the glass. */
 .boot-crt::before {
   content: "";
   position: absolute;
