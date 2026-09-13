@@ -2098,22 +2098,17 @@
      independently streaked by a bad vertical hold and settling out of step
      with its neighbours into a flat letterform — a few of them dropping to
      a flat halftone square partway through, the signal losing the shape
-     entirely for a beat before it catches hold again. The clip itself only
-     ever runs one direction, so a loop here is the clip playing again from
-     its own start rather than reversing — every pass holds on the
-     reference's own last frame for a beat first, not because every cell in
-     it is perfectly settled (a couple aren't, in the footage itself) but
-     because that is genuinely where the clip ends, and repeats until the
-     door is answered rather than resolving once and sitting still. */
+     entirely for a beat before it catches hold again. Looped exactly the
+     way the catalogue's own clip is: straight back to the first frame the
+     instant the last one plays, cross-faded through the seam the same as
+     every other frame-to-frame step, no hold and no stop-start between
+     passes — a continuous replay until the door is answered rather than a
+     resolve that plays once and sits still. */
   const ARCH_TILE_W = 130, ARCH_TILE_H = 85;   // stored per frame, at the
                                                 // reference's own 724:474
   const ARCH_FRAME_COUNT = 36;
   const ARCH_FRAME_MS = 50;            // native pace of the reference clip —
-                                        // 36 frames run in 1.8s
-  const ARCH_HOLD_MS = 900;            // pause on the resolved last frame
-                                        // before the clip restarts
-  const ARCH_PLAY_MS = ARCH_FRAME_COUNT * ARCH_FRAME_MS;
-  const ARCH_CYCLE_MS = ARCH_PLAY_MS + ARCH_HOLD_MS;
+                                        // 36 frames loop in 1.8s
   const ARCH_SHEET_URL = "/architecture-loader-frames.png";
   const archSheet = { frames: null, requested: false };
 
@@ -2143,21 +2138,10 @@
               mix = 0;
             } else {
               t += dt * 1000;
-              const cyclePos = t % ARCH_CYCLE_MS;
-              if (cyclePos >= ARCH_PLAY_MS) {
-                i0 = i1 = ARCH_FRAME_COUNT - 1;
-                mix = 0;
-              } else {
-                const pos = cyclePos / ARCH_FRAME_MS;
-                if (pos >= ARCH_FRAME_COUNT - 1) {
-                  i0 = i1 = ARCH_FRAME_COUNT - 1;
-                  mix = 0;
-                } else {
-                  i0 = pos | 0;
-                  i1 = i0 + 1;
-                  mix = pos - i0;
-                }
-              }
+              const pos = (t / ARCH_FRAME_MS) % ARCH_FRAME_COUNT;
+              i0 = pos | 0;
+              i1 = (i0 + 1) % ARCH_FRAME_COUNT;
+              mix = pos - i0;
             }
             const frame0 = frames[i0], frame1 = frames[i1];
 
