@@ -5,9 +5,9 @@
    nothing happens until you answer it — no name in it, no line of type over
    it, nothing to read, just the bar saying LOADING and then, once it has
    nothing left to report, PRESS TO ENTER. Moving between the catalogue and
-   the store you are not stopped — a starfield flies you there, forwards on
-   the way out and backwards on the way home — because the door is only
-   worth closing once.
+   the store you are not stopped — a globe forms and turns while you watch,
+   forwards on the way out and backwards on the way home — because the door
+   is only worth closing once.
 
    Architecture is a third door rather than a third pair of flights — it has
    no far side to fly to yet, so arriving there is answered the same way the
@@ -18,53 +18,35 @@
    Which screen you get is decided here, from where you were last:
 
      catalogue, arrived from anywhere but the store  →  the mosaic, and the gate
-     catalogue, arrived from the store               →  starfield, flying back
-     store                                           →  starfield, flying out
+     catalogue, arrived from the store               →  the globe, flying back
+     store                                           →  the globe, flying out
      architecture, arrived from anywhere              →  the hourglass, and the gate
 
-   The store's two flights still speak — KRITOR in the blackletter, sentence
-   case, saying whatever it likes, against the machine's own procedural
-   sub-label set in the terminal face and capitals. Both gates are silent on
-   purpose — nothing is written over either scene. */
+   The store's two flights still write a name — KRITOR STORE in the
+   blackletter, fading in once the globe has actually formed — and nothing
+   else. Both gates are silent throughout — nothing is ever written over
+   either of them. */
 (function () {
   "use strict";
 
   const LAST_PAGE_KEY = "kritor-last-page";
 
-  /* KRITOR's own lines, for the two flights only — the gate is silent. */
-  const VOICE = {
-    out: [
-      "Kritor counts the coins twice.",
-      "Kritor wraps things carefully.",
-      "Kritor hopes you brought a bag.",
-      "Kritor names its price without blinking.",
-      "Kritor sells only what it can bear to lose.",
-      "Kritor is not a shop, but it will take your money.",
-    ],
-    back: [
-      "Kritor watched you leave.",
-      "Kritor kept your place.",
-      "Kritor did not move a thing.",
-      "Kritor is still here.",
-      "Kritor knew you would come back.",
-    ],
-  };
-
-  /* Nothing above the name, on any of the three screens. The door used to spell
-     out its invitation — "YOU HAVE STUMBLED UPON", and an ENTER button under
-     it — and the warps announced their own direction, OUTBOUND and INBOUND.
-     Four lines of type over a landscape is a game's title card, not a
-     painter's archive, and a flight that has to caption which way it is going
-     is not flying convincingly. The name, where you are headed, and what
-     KRITOR has to say about it. */
+  /* Nothing above the name, on any of the three screens, and nothing below it
+     either. The door used to spell out its invitation — "YOU HAVE STUMBLED
+     UPON", and an ENTER button under it — the warps once announced their own
+     direction, OUTBOUND and INBOUND, and the two flights used to have KRITOR
+     say something under its own name (Kritor is not a shop, but it will take
+     your money — that kind of line). All of it read as a game's title card
+     once there was a globe under it to look at instead of past. Just the
+     name, and where you are headed. */
   const SUB = { gate: "", arch: "", out: "STORE", back: "CATALOGUE" };
 
-  /* Long enough that the starfield gets to accelerate and mean something,
-     short enough that it never feels like it is in the way. The loading bar is
-     paced to this too, so the flight and the fill land together. */
-  const WARP_MS = 1400;
-
-  function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+  /* The globe's own choreography, end to end: bloom, a beat to look at it,
+     the wordmark's fade-in, a beat with it up, and this is where the loading
+     bar's own fill ends too — matched by hand to GLOBE_READY_MS in
+     pixel-fx.js, since the two live in different files and neither reads
+     the other's constant. */
+  const WARP_MS = 4200;
 
   function lastPage() {
     try { return sessionStorage.getItem(LAST_PAGE_KEY) || ""; } catch (e) { return ""; }
@@ -100,20 +82,17 @@
       mode: mode, ready: Promise.resolve(), part: function () {}, stop: function () {},
     };
 
-    /* Both gates are silent — VOICE has no "gate" or "arch" list, and the
-       CSS hides the line either way. Only the store's two flights speak. */
     const gateLike = mode === "gate" || mode === "arch";
 
     boot.dataset.mode = mode;
     setText("boot-sub", SUB[mode]);
-    if (!gateLike) setText("boot-voice", pick(VOICE[mode]));
 
     const stage = document.getElementById("boot-fx");
     let fx = { stop: function () {}, part: function () {} };
     if (stage && window.KritorFX) {
       fx = mode === "gate" ? window.KritorFX.mosaic(stage)
         : mode === "arch" ? window.KritorFX.hourglass(stage)
-        : window.KritorFX.starfield(stage, { direction: mode === "back" ? "back" : "forward" });
+        : window.KritorFX.globe(stage);
     }
 
     let ready;
@@ -153,7 +132,12 @@
         document.addEventListener("keydown", enter);
       });
     } else {
-      ready = new Promise(resolve => setTimeout(resolve, WARP_MS));
+      /* The globe's own clock, not a second timer guessing at its duration —
+         see notifyReady in pixel-fx.js's run(). WARP_MS still paces the
+         loading bar's fill below, which is only ever decorative; the actual
+         hand-off waits on the scene itself, so the two can never drift out
+         of step under a slow frame or two. */
+      ready = fx.ready || new Promise(resolve => setTimeout(resolve, WARP_MS));
     }
 
     return {

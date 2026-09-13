@@ -73,11 +73,6 @@
      Two faces for the same job in two places, deliberately. */
   --title-font: "Jacquarda Bastarda 9", "pix Chicago", serif;
 
-  /* KRITOR's own voice on the boot screens. Held apart from --title-font
-     rather than pointed at it, so the store's override cannot reach it: the
-     blackletter is who is speaking, and that does not change from page to
-     page. */
-  --voice-font: "Jacquarda Bastarda 9", "pix Chicago", serif;
   --border: 2px;
   --page-pad: calc(var(--u) * 2);
   --tile-gap: calc(var(--u) * 5);
@@ -238,14 +233,14 @@ html, body, .bar, .panel, .tile-figure {
   image-rendering: pixelated;
 }
 
-/* The storm owns the whole frame — it is a landscape, and a landscape that
-   fades out at the top is a vignette of one. The starfield owns the whole
-   screen too but falls away at the edges, so the field reads as round rather
-   than as a rectangle of stars. The signal is the same: nothing is written
-   over it, so it keeps the whole frame too — only the store's two flights
-   (out, back) put type over their canvas and need the hole below. */
+/* Every gate and both flights own the whole frame now — the globe writes
+   nothing over itself either, the same as the mosaic and the hourglass, so
+   none of the four needs the hole a canvas with type baked into it used to
+   need cleared for that type to sit in. */
 .boot[data-mode="gate"] .boot-fx,
-.boot[data-mode="arch"] .boot-fx {
+.boot[data-mode="arch"] .boot-fx,
+.boot[data-mode="out"] .boot-fx,
+.boot[data-mode="back"] .boot-fx {
   top: 0;
   bottom: 0;
 }
@@ -255,9 +250,10 @@ html, body, .bar, .panel, .tile-figure {
    full strength, with nothing easing it in. Faded in instead, canvas and
    glass together so the picture and the mesh in front of it arrive as one
    thing rather than the mesh popping in a frame ahead of what it's meshing
-   over. Not on the store's two flights: those two are already moving from
-   their first frame, and a flight that fades up rather than simply
-   starting reads as arriving late to its own launch. */
+   over. Not on the store's two flights: the globe already has its own
+   arrival, the bloom-in that grows the sphere out of noise over its first
+   second and a half, and fading the whole canvas on top of that would be
+   two arrivals stacked on each other rather than one. */
 @keyframes boot-fx-fade-in {
   from { opacity: 0; }
 }
@@ -278,17 +274,6 @@ html, body, .bar, .panel, .tile-figure {
   }
 }
 
-/* A hole, not a vignette: the field is cleared where the type is and thickens
-   away from it, so the stars stream past the wordmark instead of through it,
-   and it softens again at the very edge of the screen. */
-.boot[data-mode="out"] .boot-fx,
-.boot[data-mode="back"] .boot-fx {
-  top: 0;
-  bottom: 0;
-  -webkit-mask-image: radial-gradient(ellipse at center, transparent 13%, #000 52%, #000 88%, rgba(0, 0, 0, .5) 100%);
-  mask-image: radial-gradient(ellipse at center, transparent 13%, #000 52%, #000 88%, rgba(0, 0, 0, .5) 100%);
-}
-
 /* No colour is introduced anywhere: the canvas is painted in --ink and --bg and
    nothing else, and every tone between them is ordered dither. In paper mode
    the mosaic is ink on white, in terminal mode it is phosphor on black, and
@@ -298,11 +283,11 @@ html, body, .bar, .panel, .tile-figure {
 /* ── The glass in front of the gate ──────────────────────────────────────── */
 
 /* Everything below is a skin laid over the canvas, never into it — the
-   mosaic and the signal both stay flat 1-bit ink and paper, the same as
-   every other bitmap on this site, and the tube is an illusion sitting on
-   top of it. Only over the two gates: the store's flights are a window
-   going past at speed, not a screen being looked into, and do not want
-   glass in front of them. */
+   mosaic, the hourglass and the globe all stay flat 1-bit ink and paper,
+   the same as every other bitmap on this site, and the tube is an illusion
+   sitting on top of it. Every gate and both flights get it now: the globe
+   is a screen being looked into the same way the mosaic and the hourglass
+   are, not a window going past at speed the way the old starfield was. */
 .boot-crt {
   display: none;
   position: absolute;
@@ -312,7 +297,9 @@ html, body, .bar, .panel, .tile-figure {
 }
 
 .boot[data-mode="gate"] .boot-crt,
-.boot[data-mode="arch"] .boot-crt {
+.boot[data-mode="arch"] .boot-crt,
+.boot[data-mode="out"] .boot-crt,
+.boot[data-mode="back"] .boot-crt {
   display: block;
 }
 
@@ -325,7 +312,9 @@ html, body, .bar, .panel, .tile-figure {
    the curve of the glass, both laid on as ordinary CSS over a sibling
    element instead. */
 .boot[data-mode="gate"] .boot-fx-canvas,
-.boot[data-mode="arch"] .boot-fx-canvas {
+.boot[data-mode="arch"] .boot-fx-canvas,
+.boot[data-mode="out"] .boot-fx-canvas,
+.boot[data-mode="back"] .boot-fx-canvas {
   filter: url(#crt-optics);
 }
 
@@ -592,6 +581,33 @@ html, body, .bar, .panel, .tile-figure {
   clip-path: none;
 }
 
+/* KRITOR STORE doesn't arrive with the rest of the screen the way it used
+   to when the canvas underneath was a starfield already in motion — the
+   globe has its own, slower arrival (the bloom, then a beat to actually
+   look at the thing before reading a caption on it), so the whole wordmark
+   block starts invisible and only fades up once the scene itself pokes the
+   .is-announcing class on partway through (see globe() in pixel-fx.js).
+   One rule for the whole core rather than mark/sub/voice separately: they
+   arrive as a block, not staggered.
+
+   The transition lives only on the reveal rule below, not here. Declared
+   here too, this would also fire on the very first style pass — the
+   moment boot-scene.js writes data-mode onto an element the browser has
+   already painted once at its default opacity, which counts as a real
+   before/after change as far as a transition is concerned — and the
+   wordmark would visibly fade OUT of view on arrival instead of simply
+   starting hidden. */
+.boot[data-mode="out"] .boot-core,
+.boot[data-mode="back"] .boot-core {
+  opacity: 0;
+}
+
+.boot.is-announcing[data-mode="out"] .boot-core,
+.boot.is-announcing[data-mode="back"] .boot-core {
+  opacity: 1;
+  transition: opacity 700ms ease;
+}
+
 /* Where the flight is headed, under the name. The text-indent answers the
    letter-spacing, which is applied after every character including the last
    and walks a centred line off centre by half a space. */
@@ -603,27 +619,9 @@ html, body, .bar, .panel, .tile-figure {
 
 .boot-sub:empty { display: none; }
 
-/* Layer two: KRITOR. The blackletter, and the only sentence case on the
-   screen — the line about running for your life read as a status code when it
-   was set in the same face and the same capitals as everything else. */
-.boot-voice {
-  font-family: var(--voice-font);
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: clamp(14px, 1.45vw, 21px);
-  line-height: 1.4;
-  /* Wide enough for the longest line KRITOR has to say to stay on one, and
-     capped at the screen so the short ones never push against it. */
-  max-width: min(46ch, 100%);
-}
-
 /* Neither gate writes anything over its scene — no name, no line of type,
-   not even the flash that used to ask for one. Both of the door's own text
-   layers are switched off here; the store's two flights still use both
-   unscoped rules above and below this one. */
-.boot[data-mode="gate"] .boot-voice,
+   not even the flash that used to ask for one. */
 .boot[data-mode="gate"] .boot-welcome,
-.boot[data-mode="arch"] .boot-voice,
 .boot[data-mode="arch"] .boot-welcome {
   display: none;
 }
@@ -641,12 +639,6 @@ html, body, .bar, .panel, .tile-figure {
    own grid, and leaves the name standing — while the line KRITOR was saying
    goes out and WELCOME TO comes up over the top. Quick, and in that order. */
 .boot.is-parting .boot-welcome { opacity: 1; }
-
-.boot.is-parting .boot-voice {
-  animation: none;
-  opacity: 0;
-  transition: opacity .24s ease;
-}
 
 /* And then the whole door, off whatever is already behind it. */
 .boot.is-leaving {

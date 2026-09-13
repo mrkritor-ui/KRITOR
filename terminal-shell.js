@@ -144,8 +144,8 @@
      onDeal    called per item, in order, as the works arrive */
   function runBoot(options) {
     const boot = document.getElementById("boot");
-    /* The scene is the loading screen's face: the storm and its gate, or the
-       starfield between the catalogue and the store. It runs alongside the bar
+    /* The scene is the loading screen's face: the mosaic and its gate, or the
+       globe between the catalogue and the store. It runs alongside the bar
        filling, and on the gate it is also what the sequence waits for — the
        machine will not finish coming up until somebody has answered the
        door. */

@@ -698,6 +698,15 @@
     let scene = null, img = null, px = null, bits = null;
     let W = 0, H = 0, ink = 0, paper = 0;
 
+    /* A scene that has its own idea of "done" (the globe, whose text and
+       fade are choreographed on its own render-driven clock) reports it
+       here instead of a caller guessing a wall-clock duration to match —
+       two clocks that fall out of step under any frame hitch is exactly
+       how a fade-away could start before its own text has appeared. A
+       scene with no such idea of done simply never calls it. */
+    let readyResolve;
+    const readyPromise = new Promise(function (res) { readyResolve = res; });
+
     function readPalette() {
       const cs = getComputedStyle(document.documentElement);
       ink = packed(parseColour(cs.getPropertyValue("--ink") || "#000"));
@@ -739,7 +748,7 @@
       px = new Uint32Array(img.data.buffer);
       bits = new Uint8Array(W * H);
       readPalette();
-      scene = build(W, H, { scale: scale, offsetTop: (cssH - H * scale) / 2 });
+      scene = build(W, H, { scale: scale, offsetTop: (cssH - H * scale) / 2, notifyReady: readyResolve });
     }
 
     function present() {
@@ -776,6 +785,10 @@
     themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
     return {
+      /* Resolves when the scene itself says it has finished its sequence —
+         see notifyReady above. A scene that never calls it leaves this
+         forever pending, which is correct: nothing waits on it. */
+      ready: readyPromise,
       /* Asked to leave. A scene may answer it — the gate dissolves — and one
          that does not simply carries on until it is stopped. */
       part: function (ms) { if (scene && scene.part) scene.part(ms); },
@@ -1889,112 +1902,6 @@
     });
   }
 
-  /* ── The warp: the distance between the catalogue and the store ──────────── */
-
-  /* Stars in a box in front of the camera, divided by their own depth onto the
-     grid. Forward is z falling, which throws them past the edges; back is z
-     climbing, which draws them into the middle. That is the only difference
-     between leaving for the store and coming home from it.
-
-     Where the character version had one glyph per star and a ramp of twelve
-     densities to spend on them, this has a block: near stars are two and three
-     cells across and drag a streak behind them, far ones are a single cell
-     that the dither may or may not put down at all — which is what gives the
-     field its depth now that there is no tone to give it. */
-  function starfield(host, options) {
-    const opts = options || {};
-    const back = opts.direction === "back";
-
-    return run(host, reduceMotion ? 16 : 30, function (W, H) {
-      const count = Math.min(1600, Math.round(W * H * (0.045 + Math.random() * 0.025)));
-      const NEAR = 0.35, FAR = 14;
-      const FOV = W * 0.42;
-      const xs = new Float32Array(count);
-      const ys = new Float32Array(count);
-      const zs = new Float32Array(count);
-      /* Not every star streaks, and the ones that do not are what make the ones
-         that do read as near. Fixed per star, so a streak never blinks. */
-      const trails = new Uint8Array(count);
-      const big = Math.max(1, Math.round(W / 200));
-
-      const place = (i, z) => {
-        const a = Math.random() * Math.PI * 2;
-        const r = Math.sqrt(Math.random()) * 2.6;
-        xs[i] = Math.cos(a) * r;
-        ys[i] = Math.sin(a) * r;
-        zs[i] = z;
-      };
-      for (let i = 0; i < count; i++) {
-        place(i, NEAR + Math.random() * (FAR - NEAR));
-        trails[i] = Math.random() < 0.42 ? 1 : 0;
-      }
-
-      let t = 0;
-
-      /* No part() here. The warp is not a door being opened — it lands, and
-         the screen it lands on is the one you were going to. Only the gate has
-         anything to dissolve. */
-      return {
-        render: function (dt, bits) {
-          t += dt;
-          bits.fill(0);
-          /* It builds. A field already at full speed on the first frame has
-             nothing to say; one that winds up reads as departure. */
-          const ramp = reduceMotion ? 0.45 : Math.min(1, 0.25 + t * 0.85);
-          const speed = (back ? 5.5 : 7) * ramp;
-          const step = speed * dt;
-          const cx = W / 2, cy = H / 2;
-
-          const put = (x, y) => {
-            if (x >= 0 && x < W && y >= 0 && y < H) bits[y * W + x] = 1;
-          };
-          const blob = (x, y, r) => {
-            for (let dy = 0; dy < r; dy++) for (let dx = 0; dx < r; dx++) put(x + dx, y + dy);
-          };
-
-          for (let i = 0; i < count; i++) {
-            let z = back ? zs[i] + step : zs[i] - step;
-            if (z < NEAR) { place(i, FAR); z = zs[i]; }
-            else if (z > FAR) { place(i, NEAR); z = zs[i]; }
-            else zs[i] = z;
-
-            const k = FOV / z;
-            const sx = Math.round(cx + xs[i] * k);
-            /* No halving here. The character grid had rows twice as tall as
-               they were wide and the projection had to answer it; a pixel is
-               square, so the field is finally round for free. */
-            const sy = Math.round(cy + ys[i] * k);
-            if (sx < -6 || sx >= W + 6 || sy < -6 || sy >= H + 6) continue;
-
-            const near = Math.pow(1 - (z - NEAR) / (FAR - NEAR), 1.7);
-
-            if (near > 0.72) blob(sx, sy, big * 2);
-            else if (near > 0.34) blob(sx, sy, big);
-            else if (dither(sx, sy, 0.22 + near * 1.6)) put(sx, sy);
-
-            /* The streak, drawn back along the line to the vanishing point —
-               forwards it trails behind, coming home it points the way in. */
-            if (trails[i] && near > 0.42) {
-              const kPrev = FOV / (back ? z - step * 3 : z + step * 3);
-              const px2 = cx + xs[i] * kPrev, py2 = cy + ys[i] * kPrev;
-              const dx = px2 - (cx + xs[i] * k), dy = py2 - (cy + ys[i] * k);
-              /* Stepped a cell at a time along the direction, not divided into
-                 a fixed number of stops along the distance: divided, a star
-                 near the edge — which is where the distance is longest — came
-                 out as a row of dots strung across the screen rather than as
-                 the streak it is. */
-              const reach = Math.hypot(dx, dy);
-              const len = Math.min(9 * big, Math.round(reach));
-              for (let s = 1; s <= len; s++) {
-                put(Math.round(sx + dx / reach * s), Math.round(sy + dy / reach * s));
-              }
-            }
-          }
-        },
-      };
-    });
-  }
-
   /* ── The mosaic: the catalogue's door, now ───────────────────────────────── */
 
   /* No storm, no name cut into it, nothing written over it at all — the door
@@ -2275,7 +2182,255 @@
     });
   }
 
+  /* ── The globe: the store's own arrival ──────────────────────────────────── */
+
+  /* Australia and Tasmania, simplified to the capes and gulfs a low-resolution
+     dithered sphere actually needs — Cape York's point, the Gulf of
+     Carpentaria's notch, the Great Australian Bight's long bite out of the
+     south, Tasmania sitting apart below — not a survey-grade trace. Degrees
+     of longitude and latitude, wound clockwise from Cape York. */
+  const GLOBE_AU_POLY = [
+    [142.5, -10.7], [143.5, -13.0], [145.5, -16.5], [146.5, -19.0], [148.5, -20.5],
+    [150.5, -22.5], [152.5, -25.0], [153.3, -27.5], [153.5, -30.0], [151.5, -33.0],
+    [150.0, -36.0], [148.5, -37.7], [146.5, -38.8], [144.7, -38.2], [142.0, -38.3],
+    [140.0, -38.0], [137.8, -35.6], [137.0, -34.8], [135.5, -34.4], [133.0, -32.5],
+    [129.0, -31.5], [124.0, -33.5], [118.0, -34.0], [115.1, -34.4], [115.7, -32.0],
+    [114.0, -28.5], [113.4, -24.0], [116.0, -20.5], [122.0, -18.0], [123.5, -17.0],
+    [126.5, -14.5], [129.0, -14.9], [130.8, -12.4], [132.0, -11.5], [135.0, -11.8],
+    [136.5, -12.2], [137.0, -16.5], [138.5, -17.0], [140.5, -17.3], [141.5, -14.8],
+    [141.9, -12.0],
+  ];
+  const GLOBE_TAS_POLY = [
+    [144.7, -41.0], [146.3, -41.2], [148.3, -40.8], [148.3, -42.9],
+    [147.5, -43.6], [146.0, -43.5], [144.7, -42.5],
+  ];
+
+  function globePointInPoly(poly, x, y) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const xi = poly[i][0], yi = poly[i][1];
+      const xj = poly[j][0], yj = poly[j][1];
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+
+  /* One degree of longitude by one of latitude — plenty for a coastline that
+     is at most a few dozen native pixels across on screen. Built once, ever:
+     it depends only on the two polygons above, never on a canvas size. */
+  const GLOBE_LAND_W = 360, GLOBE_LAND_H = 181;
+  const GLOBE_LAND = new Uint8Array(GLOBE_LAND_W * GLOBE_LAND_H);
+  (function buildGlobeLandMask() {
+    for (let latI = 0; latI < GLOBE_LAND_H; latI++) {
+      const lat = latI - 90;
+      for (let lonI = 0; lonI < GLOBE_LAND_W; lonI++) {
+        const isLand = globePointInPoly(GLOBE_AU_POLY, lonI, lat) || globePointInPoly(GLOBE_TAS_POLY, lonI, lat);
+        GLOBE_LAND[latI * GLOBE_LAND_W + lonI] = isLand ? 1 : 0;
+      }
+    }
+  })();
+
+  function globeLandAt(lonRad, latRad) {
+    let lonDeg = (lonRad * 180 / Math.PI) % 360;
+    if (lonDeg < 0) lonDeg += 360;
+    let latDeg = latRad * 180 / Math.PI;
+    if (latDeg < -90) latDeg = -90; else if (latDeg > 90) latDeg = 90;
+    return GLOBE_LAND[((latDeg + 90) | 0) * GLOBE_LAND_W + (lonDeg | 0)];
+  }
+
+  function globeSmoothstep(v) { return v * v * (3 - 2 * v); }
+
+  /* Two octaves of value noise — hashed lattice points, bilinearly blended,
+     eased at the edges — rather than the single-cell hash2() the rest of
+     this file uses for grain. The bloom-in wants a coherent field with
+     blobby, merging clusters, not hash2's salt-and-pepper. */
+  function globeNoise2(x, y, seed) {
+    let total = 0, amp = 0.62, freq = 1, sum = 0;
+    for (let o = 0; o < 2; o++) {
+      const sx = x * freq, sy = y * freq;
+      const x0 = Math.floor(sx), y0 = Math.floor(sy);
+      const fx = globeSmoothstep(sx - x0), fy = globeSmoothstep(sy - y0);
+      const s = seed + o * 101;
+      const h00 = hash2(x0, y0, s), h10 = hash2(x0 + 1, y0, s);
+      const h01 = hash2(x0, y0 + 1, s), h11 = hash2(x0 + 1, y0 + 1, s);
+      const a = h00 + (h10 - h00) * fx;
+      const b = h01 + (h11 - h01) * fx;
+      total += (a + (b - a) * fy) * amp;
+      sum += amp;
+      amp *= 0.55;
+      freq *= 2.3;
+    }
+    return total / sum;
+  }
+
+  /* Every constant that shapes the globe and its timing, named here rather
+     than buried below. */
+  const GLOBE_DIAMETER_FRAC = 0.66;      // sphere diameter, as a fraction of
+                                          // the frame's shorter side
+  const GLOBE_LON_CENTER = 133;          // degrees — brings Australia to the
+  const GLOBE_LAT_CENTER = -25;          // centre of the disc at rest
+  const GLOBE_OCEAN_BANDS = 4;           // quantised shading steps
+  const GLOBE_ROTATE_RAD_PER_S = (Math.PI * 2) / 90;  // one full turn a minute
+                                                        // and a half
+  const GLOBE_NOISE_SCALE = 0.11;        // coarseness of the bloom-in field —
+                                          // smaller reads as bigger clusters
+  const GLOBE_BLOOM_MS = 1600;
+  const GLOBE_HOLD_BEFORE_TEXT_MS = 800;
+  const GLOBE_TEXT_FADE_MS = 700;        // matched by the CSS transition on
+                                          // .boot-mark/.boot-sub
+  const GLOBE_HOLD_AFTER_TEXT_MS = 1100;
+  const GLOBE_READY_MS = GLOBE_BLOOM_MS + GLOBE_HOLD_BEFORE_TEXT_MS
+    + GLOBE_TEXT_FADE_MS + GLOBE_HOLD_AFTER_TEXT_MS;
+  const GLOBE_SHIMMER_MS = 90;           // how long the ocean's dither phase
+                                          // holds before it shifts to the next
+  const GLOBE_LAND_STEP = 2;             // the coastline lookup (the one part
+                                          // of this that needs a trig call) is
+                                          // sampled on a grid this many native
+                                          // pixels wide rather than every
+                                          // pixel; the shading and dither
+                                          // underneath stay full resolution,
+                                          // so only the coastline itself gets
+                                          // very slightly coarser — a quarter
+                                          // the atan2/asin calls for a
+                                          // difference nobody sees through a
+                                          // CRT filter and a nearest-neighbour
+                                          // upscale.
+
+  function globe(host) {
+    return run(host, reduceMotion ? 12 : 30, function (W, H, info) {
+      const cx = W / 2, cy = H / 2;
+      const radius = Math.max(1, Math.min(W, H) * GLOBE_DIAMETER_FRAC / 2);
+      const N = W * H;
+
+      /* Everything that doesn't depend on the spin — whether a pixel is on
+         the sphere at all, its view-space direction with the latitude
+         centring already undone, its fixed (view-space, non-rotating) light
+         intensity, and its static bloom-in noise value — computed once here
+         rather than every frame. Only the spin itself, one shared angle, is
+         a per-frame quantity; turning it into a per-pixel longitude is the
+         one thing below that still needs doing every frame. */
+      const inGlobe = new Uint8Array(N);
+      const baseX = new Float32Array(N), baseY = new Float32Array(N), baseZ = new Float32Array(N);
+      const shade = new Float32Array(N);
+      const bloom = new Float32Array(N);
+
+      const latC = GLOBE_LAT_CENTER * Math.PI / 180;
+      const cosLatC = Math.cos(-latC), sinLatC = Math.sin(-latC);
+
+      /* The light, fixed in view space — the sphere turns under it, the
+         terminator never turns with it. */
+      const llen = Math.hypot(-0.5, 0.55, 0.66);
+      const Lx = -0.5 / llen, Ly = 0.55 / llen, Lz = 0.66 / llen;
+
+      let idx = 0;
+      for (let y = 0; y < H; y++) {
+        const ny = (y - cy) / radius;
+        for (let x = 0; x < W; x++, idx++) {
+          const nx = (x - cx) / radius;
+          const r2 = nx * nx + ny * ny;
+          if (r2 > 1) { inGlobe[idx] = 0; continue; }
+          inGlobe[idx] = 1;
+          const nz = Math.sqrt(1 - r2);
+          /* Screen-down is south: negated here so the sphere reads north-up,
+             the way every map on this site already does. */
+          const Vx = nx, Vy = -ny, Vz = nz;
+          baseX[idx] = Vx;
+          baseY[idx] = Vy * cosLatC - Vz * sinLatC;
+          baseZ[idx] = Vy * sinLatC + Vz * cosLatC;
+          shade[idx] = Math.max(0, Vx * Lx + Vy * Ly + Vz * Lz);
+          bloom[idx] = globeNoise2(x * GLOBE_NOISE_SCALE, y * GLOBE_NOISE_SCALE, 4242);
+        }
+      }
+
+      const lonC = GLOBE_LON_CENTER * Math.PI / 180;
+      let t = 0;
+      let announced = false;
+      let notifiedReady = false;
+      const boot = host.parentElement || host;
+      let partMs = 0, partT = 0, dissolve = 0;
+
+      return {
+        part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
+        render: function (dt, bits) {
+          /* Always advances, reduced motion included — it is the sequence's
+             own clock, not a visual knob. Every place below that turns it
+             into motion (bloomEase, spin, shimmerPhase) already has its own
+             reduceMotion ternary holding that one static frame; gating the
+             clock itself instead would freeze the sequence at "blank"
+             forever, since neither the text nor the ready signal below would
+             ever fire. */
+          t += dt * 1000;
+
+          /* Poked once, at the one moment it matters — the fade-in itself is
+             CSS, keyed off this class, not driven frame by frame from here. */
+          if (!announced && t >= GLOBE_BLOOM_MS + GLOBE_HOLD_BEFORE_TEXT_MS) {
+            announced = true;
+            boot.classList.add("is-announcing");
+          }
+
+          /* The one moment the caller is allowed to start fading this scene
+             away — on this same clock, always strictly after "announced"
+             above, so a slow frame or two can never let the flight home
+             start before the wordmark it is supposed to be flying in on has
+             actually shown up. */
+          if (!notifiedReady && t >= GLOBE_READY_MS) {
+            notifiedReady = true;
+            if (info.notifyReady) info.notifyReady();
+          }
+
+          const bloomEase = reduceMotion ? 1 : globeSmoothstep(Math.min(1, t / GLOBE_BLOOM_MS));
+          const spin = lonC + (reduceMotion ? 0 : (t / 1000) * GLOBE_ROTATE_RAD_PER_S);
+          const cosA = Math.cos(spin), sinA = Math.sin(spin);
+          const shimmerPhase = reduceMotion ? 0 : Math.floor(t / GLOBE_SHIMMER_MS);
+          const shimmerDX = (shimmerPhase * 3) | 0, shimmerDY = (shimmerPhase * 5) | 0;
+
+          for (let by = 0; by < H; by += GLOBE_LAND_STEP) {
+            const yEnd = Math.min(H, by + GLOBE_LAND_STEP);
+            for (let bx = 0; bx < W; bx += GLOBE_LAND_STEP) {
+              const xEnd = Math.min(W, bx + GLOBE_LAND_STEP);
+              const si = by * W + bx;
+              let land = 0;
+              if (inGlobe[si]) {
+                const Wx = baseX[si] * cosA + baseZ[si] * sinA;
+                const Wz = -baseX[si] * sinA + baseZ[si] * cosA;
+                const lon = Math.atan2(Wx, Wz);
+                const lat = Math.asin(Math.max(-1, Math.min(1, baseY[si])));
+                land = globeLandAt(lon, lat);
+              }
+              for (let y = by; y < yEnd; y++) {
+                const row = y * W;
+                for (let x = bx; x < xEnd; x++) {
+                  const i = row + x;
+                  if (!inGlobe[i]) { bits[i] = 0; continue; }
+                  if (bloomEase < 1 && bloom[i] > bloomEase) { bits[i] = 0; continue; }
+                  if (land) { bits[i] = 0; continue; }
+                  const band = Math.min(GLOBE_OCEAN_BANDS - 1, (shade[i] * GLOBE_OCEAN_BANDS) | 0);
+                  const coverage = (band + 0.5) / GLOBE_OCEAN_BANDS;
+                  bits[i] = dither(x + shimmerDX, y + shimmerDY, coverage);
+                }
+              }
+            }
+          }
+
+          if (partMs) {
+            partT += dt * 1000;
+            dissolve = Math.min(1, partT / partMs);
+            if (dissolve > 0) {
+              for (let y = 0; y < H; y++) {
+                const row = y * W;
+                for (let x = 0; x < W; x++) {
+                  const i = row + x;
+                  if (bits[i] && dither(x, y, dissolve)) bits[i] = 0;
+                }
+              }
+            }
+          }
+        },
+      };
+    });
+  }
+
   window.KritorFX = {
-    terrain: terrain, starfield: starfield, mosaic: mosaic, hourglass: hourglass, reduceMotion: reduceMotion,
+    terrain: terrain, mosaic: mosaic, hourglass: hourglass, globe: globe, reduceMotion: reduceMotion,
   };
 })();

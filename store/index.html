@@ -33,22 +33,49 @@
 </head>
 <body>
 
+  <!-- The tube's own optics: a bright-pass bloom (threshold, blur, screen
+       back over the source) and a genuine channel split for the fringe a
+       CRT's three guns leave at any edge — the same filter every other
+       gate on this site points a canvas at. Defined per document, since a
+       url(#id) reference doesn't cross documents. Hidden and sized to
+       nothing: it exists only to be pointed at by url(#crt-optics). -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feComponentTransfer in="SourceGraphic" result="bright">
+        <feFuncR type="linear" slope="3" intercept="-1.6"/>
+        <feFuncG type="linear" slope="3" intercept="-1.6"/>
+        <feFuncB type="linear" slope="3" intercept="-1.6"/>
+      </feComponentTransfer>
+      <feGaussianBlur in="bright" stdDeviation="0.8" result="bloom"/>
+      <feBlend in="SourceGraphic" in2="bloom" mode="screen" result="bloomed"/>
+
+      <feColorMatrix in="bloomed" type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rChan"/>
+      <feOffset in="rChan" dx="-0.6" dy="0" result="rShift"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gChan"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bChan"/>
+      <feOffset in="bChan" dx="0.6" dy="0" result="bShift"/>
+      <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="bShift" mode="screen"/>
+    </filter>
+  </svg>
+
   <!-- Boot. Covers the page while it loads; the bar sits above it. The mode
        attribute is written by boot-scene.js on the first frame and decides
-       everything below: the storm, or the starfield.
+       everything below: the globe, forwards or backwards.
 
-       The name is drawn into the picture rather than set over it — pixel-fx.js
-       cuts KRITOR out of the sky on the same grid as the clouds, so the
-       lightning reaches it — and the <p> below is left for anything reading
-       the page rather than looking at it. What is on screen is the landscape,
-       the name in it, and one line of what KRITOR has to say. -->
+       Nothing is drawn over the globe either — .boot-statement carries the
+       KRITOR/STORE wordmark, but it fades in only once the sphere itself has
+       formed (see .boot.is-announcing below), not from the first frame. -->
   <div class="boot" id="boot">
     <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
+    <div class="boot-crt" aria-hidden="true"></div>
     <div class="boot-statement">
       <div class="boot-core">
         <p class="boot-mark">KRITOR</p>
         <p class="boot-sub" id="boot-sub"></p>
-        <p class="boot-voice" id="boot-voice"></p>
         <p class="boot-welcome" id="boot-welcome" hidden>WELCOME.</p>
       </div>
     </div>

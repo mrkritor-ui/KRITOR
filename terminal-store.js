@@ -425,9 +425,4 @@
     const max = document.body.scrollHeight - window.innerHeight;
     scrollFill.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + "%";
   }, { passive: true });
-
-  T.startScreensaver(items.map(item => {
-    const e = bitsEntry(firstImage(item));
-    return { url: bitsUrl(firstImage(item)), w: e ? e.w : 1, h: e ? e.h : 1 };
-  }));
 })();
