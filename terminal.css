@@ -525,21 +525,22 @@ html, body, .bar, .panel, .tile-figure {
   gap: calc(var(--u) * .75);
 }
 
+/* Visually hidden by default — the same treatment screen-reader-only text
+   everywhere else gets, taken out of sight rather than out of the tree, so
+   the name is still the first thing the page says. This used to be the
+   other way around: visible by default, hidden only once boot-scene.js had
+   run and set data-mode to gate or arch. Landing on /art/ or /architecture/,
+   that script is well down a chain of other tags (the artwork data, the
+   image manifests, pixel-fx.js) that all load and run first, and on a slow
+   connection the browser paints this paragraph in its ordinary visible
+   state before any of that finishes — the name flashing on screen and then
+   vanishing the moment the script catches up. Defaulting to hidden means a
+   slow script leaves it invisible a little longer, never visible-then-gone. */
 .boot-mark {
   font-size: clamp(20px, 3.2vw, 46px);
   line-height: 1;
   letter-spacing: .12em;
   text-indent: .12em;
-}
-
-/* Neither gate sets the name in type on screen — the mosaic has no text at
-   all, and the signal's huge letter is one glyph standing in for the whole
-   word, not the word itself — so this one is only left for anything reading
-   the page rather than looking at it. Taken out of the flow rather than out
-   of the tree: display: none would take the name off the screen for a
-   screen reader as well, and the name is the first thing the screen says. */
-.boot[data-mode="gate"] .boot-mark,
-.boot[data-mode="arch"] .boot-mark {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -548,6 +549,19 @@ html, body, .bar, .panel, .tile-figure {
   overflow: hidden;
   white-space: nowrap;
   clip-path: inset(50%);
+}
+
+/* The store's two flights are the only screens that set the name in type
+   on screen rather than leaving it for a screen reader alone. */
+.boot[data-mode="out"] .boot-mark,
+.boot[data-mode="back"] .boot-mark {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  white-space: normal;
+  clip-path: none;
 }
 
 /* Where the flight is headed, under the name. The text-indent answers the
