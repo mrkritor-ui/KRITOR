@@ -250,6 +250,34 @@ html, body, .bar, .panel, .tile-figure {
   bottom: 0;
 }
 
+/* The mosaic and the hourglass used to just be there on the first frame —
+   the canvas starts rendering and the whole field is on screen at once,
+   full strength, with nothing easing it in. Faded in instead, canvas and
+   glass together so the picture and the mesh in front of it arrive as one
+   thing rather than the mesh popping in a frame ahead of what it's meshing
+   over. Not on the store's two flights: those two are already moving from
+   their first frame, and a flight that fades up rather than simply
+   starting reads as arriving late to its own launch. */
+@keyframes boot-fx-fade-in {
+  from { opacity: 0; }
+}
+
+.boot[data-mode="gate"] .boot-fx-canvas,
+.boot[data-mode="arch"] .boot-fx-canvas,
+.boot[data-mode="gate"] .boot-crt,
+.boot[data-mode="arch"] .boot-crt {
+  animation: boot-fx-fade-in 700ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot[data-mode="gate"] .boot-fx-canvas,
+  .boot[data-mode="arch"] .boot-fx-canvas,
+  .boot[data-mode="gate"] .boot-crt,
+  .boot[data-mode="arch"] .boot-crt {
+    animation: none;
+  }
+}
+
 /* A hole, not a vignette: the field is cleared where the type is and thickens
    away from it, so the stars stream past the wordmark instead of through it,
    and it softens again at the very edge of the screen. */
