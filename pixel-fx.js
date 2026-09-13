@@ -1916,103 +1916,127 @@
     });
   }
 
+  /* ── Frame sheets: scenes that are footage, not generators ───────────────── */
+
+  /* Two of the three boot scenes are not procedural at all any more: they
+     are reference clips, downsampled frame by frame into one tall strip of
+     stills and played back in their own real order at their own real pace.
+     Both started as generators guessing at the same look — an irregular
+     partition re-thrown every quarter-second for the catalogue, a bold "A"
+     blurring and settling cell by cell for architecture — and both read as
+     choppy for the same reason: a freshly-rolled guess has no memory of the
+     guess before it, where real footage never loses that thread. Copying
+     the actual frames sidesteps the problem outright, because the
+     coherence was always in the footage rather than in an algorithm
+     waiting to be found. This is the machinery both of them share. */
+
+  /* One flat luminance array per frame (0-255), decoded once into `state`
+     and shared by every instance of the scene rather than reloaded per
+     boot — the sheet never changes size or content, so there is nothing to
+     redo on a resize the way the rest of a scene's own build() is redone.
+     Loaded lazily, from the scene's own constructor rather than at module
+     scope: this file is shared by every boot screen on the site, and
+     fetching an asset only one of them uses would otherwise cost the other
+     two a request neither ever needed. */
+  function loadFrameSheet(state, url, tileW, tileH, frameCount) {
+    if (state.requested) return;
+    state.requested = true;
+    const img = new Image();
+    img.onload = function () {
+      const cnv = document.createElement("canvas");
+      cnv.width = tileW;
+      cnv.height = tileH * frameCount;
+      const cx = cnv.getContext("2d", { willReadFrequently: true });
+      cx.drawImage(img, 0, 0);
+      const data = cx.getImageData(0, 0, tileW, tileH * frameCount).data;
+      const frames = new Array(frameCount);
+      const area = tileW * tileH;
+      for (let f = 0; f < frameCount; f++) {
+        const arr = new Uint8Array(area);
+        const base = f * area * 4;
+        for (let i = 0; i < area; i++) arr[i] = data[base + i * 4];
+        frames[f] = arr;
+      }
+      state.frames = frames;
+    };
+    img.src = url;
+  }
+
+  /* Cover, not contain: footage of one fixed shape filling a canvas of any
+     proportions has to lose some of itself off two edges rather than
+     letterbox, or a full-bleed boot screen stops being full-bleed the
+     moment its own aspect ratio doesn't match the clip's. Centred, so
+     whatever is cropped is cropped evenly off both sides. Returns the
+     scale from stored-frame pixels to canvas pixels and the on-canvas
+     origin of the frame's own (0, 0) corner. */
+  function frameSheetCover(W, H, tileW, tileH) {
+    const scale = Math.max(W / tileW, H / tileH);
+    return { scale: scale, originX: (W - tileW * scale) / 2, originY: (H - tileH * scale) / 2 };
+  }
+
+  /* Bilinear rather than nearest — a stored frame is a fraction of the
+     canvas's own native resolution, and sampling it with hard texel jumps
+     would draw a second, coarser grid on top of whatever the footage
+     itself already has. Interpolated, a low-resolution source reads as the
+     same picture slightly softened at the edges — which the dither pass
+     every caller runs it through immediately re-hardens into clean cells
+     anyway. */
+  function frameSheetSample(frame, tileW, tileH, fu, fv) {
+    /* Clamped rather than trusted: the cover crop keeps both in range by
+       construction, but the very last pixel on a covered edge can round to
+       exactly tileW/tileH, and indexing a frame array one past its own end
+       reads back undefined instead of a pixel — which then poisons the
+       lerp into NaN and the dither after it into a false paper pixel right
+       on the seam. */
+    if (fu < 0) fu = 0; else if (fu > tileW - 1) fu = tileW - 1;
+    if (fv < 0) fv = 0; else if (fv > tileH - 1) fv = tileH - 1;
+    const x0 = fu | 0, y0 = fv | 0;
+    const x1 = x0 + 1 < tileW ? x0 + 1 : x0;
+    const y1 = y0 + 1 < tileH ? y0 + 1 : y0;
+    const tx = fu - x0, ty = fv - y0;
+    const row0 = y0 * tileW, row1 = y1 * tileW;
+    const a = frame[row0 + x0] + (frame[row0 + x1] - frame[row0 + x0]) * tx;
+    const b = frame[row1 + x0] + (frame[row1 + x1] - frame[row1 + x0]) * tx;
+    /* Inverted on the way out: the sheet stores luminance (0 black, 255
+       white), straight off the source frame, but every caller feeds this
+       into dither() where 1 means "ink" — so a dark letterform on a light
+       ground has to come back as HIGH coverage, not low, or the whole
+       scene prints as its own negative. */
+    return 1 - (a + (b - a) * ty) / 255;
+  }
+
   /* ── The block glitch: the catalogue's door, now ─────────────────────────── */
 
   /* No storm, no name cut into it, nothing written over it at all — the door
      is a field of paper and ink that will not sit still, the way a signal
-     with nothing on it does not sit still. This one is not a generator at
-     all: it is the reference clip itself, forty-three real frames of a
-     datamoshed block field, stored as a strip of low-resolution stills and
-     played back in their own order at their own pace. An earlier version of
-     this scene threw a fresh, unrelated random partition at the screen every
-     quarter-second — closer in spirit, further from the thing itself, and
-     it read as choppy because nothing about a freshly-rolled arrangement
-     resembles the one before it. The reference has no such cuts: watched
-     frame by frame, its blocks rise and drift right in a single continuous
-     wave, which random re-partitioning can never reproduce because it
-     never has any memory of where the last frame was. Copying the actual
-     frames sidesteps the whole problem — the coherence was always in the
-     footage, not in an algorithm waiting to be found. */
-  const ART_TILE = 100;                // stored resolution of one frame,
-                                        // square, before it's cropped to fit
-                                        // whatever shape the canvas is
+     with nothing on it does not sit still. Forty-three real frames of a
+     datamoshed block field, ambient and looping: watched frame by frame its
+     blocks rise and drift right in a single continuous wave, which is
+     exactly the motion a fresh random partition every quarter-second could
+     never reproduce. */
+  const ART_TILE_W = 100, ART_TILE_H = 100;    // stored per frame, before the
+                                                // cover crop above fits it to
+                                                // whatever shape the canvas is
   const ART_FRAME_COUNT = 43;
   const ART_FRAME_MS = 40;             // native pace of the reference clip —
                                         // 43 frames loop in 1.72s
   const ART_SHEET_URL = "/art-loader-frames.png";
-
-  /* One flat array per frame, luminance 0-255, decoded once and shared by
-     every instance of the scene rather than reloaded per boot — the sheet
-     never changes size or content, so there is nothing to redo on a resize
-     the way the rest of a scene's own build() is redone. Loaded lazily, on
-     the first call to blockGlitch() rather than at module scope: this file
-     is shared by every boot screen on the site, and fetching an asset only
-     the catalogue's door uses would otherwise cost architecture and the
-     store a request neither of them ever needed. */
-  let artFrames = null;
-  let artFramesRequested = false;
-  function loadArtFrames() {
-    if (artFramesRequested) return;
-    artFramesRequested = true;
-    const img = new Image();
-    img.onload = function () {
-      const cnv = document.createElement("canvas");
-      cnv.width = ART_TILE;
-      cnv.height = ART_TILE * ART_FRAME_COUNT;
-      const cx = cnv.getContext("2d", { willReadFrequently: true });
-      cx.drawImage(img, 0, 0);
-      const data = cx.getImageData(0, 0, ART_TILE, ART_TILE * ART_FRAME_COUNT).data;
-      const frames = new Array(ART_FRAME_COUNT);
-      const tileArea = ART_TILE * ART_TILE;
-      for (let f = 0; f < ART_FRAME_COUNT; f++) {
-        const arr = new Uint8Array(tileArea);
-        const base = f * tileArea * 4;
-        for (let i = 0; i < tileArea; i++) arr[i] = data[base + i * 4];
-        frames[f] = arr;
-      }
-      artFrames = frames;
-    };
-    img.src = ART_SHEET_URL;
-  }
-
-  /* Bilinear rather than nearest — the sheet is a fraction of the canvas's
-     own native resolution (a stored frame is a hundred pixels square; the
-     canvas is routinely several times that), and sampling it with hard
-     texel jumps would draw a second, coarser grid of blocks on top of the
-     real ones. Interpolated, a low-resolution source reads as the same
-     picture slightly softened at the edges — which a dither pass over it
-     immediately re-hardens into clean cells anyway. */
-  function artSample(frame, fu, fv) {
-    const x0 = fu | 0, y0 = fv | 0;
-    const x1 = x0 + 1 < ART_TILE ? x0 + 1 : x0;
-    const y1 = y0 + 1 < ART_TILE ? y0 + 1 : y0;
-    const tx = fu - x0, ty = fv - y0;
-    const row0 = y0 * ART_TILE, row1 = y1 * ART_TILE;
-    const a = frame[row0 + x0] + (frame[row0 + x1] - frame[row0 + x0]) * tx;
-    const b = frame[row1 + x0] + (frame[row1 + x1] - frame[row1 + x0]) * tx;
-    return (a + (b - a) * ty) / 255;
-  }
+  const artSheet = { frames: null, requested: false };
 
   function blockGlitch(host) {
-    loadArtFrames();
+    loadFrameSheet(artSheet, ART_SHEET_URL, ART_TILE_W, ART_TILE_H, ART_FRAME_COUNT);
     return run(host, reduceMotion ? 12 : Infinity, function (W, H) {
-      /* Cover, not contain: a square clip filling a rectangle of any
-         proportions has to lose some of itself off two edges rather than
-         letterbox, or the door stops being full-bleed the moment it isn't
-         itself square. Centred, so whatever is cropped is cropped evenly
-         off both sides. */
-      const scale = Math.max(W, H);
-      const originX = (W - scale) / 2, originY = (H - scale) / 2;
-
+      const cover = frameSheetCover(W, H, ART_TILE_W, ART_TILE_H);
       let t = 0;
       let partMs = 0, partT = 0, dissolve = 0;
 
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
-          if (!artFrames) {
+          const frames = artSheet.frames;
+          if (!frames) {
             /* The sheet hasn't decoded yet — paper, and nothing drawn on
-               it, rather than holding the previous build's last frame or
+               it, rather than holding a previous build's last frame or
                reaching for a placeholder generator. On any real connection
                this is a handful of frames at most; the loading bar is
                already telling the truth about there being something to
@@ -2025,23 +2049,26 @@
                loop can run many times faster than that on an uncapped rAF,
                so without it every stored frame would simply hold, unchanged,
                across several rendered frames and then jump — the exact
-               choppiness a generator with no memory produced, just with a
+               choppiness a from-scratch generator produced, just with a
                memory this time. Blending the two nearest stored frames by
                how far between them the clock actually is turns that jump
-               into the same continuous drift the footage itself has. */
+               into the same continuous drift the footage itself has. Loops,
+               since this scene is ambient rather than a one-way resolve —
+               there is no frame here that reads as more "finished" than
+               any other. */
             const pos = (t / ART_FRAME_MS) % ART_FRAME_COUNT;
             const i0 = pos | 0;
             const i1 = (i0 + 1) % ART_FRAME_COUNT;
             const mix = reduceMotion ? 0 : pos - i0;
-            const frame0 = artFrames[i0], frame1 = artFrames[i1];
+            const frame0 = frames[i0], frame1 = frames[i1];
 
             for (let y = 0; y < H; y++) {
               const row = y * W;
-              const fv = ((y - originY) / scale) * (ART_TILE - 1);
+              const fv = (y - cover.originY) / cover.scale;
               for (let x = 0; x < W; x++) {
-                const fu = ((x - originX) / scale) * (ART_TILE - 1);
-                const c0 = artSample(frame0, fu, fv);
-                const coverage = mix > 0 ? c0 + (artSample(frame1, fu, fv) - c0) * mix : c0;
+                const fu = (x - cover.originX) / cover.scale;
+                const c0 = frameSheetSample(frame0, ART_TILE_W, ART_TILE_H, fu, fv);
+                const coverage = mix > 0 ? c0 + (frameSheetSample(frame1, ART_TILE_W, ART_TILE_H, fu, fv) - c0) * mix : c0;
                 bits[row + x] = dither(x, y, coverage);
               }
             }
@@ -2067,174 +2094,74 @@
 
   /* ── The letter grid: architecture's own field ───────────────────────────── */
 
-  /* A grid of cells, each holding the same bold "A" — standing in for a
-     section that has no picture of its own yet, the way the hourglass this
-     replaced did. Every cell starts as a smear, heavily streaked along the
-     vertical axis the way a bad vertical-hold does to a CRT, and settles
-     independently and out of step with its neighbours into a flat, solid
-     letterform. A few cells drop to a flat halftone square partway through
-     — the signal losing the shape entirely for a beat, to grey noise,
-     before it catches hold again. One direction only: nothing here loops,
-     and once every cell has resolved the grid simply holds on its finished
-     shape until the door is answered, the same as the mosaic before it
-     held on its own drifting one. */
-  const LETTER_CELL_TARGET = 92;       // roughly this many native px per
-                                        // cell, before the grid is clamped
-  const LETTER_MIN_COLS = 3, LETTER_MAX_COLS = 9;
-  const LETTER_MIN_ROWS = 2, LETTER_MAX_ROWS = 7;
-  const LETTER_GUTTER_PX = 1;          // the paper seam between cells
-  const LETTER_TOTAL_MS = 1800;        // the whole cascade, first cell to last
-  const LETTER_SETTLE_MIN_MS = 420;    // fastest a single cell can resolve
-  const LETTER_SETTLE_MAX_MS = 900;    // slowest a single cell can resolve
-  const LETTER_BLUR_SPREAD = 0.55;     // vertical smear at its worst, as a
-                                        // fraction of a cell's own height
-  const LETTER_BLUR_SAMPLES = [-1, -0.55, 0, 0.55, 1]; // the smear's own
-                                        // sample offsets, symmetric around 0
-  const LETTER_FLICKER_CHANCE = 0.3;   // odds a given cell drops to flat
-                                        // halftone once on its way to settled
-  const LETTER_FLICKER_SPAN = 0.16;    // that dropout's length, as a fraction
-                                        // of the cell's own settle time
-  const LETTER_GRAIN = 0.012;          // sparse per-frame bit flips, the same
-                                        // restrained amount every other scene
-                                        // on this site already settled on
-
-  /* The glyph itself: two tapered legs and a crossbar, entirely in a cell's
-     own local (u, v) space — u across, 0 to 1, v down, 0 (apex) to 1
-     (base). Every half-width below is a fraction of the cell's own width. */
-  const LETTER_APEX_HALF = 0.03;
-  const LETTER_BASE_HALF = 0.46;
-  const LETTER_LEG_THICK = 0.20;
-  const LETTER_BAR_TOP = 0.58;
-  const LETTER_BAR_BOTTOM = 0.7;
-
-  function letterOuterHalf(v) {
-    return LETTER_APEX_HALF + (LETTER_BASE_HALF - LETTER_APEX_HALF) * v;
-  }
-
-  /* True inside the "A"'s own ink at this exact (u, v) — no smear, no
-     antialiasing, just the shape. Smearing it is the caller's job, done by
-     averaging this across a handful of v's rather than one. */
-  function letterInside(u, v) {
-    const du = Math.abs(u - 0.5);
-    const wo = letterOuterHalf(v);
-    if (du > wo) return false;
-    if (v >= LETTER_BAR_TOP && v <= LETTER_BAR_BOTTOM) return true;
-    const wi = wo - LETTER_LEG_THICK;
-    return wi <= 0 || du >= wi;
-  }
-
-  /* Coverage at (u, v): the fraction of a handful of samples, spread
-     `spread` either side of v in v alone, that land inside the glyph — a
-     vertical motion blur done by sampling instead of convolving, since the
-     shape is cheap enough to evaluate five times but not cheap enough to
-     blur for real. At spread 0 every sample lands on v itself and this
-     collapses back to a hard, unsmeared edge, which is also why the caller
-     skips the loop entirely once a cell has settled. */
-  function letterCoverage(u, v, spread) {
-    if (spread <= 0.001) return letterInside(u, v) ? 1 : 0;
-    let hit = 0;
-    for (let i = 0; i < LETTER_BLUR_SAMPLES.length; i++) {
-      /* Out-of-range samples count as outside the glyph rather than being
-         clamped back onto the nearest in-range row — clamping piled every
-         sample beyond an edge onto that one row instead, which above the
-         apex (already only 6% of the cell wide) added up to a thin dark
-         spike standing straight up off the point rather than a soft
-         falloff. */
-      const sv = v + LETTER_BLUR_SAMPLES[i] * spread;
-      if (sv >= 0 && sv <= 1 && letterInside(u, sv)) hit++;
-    }
-    return hit / LETTER_BLUR_SAMPLES.length;
-  }
+  /* Thirty-six real frames of a grid of the same bold "A", each cell
+     independently streaked by a bad vertical hold and settling out of step
+     with its neighbours into a flat letterform — a few of them dropping to
+     a flat halftone square partway through, the signal losing the shape
+     entirely for a beat before it catches hold again. One direction only:
+     unlike the catalogue's clip this doesn't loop, because a resolve run
+     backwards over and over stops reading as a resolve at all. Playback
+     simply stops advancing once it reaches the reference's own last frame
+     and holds there — not because every cell in it is perfectly settled
+     (a couple aren't, in the footage itself) but because that is where the
+     real clip actually ends, and this scene's whole premise is to show
+     that clip rather than a tidier invention standing in for it. */
+  const ARCH_TILE_W = 130, ARCH_TILE_H = 85;   // stored per frame, at the
+                                                // reference's own 724:474
+  const ARCH_FRAME_COUNT = 36;
+  const ARCH_FRAME_MS = 50;            // native pace of the reference clip —
+                                        // 36 frames run once in 1.8s
+  const ARCH_SHEET_URL = "/architecture-loader-frames.png";
+  const archSheet = { frames: null, requested: false };
 
   function letterGrid(host) {
+    loadFrameSheet(archSheet, ARCH_SHEET_URL, ARCH_TILE_W, ARCH_TILE_H, ARCH_FRAME_COUNT);
     return run(host, reduceMotion ? 12 : Infinity, function (W, H) {
-      const cols = Math.max(LETTER_MIN_COLS, Math.min(LETTER_MAX_COLS, Math.round(W / LETTER_CELL_TARGET)));
-      const rows = Math.max(LETTER_MIN_ROWS, Math.min(LETTER_MAX_ROWS, Math.round(H / LETTER_CELL_TARGET)));
-      const n = cols * rows;
-
-      /* Every cell's own schedule, decided once at build time: a delay
-         before it starts moving at all, and a duration for the settle once
-         it does — sized so delay plus duration never runs past the
-         cascade's own total, however unlucky the roll. A minority also get
-         one flat halftone dropout, placed somewhere in the middle third of
-         their own settle so it never reads as the start or the finish. */
-      const delay = new Float32Array(n), dur = new Float32Array(n);
-      const flickerFrom = new Float32Array(n), flickerTo = new Float32Array(n);
-      const flickerTone = new Float32Array(n);
-      for (let i = 0; i < n; i++) {
-        dur[i] = LETTER_SETTLE_MIN_MS + Math.random() * (LETTER_SETTLE_MAX_MS - LETTER_SETTLE_MIN_MS);
-        delay[i] = Math.random() * Math.max(0, LETTER_TOTAL_MS - dur[i]);
-        if (Math.random() < LETTER_FLICKER_CHANCE) {
-          const at = 0.4 + Math.random() * 0.3;
-          const half = LETTER_FLICKER_SPAN / 2;
-          flickerFrom[i] = Math.max(0, at - half);
-          flickerTo[i] = Math.min(1, at + half);
-          flickerTone[i] = 0.42 + Math.random() * 0.16;
-        } else {
-          flickerFrom[i] = flickerTo[i] = -1;
-        }
-      }
-
+      const cover = frameSheetCover(W, H, ARCH_TILE_W, ARCH_TILE_H);
       let t = 0;
       let partMs = 0, partT = 0, dissolve = 0;
 
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
-          /* Frozen on the fully-resolved frame under reduced motion — t
-             simply never advances, so every cell's local time stays at or
-             below 0 forever... except that reads as "still smeared", the
-             opposite of what reduced motion asks for here. So instead the
-             cells are drawn resolved outright below, and t is left doing
-             nothing at all. */
-          if (!reduceMotion) t += dt * 1000;
-
-          for (let ry = 0; ry < rows; ry++) {
-            const y0 = Math.round((ry / rows) * H), y1 = Math.round(((ry + 1) / rows) * H);
-            for (let cx = 0; cx < cols; cx++) {
-              const x0 = Math.round((cx / cols) * W), x1 = Math.round(((cx + 1) / cols) * W);
-              const idx = ry * cols + cx;
-
-              let spread = 0, flickerActive = false, tone = 0;
-              if (!reduceMotion) {
-                const localT = t - delay[idx];
-                if (localT <= 0) {
-                  spread = LETTER_BLUR_SPREAD;
-                } else {
-                  const p = Math.min(1, localT / dur[idx]);
-                  spread = LETTER_BLUR_SPREAD * (1 - p * p * (3 - 2 * p));
-                  if (flickerFrom[idx] >= 0 && p >= flickerFrom[idx] && p <= flickerTo[idx]) {
-                    flickerActive = true;
-                    tone = flickerTone[idx];
-                  }
-                }
-              }
-
-              const gx0 = x0 + LETTER_GUTTER_PX, gx1 = x1 - LETTER_GUTTER_PX;
-              const gy0 = y0 + LETTER_GUTTER_PX, gy1 = y1 - LETTER_GUTTER_PX;
-              const cw = Math.max(1, x1 - x0), ch = Math.max(1, y1 - y0);
-
-              for (let y = y0; y < y1; y++) {
-                const row = y * W;
-                if (y < gy0 || y >= gy1) {
-                  for (let x = x0; x < x1; x++) bits[row + x] = 0;
-                  continue;
-                }
-                const v = (y - y0) / ch;
-                for (let x = x0; x < x1; x++) {
-                  if (x < gx0 || x >= gx1) { bits[row + x] = 0; continue; }
-                  if (flickerActive) { bits[row + x] = dither(x, y, tone); continue; }
-                  const u = (x - x0) / cw;
-                  bits[row + x] = dither(x, y, letterCoverage(u, v, spread));
-                }
+          const frames = archSheet.frames;
+          if (!frames) {
+            bits.fill(0);
+          } else {
+            /* Reduced motion holds the reference's own last frame outright
+               — the closest thing the real clip has to "resolved" —
+               rather than starting the clock at 0 and freezing there, which
+               would hold the FIRST frame instead: the most heavily
+               smeared one there is, the opposite of what reduced motion is
+               asking for. */
+            let i0, i1, mix;
+            if (reduceMotion) {
+              i0 = i1 = ARCH_FRAME_COUNT - 1;
+              mix = 0;
+            } else {
+              t += dt * 1000;
+              const pos = t / ARCH_FRAME_MS;
+              if (pos >= ARCH_FRAME_COUNT - 1) {
+                i0 = i1 = ARCH_FRAME_COUNT - 1;
+                mix = 0;
+              } else {
+                i0 = pos | 0;
+                i1 = i0 + 1;
+                mix = pos - i0;
               }
             }
-          }
+            const frame0 = frames[i0], frame1 = frames[i1];
 
-          const flips = Math.round(W * H * LETTER_GRAIN);
-          for (let k = 0; k < flips; k++) {
-            const i = (Math.random() * W * H) | 0;
-            bits[i] = bits[i] ? 0 : 1;
+            for (let y = 0; y < H; y++) {
+              const row = y * W;
+              const fv = (y - cover.originY) / cover.scale;
+              for (let x = 0; x < W; x++) {
+                const fu = (x - cover.originX) / cover.scale;
+                const c0 = frameSheetSample(frame0, ARCH_TILE_W, ARCH_TILE_H, fu, fv);
+                const coverage = mix > 0 ? c0 + (frameSheetSample(frame1, ARCH_TILE_W, ARCH_TILE_H, fu, fv) - c0) * mix : c0;
+                bits[row + x] = dither(x, y, coverage);
+              }
+            }
           }
 
           if (partMs) {
