@@ -1920,135 +1920,130 @@
 
   /* No storm, no name cut into it, nothing written over it at all — the door
      is a field of paper and ink that will not sit still, the way a signal
-     with nothing on it does not sit still. Where the mosaic this replaced
-     drifted a handful of slow cuts, this one simply throws out a fresh,
-     wholly unrelated arrangement of irregular blocks every quarter-second —
-     a datamoshed signal rather than a sheet of paper being cut, the louder,
-     faster cousin of the same idea. Grain and the odd horizontal scan-glitch
-     run continuously underneath on their own clock, so the screen is never
-     merely waiting between one arrangement and the next. */
-  const GLITCH_CYCLE_MS = 280;         // one fresh block arrangement, this often
-  const GLITCH_SPLIT_MIN = 0.28;       // a partition's own split point never
-  const GLITCH_SPLIT_MAX = 0.72;       // lands closer to an edge than this
-  const GLITCH_MAX_DEPTH = 7;          // recursion limit — how fine the
-                                        // smallest blocks can get
-  const GLITCH_LEAF_MIN_PX = 26;       // stop splitting a block once either
-                                        // side would fall below this
-  const GLITCH_GREY_CHANCE = 0.06;     // odds a leaf dithers grey instead of
-                                        // sitting flat at ink or at paper
-  const GLITCH_GRAIN = 0.02;           // per-frame bit flips — louder than
-                                        // the architecture screen's own, this
-                                        // being static over a signal rather
-                                        // than dust on glass
-  const GLITCH_STREAK_CHANCE = 0.05;   // odds a new scan-glitch streak
-                                        // starts, rolled once per frame
-  const GLITCH_STREAK_MIN_MS = 60;
-  const GLITCH_STREAK_MAX_MS = 160;
-  const GLITCH_STREAK_MAX_ROWS = 2;    // a streak is one or two rows tall
-  const GLITCH_STREAK_MAX_SHIFT = 10;  // native px, either direction
-  const GLITCH_STREAK_POOL = 4;        // streaks live at once, at most
+     with nothing on it does not sit still. This one is not a generator at
+     all: it is the reference clip itself, forty-three real frames of a
+     datamoshed block field, stored as a strip of low-resolution stills and
+     played back in their own order at their own pace. An earlier version of
+     this scene threw a fresh, unrelated random partition at the screen every
+     quarter-second — closer in spirit, further from the thing itself, and
+     it read as choppy because nothing about a freshly-rolled arrangement
+     resembles the one before it. The reference has no such cuts: watched
+     frame by frame, its blocks rise and drift right in a single continuous
+     wave, which random re-partitioning can never reproduce because it
+     never has any memory of where the last frame was. Copying the actual
+     frames sidesteps the whole problem — the coherence was always in the
+     footage, not in an algorithm waiting to be found. */
+  const ART_TILE = 100;                // stored resolution of one frame,
+                                        // square, before it's cropped to fit
+                                        // whatever shape the canvas is
+  const ART_FRAME_COUNT = 43;
+  const ART_FRAME_MS = 40;             // native pace of the reference clip —
+                                        // 43 frames loop in 1.72s
+  const ART_SHEET_URL = "/art-loader-frames.png";
 
-  /* One recursive partition of a W×H field into flat-toned leaves, written
-     straight into `tone` (0 paper, 1 ink, 2 dithered grey) rather than kept
-     as a tree — nothing after this build needs the shape of the split, only
-     the tone it left behind in every pixel. Called fresh every cycle rather
-     than eased toward, since the reference this follows is a signal being
-     re-cut, not a layout being rearranged. */
-  function glitchPartition(tone, W, x0, y0, x1, y1, depth) {
-    const w = x1 - x0, h = y1 - y0;
-    const canSplit = depth < GLITCH_MAX_DEPTH &&
-      (w >= GLITCH_LEAF_MIN_PX * 2 || h >= GLITCH_LEAF_MIN_PX * 2);
-    if (!canSplit) {
-      const roll = Math.random();
-      const v = roll < GLITCH_GREY_CHANCE ? 2
-        : roll < GLITCH_GREY_CHANCE + (1 - GLITCH_GREY_CHANCE) * 0.5 ? 1 : 0;
-      for (let y = y0; y < y1; y++) {
-        const row = y * W;
-        for (let x = x0; x < x1; x++) tone[row + x] = v;
+  /* One flat array per frame, luminance 0-255, decoded once and shared by
+     every instance of the scene rather than reloaded per boot — the sheet
+     never changes size or content, so there is nothing to redo on a resize
+     the way the rest of a scene's own build() is redone. Loaded lazily, on
+     the first call to blockGlitch() rather than at module scope: this file
+     is shared by every boot screen on the site, and fetching an asset only
+     the catalogue's door uses would otherwise cost architecture and the
+     store a request neither of them ever needed. */
+  let artFrames = null;
+  let artFramesRequested = false;
+  function loadArtFrames() {
+    if (artFramesRequested) return;
+    artFramesRequested = true;
+    const img = new Image();
+    img.onload = function () {
+      const cnv = document.createElement("canvas");
+      cnv.width = ART_TILE;
+      cnv.height = ART_TILE * ART_FRAME_COUNT;
+      const cx = cnv.getContext("2d", { willReadFrequently: true });
+      cx.drawImage(img, 0, 0);
+      const data = cx.getImageData(0, 0, ART_TILE, ART_TILE * ART_FRAME_COUNT).data;
+      const frames = new Array(ART_FRAME_COUNT);
+      const tileArea = ART_TILE * ART_TILE;
+      for (let f = 0; f < ART_FRAME_COUNT; f++) {
+        const arr = new Uint8Array(tileArea);
+        const base = f * tileArea * 4;
+        for (let i = 0; i < tileArea; i++) arr[i] = data[base + i * 4];
+        frames[f] = arr;
       }
-      return;
-    }
-    if (w >= h) {
-      const cut = x0 + Math.max(1, Math.round(w * (GLITCH_SPLIT_MIN + Math.random() * (GLITCH_SPLIT_MAX - GLITCH_SPLIT_MIN))));
-      glitchPartition(tone, W, x0, y0, cut, y1, depth + 1);
-      glitchPartition(tone, W, cut, y0, x1, y1, depth + 1);
-    } else {
-      const cut = y0 + Math.max(1, Math.round(h * (GLITCH_SPLIT_MIN + Math.random() * (GLITCH_SPLIT_MAX - GLITCH_SPLIT_MIN))));
-      glitchPartition(tone, W, x0, y0, x1, cut, depth + 1);
-      glitchPartition(tone, W, x0, cut, x1, y1, depth + 1);
-    }
+      artFrames = frames;
+    };
+    img.src = ART_SHEET_URL;
+  }
+
+  /* Bilinear rather than nearest — the sheet is a fraction of the canvas's
+     own native resolution (a stored frame is a hundred pixels square; the
+     canvas is routinely several times that), and sampling it with hard
+     texel jumps would draw a second, coarser grid of blocks on top of the
+     real ones. Interpolated, a low-resolution source reads as the same
+     picture slightly softened at the edges — which a dither pass over it
+     immediately re-hardens into clean cells anyway. */
+  function artSample(frame, fu, fv) {
+    const x0 = fu | 0, y0 = fv | 0;
+    const x1 = x0 + 1 < ART_TILE ? x0 + 1 : x0;
+    const y1 = y0 + 1 < ART_TILE ? y0 + 1 : y0;
+    const tx = fu - x0, ty = fv - y0;
+    const row0 = y0 * ART_TILE, row1 = y1 * ART_TILE;
+    const a = frame[row0 + x0] + (frame[row0 + x1] - frame[row0 + x0]) * tx;
+    const b = frame[row1 + x0] + (frame[row1 + x1] - frame[row1 + x0]) * tx;
+    return (a + (b - a) * ty) / 255;
   }
 
   function blockGlitch(host) {
+    loadArtFrames();
     return run(host, reduceMotion ? 12 : Infinity, function (W, H) {
-      const tone = new Uint8Array(W * H);
-      glitchPartition(tone, W, 0, 0, W, H, 0);
+      /* Cover, not contain: a square clip filling a rectangle of any
+         proportions has to lose some of itself off two edges rather than
+         letterbox, or the door stops being full-bleed the moment it isn't
+         itself square. Centred, so whatever is cropped is cropped evenly
+         off both sides. */
+      const scale = Math.max(W, H);
+      const originX = (W - scale) / 2, originY = (H - scale) / 2;
 
-      /* Frozen under reduced motion by simply never counting down to the
-         next cycle, rather than by branching the render loop apart from the
-         moving version of it — one static arrangement, held. */
-      let cycleWait = GLITCH_CYCLE_MS;
-
-      /* A small fixed pool rather than an array that grows and shrinks —
-         streaks are few at once and none of them outlive a couple of
-         hundred milliseconds. `left` doubles as the slot's own occupancy
-         flag: at or below zero, the slot is free. */
-      const streakY = new Int32Array(GLITCH_STREAK_POOL);
-      const streakH = new Int32Array(GLITCH_STREAK_POOL);
-      const streakDX = new Int32Array(GLITCH_STREAK_POOL);
-      const streakLeft = new Float32Array(GLITCH_STREAK_POOL);
-
+      let t = 0;
       let partMs = 0, partT = 0, dissolve = 0;
 
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
-          if (!reduceMotion) {
-            cycleWait -= dt * 1000;
-            if (cycleWait <= 0) {
-              glitchPartition(tone, W, 0, 0, W, H, 0);
-              cycleWait += GLITCH_CYCLE_MS;
-            }
+          if (!artFrames) {
+            /* The sheet hasn't decoded yet — paper, and nothing drawn on
+               it, rather than holding the previous build's last frame or
+               reaching for a placeholder generator. On any real connection
+               this is a handful of frames at most; the loading bar is
+               already telling the truth about there being something to
+               wait for. */
+            bits.fill(0);
+          } else {
+            if (!reduceMotion) t += dt * 1000;
+            /* Cross-faded rather than cut from one stored frame straight to
+               the next: the reference plays at 25fps, and this scene's own
+               loop can run many times faster than that on an uncapped rAF,
+               so without it every stored frame would simply hold, unchanged,
+               across several rendered frames and then jump — the exact
+               choppiness a generator with no memory produced, just with a
+               memory this time. Blending the two nearest stored frames by
+               how far between them the clock actually is turns that jump
+               into the same continuous drift the footage itself has. */
+            const pos = (t / ART_FRAME_MS) % ART_FRAME_COUNT;
+            const i0 = pos | 0;
+            const i1 = (i0 + 1) % ART_FRAME_COUNT;
+            const mix = reduceMotion ? 0 : pos - i0;
+            const frame0 = artFrames[i0], frame1 = artFrames[i1];
 
-            if (Math.random() < GLITCH_STREAK_CHANCE) {
-              for (let s = 0; s < GLITCH_STREAK_POOL; s++) {
-                if (streakLeft[s] > 0) continue;
-                streakY[s] = (Math.random() * H) | 0;
-                streakH[s] = 1 + ((Math.random() * GLITCH_STREAK_MAX_ROWS) | 0);
-                streakDX[s] = ((Math.random() * 2 - 1) * GLITCH_STREAK_MAX_SHIFT) | 0;
-                streakLeft[s] = GLITCH_STREAK_MIN_MS + Math.random() * (GLITCH_STREAK_MAX_MS - GLITCH_STREAK_MIN_MS);
-                break;
+            for (let y = 0; y < H; y++) {
+              const row = y * W;
+              const fv = ((y - originY) / scale) * (ART_TILE - 1);
+              for (let x = 0; x < W; x++) {
+                const fu = ((x - originX) / scale) * (ART_TILE - 1);
+                const c0 = artSample(frame0, fu, fv);
+                const coverage = mix > 0 ? c0 + (artSample(frame1, fu, fv) - c0) * mix : c0;
+                bits[row + x] = dither(x, y, coverage);
               }
-            }
-            for (let s = 0; s < GLITCH_STREAK_POOL; s++) {
-              if (streakLeft[s] > 0) streakLeft[s] -= dt * 1000;
-            }
-          }
-
-          for (let y = 0; y < H; y++) {
-            const row = y * W;
-            /* At most one streak claims a given row — the pool is small
-               enough, and streaks brief enough, that two ever overlapping
-               the same row is rare enough not to matter which one wins. */
-            let dx = 0;
-            if (!reduceMotion) {
-              for (let s = 0; s < GLITCH_STREAK_POOL; s++) {
-                if (streakLeft[s] > 0 && y >= streakY[s] && y < streakY[s] + streakH[s]) { dx = streakDX[s]; break; }
-              }
-            }
-            for (let x = 0; x < W; x++) {
-              let sx = x + dx;
-              if (sx < 0) sx = 0; else if (sx >= W) sx = W - 1;
-              const v = tone[row + sx];
-              bits[row + x] = v === 2 ? dither(x, y, 0.5) : v;
-            }
-          }
-
-          if (!reduceMotion) {
-            const flips = Math.round(W * H * GLITCH_GRAIN);
-            for (let k = 0; k < flips; k++) {
-              const i = (Math.random() * W * H) | 0;
-              bits[i] = bits[i] ? 0 : 1;
             }
           }
 

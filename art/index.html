@@ -26,6 +26,13 @@
         href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap"></noscript>
 
+  <!-- The door's own footage — pixel-fx.js starts decoding this the moment it
+       runs, but that is already after the stylesheet, the fonts and however
+       much else stands ahead of it in the same <head>. Preloaded so the
+       fetch is underway from the first possible moment instead, the same
+       reasoning as the font two lines up. -->
+  <link rel="preload" href="/art-loader-frames.png" as="image">
+
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
