@@ -451,11 +451,18 @@ html, body, .bar, .panel, .tile-figure {
    ink lifts them enough to actually show against the dark ground. The ink
    stays the primary colour either way; red and cyan are only ever a small
    push off it, not a replacement for it. */
-.crt-glass .bar,
-.crt-glass .home-tab,
-.crt-glass .foot,
-.crt-glass .bar-btn,
-.crt-glass .ico {
+/* Unscoped — every bar, every home tab, every footer, on every page. This
+   used to be gated behind .crt-glass, which only ever ended up on art's
+   own <body>, so the one page with the least reason to feel like the odd
+   one out (the shopfront, the directory, the door standing in for
+   architecture) was the one place a visitor never saw it. The glass is
+   meant to be the site's own furniture, not a costume the catalogue
+   alone wears. */
+.bar,
+.home-tab,
+.foot,
+.bar-btn,
+.ico {
   filter:
     drop-shadow(1px 0 0 color-mix(in srgb, red 35%, var(--ink) 65%))
     drop-shadow(-1px 0 0 color-mix(in srgb, cyan 35%, var(--ink) 65%));
