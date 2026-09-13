@@ -2174,10 +2174,16 @@
 
      Every constant that shapes the look is named here, at the top, rather
      than buried in the maths below. */
-  const HOURGLASS_BANDS = 12;          // discrete steps from tip to corner
+  const HOURGLASS_BANDS = 28;          // discrete steps from tip to corner
   const HOURGLASS_WAIST = 0.14;        // the pinch's width at the vertical
                                         // middle, as a fraction of its width
                                         // at the top and bottom edges
+  const HOURGLASS_GAMMA = 1.7;         // >1 packs more of those steps toward
+                                        // the corners — the dark end covers
+                                        // far more screen area per step than
+                                        // the tips do, so a flat step count
+                                        // reads as bigger, harder blocks
+                                        // exactly where it's darkest
   const HOURGLASS_FLOW_MS = 1100;      // time for the rings to flow inward by
                                         // one full band's width — smaller is
                                         // a faster cascade
@@ -2188,6 +2194,15 @@
   const HOURGLASS_GRAIN = 0.01;          // sparse per-frame bit flips, the same
                                           // restrained amount every other scene
                                           // on this site already settled on
+
+  /* pow() is the one call in the render loop expensive enough to matter,
+     called once per pixel every frame — a lookup table built once per
+     build/rebuild (not per frame) turns it into an array read. */
+  const HOURGLASS_GAMMA_LUT_SIZE = 2048;
+  const hourglassGammaLUT = new Float32Array(HOURGLASS_GAMMA_LUT_SIZE);
+  for (let i = 0; i < HOURGLASS_GAMMA_LUT_SIZE; i++) {
+    hourglassGammaLUT[i] = Math.pow(i / (HOURGLASS_GAMMA_LUT_SIZE - 1), HOURGLASS_GAMMA);
+  }
 
   function hourglass(host) {
     return run(host, reduceMotion ? 10 : 30, function (W, H) {
@@ -2224,7 +2239,13 @@
                  in place. */
               let effective = (d + phase) % HOURGLASS_RANGE;
               if (effective < 0) effective += HOURGLASS_RANGE;
-              const band = Math.min(HOURGLASS_BANDS - 1, Math.floor((effective / HOURGLASS_RANGE) * HOURGLASS_BANDS));
+              /* The gamma curve is applied here, after the phase and the
+                 wrap — it reshapes how finely each ring is cut, not where
+                 the rings themselves sit, so the cascade's own speed is
+                 untouched by it. */
+              const lutIdx = Math.min(HOURGLASS_GAMMA_LUT_SIZE - 1, ((effective / HOURGLASS_RANGE) * (HOURGLASS_GAMMA_LUT_SIZE - 1)) | 0);
+              const norm = hourglassGammaLUT[lutIdx];
+              const band = Math.min(HOURGLASS_BANDS - 1, Math.floor(norm * HOURGLASS_BANDS));
               const coverage = band / (HOURGLASS_BANDS - 1);
               bits[row + x] = dither(x, y, coverage);
             }
