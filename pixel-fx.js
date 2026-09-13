@@ -2161,15 +2161,30 @@
      that band's step calls for — a halftone screen out of the one dither
      matrix this file already had, not a second dithering system next to it.
 
+     A held breathing pulse on the band radii read as barely-there — twelve
+     percent swell over thirteen seconds is motion a grain of static already
+     buries. What actually reads as motion is the rings themselves flowing:
+     each band's own edge continuously travels toward the tips and the
+     centreline rather than holding still and merely resizing, the same
+     distance field re-quantized every frame against a phase that only ever
+     grows. No reset: a growing phase folded back into [0,1) every frame
+     produces the same repeating stack of bands a clock face's hands do —
+     seamless, because nothing about it ever jumps back to a start position,
+     it just keeps counting.
+
      Every constant that shapes the look is named here, at the top, rather
      than buried in the maths below. */
   const HOURGLASS_BANDS = 12;          // discrete steps from tip to corner
   const HOURGLASS_WAIST = 0.14;        // the pinch's width at the vertical
                                         // middle, as a fraction of its width
                                         // at the top and bottom edges
-  const HOURGLASS_BREATHE_AMOUNT = 0.12; // how far the bands swell and settle,
-                                          // as a fraction of the field's own scale
-  const HOURGLASS_BREATHE_MS = 13000;    // one full swell-and-settle cycle
+  const HOURGLASS_FLOW_MS = 1100;      // time for the rings to flow inward by
+                                        // one full band's width — smaller is
+                                        // a faster cascade
+  const HOURGLASS_RANGE = 1.6;         // the distance field's own span, tip to
+                                        // just past the corners — one full
+                                        // cascade wraps every this-many bands'
+                                        // worth of flow, not one band's worth
   const HOURGLASS_GRAIN = 0.01;          // sparse per-frame bit flips, the same
                                           // restrained amount every other scene
                                           // on this site already settled on
@@ -2187,7 +2202,10 @@
              advances — rather than just playing the same animation slower,
              which is still motion. */
           if (!reduceMotion) t += dt * 1000;
-          const breathe = 1 + HOURGLASS_BREATHE_AMOUNT * Math.sin((2 * Math.PI * t) / HOURGLASS_BREATHE_MS);
+          /* Grows by one band's worth of the field's own range every
+             HOURGLASS_FLOW_MS, forever — never reset, only wrapped below,
+             which is what keeps the cascade seamless. */
+          const phase = (t / HOURGLASS_FLOW_MS) * (HOURGLASS_RANGE / HOURGLASS_BANDS);
 
           for (let y = 0; y < H; y++) {
             /* 0 at the top and bottom edge, 1 at the vertical middle — the
@@ -2197,8 +2215,16 @@
             const row = y * W;
             for (let x = 0; x < W; x++) {
               const nx = Math.abs(x - cx) / halfW;
-              const d = (nx / taper) * breathe;
-              const band = Math.min(HOURGLASS_BANDS - 1, Math.floor(d * HOURGLASS_BANDS));
+              const d = nx / taper;
+              /* Adding the phase before wrapping to the field's own range
+                 is what makes a ring's edge travel toward smaller d — toward
+                 the tips and the centreline — as the phase grows: a ring
+                 that would fall below 0 reappears at the far edge and keeps
+                 travelling inward, rather than the whole field only resizing
+                 in place. */
+              let effective = (d + phase) % HOURGLASS_RANGE;
+              if (effective < 0) effective += HOURGLASS_RANGE;
+              const band = Math.min(HOURGLASS_BANDS - 1, Math.floor((effective / HOURGLASS_RANGE) * HOURGLASS_BANDS));
               const coverage = band / (HOURGLASS_BANDS - 1);
               bits[row + x] = dither(x, y, coverage);
             }
