@@ -11,16 +11,16 @@
 
    Architecture is a third door rather than a third pair of flights — it has
    no far side to fly to yet, so arriving there is answered the same way the
-   gate is: a scene, silent, waiting on a click. Its own scene is a single
-   letter of KRITOR's own name, huge and not quite settled, standing in for
-   a section that has no picture of its own yet either.
+   gate is: a scene, silent, waiting on a click. Its own scene is a field of
+   bands radiating from the frame's own centre, standing in for a section
+   that has no picture of its own yet either.
 
    Which screen you get is decided here, from where you were last:
 
      catalogue, arrived from anywhere but the store  →  the mosaic, and the gate
      catalogue, arrived from the store               →  starfield, flying back
      store                                           →  starfield, flying out
-     architecture, arrived from anywhere              →  the signal, and the gate
+     architecture, arrived from anywhere              →  the hourglass, and the gate
 
    The store's two flights still speak — KRITOR in the blackletter, sentence
    case, saying whatever it likes, against the machine's own procedural
@@ -112,7 +112,7 @@
     let fx = { stop: function () {}, part: function () {} };
     if (stage && window.KritorFX) {
       fx = mode === "gate" ? window.KritorFX.mosaic(stage)
-        : mode === "arch" ? window.KritorFX.signal(stage)
+        : mode === "arch" ? window.KritorFX.hourglass(stage)
         : window.KritorFX.starfield(stage, { direction: mode === "back" ? "back" : "forward" });
     }
 

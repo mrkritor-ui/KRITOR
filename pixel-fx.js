@@ -2147,278 +2147,64 @@
     });
   }
 
-  /* ── The signal: architecture, not tuned in yet ──────────────────────────── */
+  /* ── The hourglass: architecture's own field ─────────────────────────────── */
 
-  /* A plain bitmap font, not the wordmark's hand-drawn one — a grid tuning
-     into a channel wants a character set that reads as the machine's own,
-     the way a test card's own type never matches the programme it precedes.
-     Five cells wide, seven tall: the smallest grid a Latin letterform still
-     reads correctly in, the same proportions typewriters, dot-matrix
-     printers and the first character-mapped displays all converged on
-     independently. */
-  const BLOCK_COLS = 5, BLOCK_ROWS = 7;
-  /* I, T and O have no diagonal in them, so a coarse cell grid draws them
-     exactly as well as anything else would — kept as a plain bitmap. I and
-     T's stems were a single cell wide against everything else's two, thin
-     enough that a blur radius sized for the rest of the alphabet erased
-     them near to nothing (the hole that used to open up in the middle of
-     this wall); widened here to match the weight of every other stroke. */
-  const BLOCK_FONT = {
-    I: ["11111", "01110", "01110", "01110", "01110", "01110", "11111"],
-    T: ["11111", "01110", "01110", "01110", "01110", "01110", "01110"],
-    O: ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
-  };
+  /* Two diamonds, one growing from the top edge's centre and one from the
+     bottom's, mirrored into a single bowtie. Distance to whichever tip is
+     nearer is measured on a taxicab-ish grid — horizontal distance from the
+     vertical centreline plus vertical distance from the nearer edge — so the
+     lightest band sits on the two tips and along the centreline the whole
+     height of the frame, and the darkest sits in the four corners, farthest
+     from both. Stepped into a fixed number of bands rather than a smooth
+     ramp, then every band is textured by the same ordered dither the rest of
+     this file already draws every 1-bit picture with, at whatever density
+     that band's step calls for — a halftone screen out of the one dither
+     matrix this file already had, not a second dithering system next to it.
 
-  /* A, K, R and 2 all carry a diagonal, and a diagonal built one grid cell
-     per row is a staircase of separate little squares — fine at a size
-     where the steps disappear into the letter, not at this one, where each
-     step is its own visible block. Drawn as filled polygons instead, in the
-     same 5-by-7 unit box the bitmap letters use, so a diagonal is one
-     continuous slanted edge rather than a run of disconnected cells. Each
-     entry is a list of parts; each part is one or more contours filled
-     together (two contours punches a hole — R's bowl is a ring, the same
-     way an O would be built this way too). */
-  const GLYPH_VECTORS = {
-    A: [
-      [[[1.975, 0], [3.025, 0], [1.075, 7], [0.025, 7]]],
-      [[[1.975, 0], [3.025, 0], [4.975, 7], [3.925, 7]]],
-      [[[0.85, 4.15], [4.15, 4.15], [4.15, 5.05], [0.85, 5.05]]],
-    ],
-    K: [
-      [[[0, 0], [1.05, 0], [1.05, 7], [0, 7]]],
-      [[[0.55, 3.5], [1.55, 3.5], [5, 0], [4, 0]]],
-      [[[0.55, 3.5], [1.55, 3.5], [5, 7], [4, 7]]],
-    ],
-    R: [
-      [[[0, 0], [1.05, 0], [1.05, 7], [0, 7]]],
-      [[[0, 0], [4, 0], [4, 3.2], [0, 3.2]], [[1.05, 0.85], [3, 0.85], [3, 2.35], [1.05, 2.35]]],
-      [[[1.05, 3.2], [2.15, 3.2], [4.85, 7], [3.75, 7]]],
-    ],
-    2: [
-      [[[0.6, 0], [4.4, 0], [4.4, 1], [0.6, 1]]],
-      [[[3.35, 1], [4.4, 1], [4.4, 2.6], [3.35, 2.6]]],
-      [[[2.85, 2.6], [3.9, 2.6], [1.65, 6], [0.6, 6]]],
-      [[[0.4, 6], [4.6, 6], [4.6, 7], [0.4, 7]]],
-    ],
-  };
+     Every constant that shapes the look is named here, at the top, rather
+     than buried in the maths below. */
+  const HOURGLASS_BANDS = 12;          // discrete steps from tip to corner
+  const HOURGLASS_WAIST = 0.14;        // the pinch's width at the vertical
+                                        // middle, as a fraction of its width
+                                        // at the top and bottom edges
+  const HOURGLASS_BREATHE_AMOUNT = 0.12; // how far the bands swell and settle,
+                                          // as a fraction of the field's own scale
+  const HOURGLASS_BREATHE_MS = 13000;    // one full swell-and-settle cycle
+  const HOURGLASS_GRAIN = 0.01;          // sparse per-frame bit flips, the same
+                                          // restrained amount every other scene
+                                          // on this site already settled on
 
-  function drawGlyph(buf, W, H, ch, x0, y0, cell, value, additive) {
-    const rows = BLOCK_FONT[ch];
-    if (rows) {
-      for (let r = 0; r < BLOCK_ROWS; r++) {
-        const bits = rows[r];
-        for (let c = 0; c < BLOCK_COLS; c++) {
-          if (bits[c] !== "1") continue;
-          const x0c = x0 + c * cell, y0c = y0 + r * cell, x1c = x0 + (c + 1) * cell, y1c = y0 + (r + 1) * cell;
-          if (additive) maxRect(buf, W, H, x0c, y0c, x1c, y1c, value);
-          else rect(buf, W, H, x0c, y0c, x1c, y1c, value);
-        }
-      }
-      return;
-    }
-    const parts = GLYPH_VECTORS[ch];
-    if (!parts) return;
-    for (let p = 0; p < parts.length; p++) {
-      fillGlyphPart(buf, W, H, parts[p], x0, y0, cell, value, additive);
-    }
-  }
-
-  /* Every contour in GLYPH_VECTORS is a plain quad (4 points), and every
-     part is at most two of them (the second punches a hole — R's bowl).
-     One glyph at one moment on screen is drawn up to three times (a melting
-     cell plus its ghosts), fifteen or so cells a frame — enough calls that
-     fillShapeAt's own array-per-contour, array-per-point allocation was
-     worth cutting. Scratch buffers sized for the shape this table actually
-     has (2 contours, 4 points each) instead. */
-  const GLYPH_SX = new Float64Array(8);
-  const GLYPH_SY = new Float64Array(8);
-  const GLYPH_XS = new Float64Array(8);
-
-  function fillGlyphPart(buf, W, H, part, ox, oy, s, value, additive) {
-    const nc = part.length;
-    let minY = Infinity, maxY = -Infinity;
-    for (let c = 0; c < nc; c++) {
-      const pts = part[c], base = c * 4;
-      for (let p = 0; p < 4; p++) {
-        const x = ox + pts[p][0] * s, y = oy + pts[p][1] * s;
-        GLYPH_SX[base + p] = x;
-        GLYPH_SY[base + p] = y;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-    const y0 = Math.max(0, Math.round(minY));
-    const y1 = Math.min(H - 1, Math.round(maxY));
-    for (let y = y0; y <= y1; y++) {
-      const cy = y + 0.5;
-      let n = 0;
-      for (let c = 0; c < nc; c++) {
-        const base = c * 4;
-        for (let i = 0; i < 4; i++) {
-          const j = base + ((i + 1) & 3);
-          const ay = GLYPH_SY[base + i], by = GLYPH_SY[j];
-          if ((ay <= cy) === (by <= cy)) continue;
-          GLYPH_XS[n++] = GLYPH_SX[base + i] + (cy - ay) / (by - ay) * (GLYPH_SX[j] - GLYPH_SX[base + i]);
-        }
-      }
-      if (n < 2) continue;
-      for (let a = 1; a < n; a++) {
-        const v = GLYPH_XS[a];
-        let b = a - 1;
-        while (b >= 0 && GLYPH_XS[b] > v) { GLYPH_XS[b + 1] = GLYPH_XS[b]; b--; }
-        GLYPH_XS[b + 1] = v;
-      }
-      const row = y * W;
-      for (let k = 0; k + 1 < n; k += 2) {
-        const sx = Math.max(0, Math.round(GLYPH_XS[k]));
-        const ex = Math.min(W - 1, Math.round(GLYPH_XS[k + 1]) - 1);
-        if (additive) { for (let x = sx; x <= ex; x++) { if (value > buf[row + x]) buf[row + x] = value; } }
-        else { for (let x = sx; x <= ex; x++) buf[row + x] = value; }
-      }
-    }
-  }
-
-  /* Like rect(), but keeps whatever was already there if it was brighter —
-     for stamping a faint ghost copy of a glyph without ever dimming the
-     real stroke (or an earlier, stronger ghost) that already occupies the
-     same cell. */
-  function maxRect(buf, W, H, x0, y0, x1, y1, value) {
-    const a = Math.max(0, Math.round(x0)), b = Math.min(W - 1, Math.round(x1) - 1);
-    const c = Math.max(0, Math.round(y0)), d = Math.min(H - 1, Math.round(y1) - 1);
-    for (let y = c; y <= d; y++) {
-      const row = y * W;
-      for (let x = a; x <= b; x++) if (value > buf[row + x]) buf[row + x] = value;
-    }
-  }
-
-  /* Separable box blur, in place via one scratch row/column buffer allocated
-     once outside the frame loop — this runs on the small native grid (see
-     run(), which is what makes any of this affordable), so a blur here is a
-     few hundred cells wide rather than a screen's worth of pixels. */
-  function boxBlur(buf, tmp, W, H, radius) {
-    const norm = 1 / (radius * 2 + 1);
-    for (let y = 0; y < H; y++) {
-      const row = y * W;
-      let sum = 0;
-      for (let x = -radius; x <= radius; x++) sum += buf[row + Math.max(0, Math.min(W - 1, x))];
-      for (let x = 0; x < W; x++) {
-        tmp[row + x] = sum * norm;
-        sum += buf[row + Math.min(W - 1, x + radius + 1)] - buf[row + Math.max(0, x - radius)];
-      }
-    }
-    for (let x = 0; x < W; x++) {
-      let sum = 0;
-      for (let y = -radius; y <= radius; y++) sum += tmp[Math.max(0, Math.min(H - 1, y)) * W + x];
-      for (let y = 0; y < H; y++) {
-        buf[y * W + x] = sum * norm;
-        sum += tmp[Math.min(H - 1, y + radius + 1) * W + x] - tmp[Math.max(0, y - radius) * W + x];
-      }
-    }
-  }
-
-  function signal(host) {
-    return run(host, reduceMotion ? 10 : 20, function (W, H) {
-      const chars = Object.keys(BLOCK_FONT).concat(Object.keys(GLYPH_VECTORS));
-
-      /* A wall of characters, edge to edge — the whole frame is the tuning
-         screen, not one letter with paper around it. Sized off the frame so
-         a phone gets a coarser grid rather than the same cell count
-         shrunk. */
-      const cols = Math.max(3, Math.min(6, Math.round(W / 92)));
-      const rows = Math.max(2, Math.min(4, Math.round(H / 100)));
-      const cellCount = cols * rows;
-      const cellW = W / cols, cellH = H / rows;
-      const cell = Math.max(2, Math.floor(Math.min(cellW, cellH) * 0.82 / BLOCK_ROWS));
-
-      const cellChar = new Array(cellCount);
-      const cellWait = new Float32Array(cellCount);
-      /* About one cell in three stays sharp — the rest melt. A wall that
-         melted evenly would read as one blur filter over a picture; a few
-         cells still in focus is what makes the rest read as losing the
-         signal rather than as the camera being out of focus. */
-      const cellSharp = new Uint8Array(cellCount);
-      /* The melting third isn't one flat blur either — each of those cells
-         gets its own count of ghost copies (0-2) offset a random distance
-         and direction, stamped in underneath the real stroke before the
-         blur runs. That's what a signal actually losing lock looks like:
-         a double-exposure smear behind the letter, not a uniform softening
-         of it — closer to the reference gif's melt than a single global
-         blur radius could get on its own. */
-      const cellEchoes = new Uint8Array(cellCount);
-      const cellEchoDX = new Float32Array(cellCount * 2);
-      const cellEchoDY = new Float32Array(cellCount * 2);
-
-      function reroll(i) {
-        cellChar[i] = chars[Math.floor(Math.random() * chars.length)];
-        cellWait[i] = 0.8 + Math.random() * 2.6;
-        cellSharp[i] = Math.random() < 0.3 ? 1 : 0;
-        if (cellSharp[i]) {
-          cellEchoes[i] = 0;
-        } else {
-          cellEchoes[i] = Math.random() < 0.55 ? (Math.random() < 0.4 ? 2 : 1) : 0;
-          for (let k = 0; k < 2; k++) {
-            const a = Math.random() * Math.PI * 2;
-            const d = cell * (0.5 + Math.random() * 1.1);
-            cellEchoDX[i * 2 + k] = Math.cos(a) * d;
-            cellEchoDY[i * 2 + k] = Math.sin(a) * d;
-          }
-        }
-      }
-      for (let i = 0; i < cellCount; i++) reroll(i);
-
-      /* Cell position never moves once the grid is laid out — only the
-         glyph, echoes and blur touch it frame to frame — so it's worth
-         computing once here rather than every stampCell call, of which
-         there are up to three per melting cell, every frame. */
-      const cellOriginX = new Float32Array(cellCount);
-      const cellOriginY = new Float32Array(cellCount);
-      {
-        const gw = BLOCK_COLS * cell, gh = BLOCK_ROWS * cell;
-        for (let i = 0; i < cellCount; i++) {
-          const r = (i / cols) | 0, c = i % cols;
-          cellOriginX[i] = Math.round(c * cellW + (cellW - gw) / 2);
-          cellOriginY[i] = Math.round(r * cellH + (cellH - gh) / 2);
-        }
-      }
-
-      function stampCell(target, i, value) {
-        const x0 = cellOriginX[i], y0 = cellOriginY[i];
-        for (let k = 0; k < cellEchoes[i]; k++) {
-          drawGlyph(target, W, H, cellChar[i], x0 + cellEchoDX[i * 2 + k], y0 + cellEchoDY[i * 2 + k], cell, value * 0.55, true);
-        }
-        drawGlyph(target, W, H, cellChar[i], x0, y0, cell, value, true);
-      }
-
-      const coverage = new Float32Array(W * H);
-      const scratch = new Float32Array(W * H);
-      const blurRadius = Math.max(1, Math.round(W * 0.01));
-
+  function hourglass(host) {
+    return run(host, reduceMotion ? 10 : 30, function (W, H) {
+      const cx = W / 2, halfW = Math.max(1, W / 2), halfH = Math.max(1, H / 2);
+      let t = 0;
       let partMs = 0, partT = 0, dissolve = 0;
 
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
-          for (let i = 0; i < cellCount; i++) {
-            cellWait[i] -= dt;
-            if (cellWait[i] <= 0) reroll(i);
+          /* Frozen on a single frame under reduced motion — t simply never
+             advances — rather than just playing the same animation slower,
+             which is still motion. */
+          if (!reduceMotion) t += dt * 1000;
+          const breathe = 1 + HOURGLASS_BREATHE_AMOUNT * Math.sin((2 * Math.PI * t) / HOURGLASS_BREATHE_MS);
+
+          for (let y = 0; y < H; y++) {
+            /* 0 at the top and bottom edge, 1 at the vertical middle — the
+               pinch is where this is largest, not smallest. */
+            const ny = Math.min(y, H - 1 - y) / halfH;
+            const taper = Math.max(HOURGLASS_WAIST, 1 - (1 - HOURGLASS_WAIST) * ny);
+            const row = y * W;
+            for (let x = 0; x < W; x++) {
+              const nx = Math.abs(x - cx) / halfW;
+              const d = (nx / taper) * breathe;
+              const band = Math.min(HOURGLASS_BANDS - 1, Math.floor(d * HOURGLASS_BANDS));
+              const coverage = band / (HOURGLASS_BANDS - 1);
+              bits[row + x] = dither(x, y, coverage);
+            }
           }
 
-          coverage.fill(0);
-          for (let i = 0; i < cellCount; i++) stampCell(coverage, i, 1);
-          boxBlur(coverage, scratch, W, H, blurRadius);
-          /* The sharp third, stamped again on top of their own blurred
-             selves — cheaper than blurring each cell to its own radius, and
-             the result is the same either way: some cells crisp, the rest
-             not. */
-          for (let i = 0; i < cellCount; i++) if (cellSharp[i]) stampCell(coverage, i, 1);
-
-          for (let i = 0, n = W * H; i < n; i++) {
-            bits[i] = dither(i % W, (i / W) | 0, coverage[i]);
-          }
-
-          /* Grain across the whole frame, the same restrained amount the
-             mosaic settled on. */
-          const flips = Math.round(W * H * 0.01);
+          const flips = Math.round(W * H * HOURGLASS_GRAIN);
           for (let k = 0; k < flips; k++) {
             const i = (Math.random() * W * H) | 0;
             bits[i] = bits[i] ? 0 : 1;
@@ -2443,6 +2229,6 @@
   }
 
   window.KritorFX = {
-    terrain: terrain, starfield: starfield, mosaic: mosaic, signal: signal, reduceMotion: reduceMotion,
+    terrain: terrain, starfield: starfield, mosaic: mosaic, hourglass: hourglass, reduceMotion: reduceMotion,
   };
 })();
