@@ -458,10 +458,18 @@ html, body, .bar, .panel, .tile-figure {
    filtered. --bits is a custom property, and those inherit into
    pseudo-elements the same as any other, so ::before and ::after pick up
    the exact silhouette .tile-bits itself is drawn with, no separate lookup
-   needed. Nudged a pixel apart and screen-blended — additive, so it only
-   ever adds colour at the edge two slightly-offset copies of the same
-   shape don't quite cover the same pixels, never darkens or softens the
-   dither underneath. */
+   needed. Nudged a pixel apart and screen-blended.
+
+   The one thing this doesn't share with the bar's own fringe: a rendition
+   is a dither, not a letterform, and a dither has an edge at nearly every
+   pixel rather than a few widely-spaced strokes. Offsetting the whole
+   pattern by a pixel puts an edge-sized mismatch behind almost the entire
+   picture instead of just its outline, so full-strength colour here reads
+   as a field of red and cyan static, not a fringe — which is what was on
+   screen before this. Mixed hard toward --ink and knocked back in alpha to
+   answer that: the rendition's own grey stays what actually reads, and
+   what colour does show through is a faint, mostly-grey warm/cool grain
+   sitting on top of it rather than a colour of its own. */
 .crt-glass .tile-bits { position: relative; }
 
 .crt-glass .tile-bits::before,
@@ -480,12 +488,12 @@ html, body, .bar, .panel, .tile-figure {
 }
 
 .crt-glass .tile-bits::before {
-  background-color: rgba(255, 45, 45, .55);
+  background-color: color-mix(in srgb, color-mix(in srgb, red 30%, var(--ink) 70%) 40%, transparent);
   transform: translateX(1px);
 }
 
 .crt-glass .tile-bits::after {
-  background-color: rgba(45, 210, 255, .55);
+  background-color: color-mix(in srgb, color-mix(in srgb, cyan 30%, var(--ink) 70%) 40%, transparent);
   transform: translateX(-1px);
 }
 
