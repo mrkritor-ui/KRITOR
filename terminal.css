@@ -361,16 +361,14 @@ html, body, .bar, .panel, .tile-figure {
 
 /* The same mesh and curve as the door's, laid over the catalogue itself once
    it's open — fixed to the screen rather than the page, so it holds still
-   under scroll the way a physical sheet of glass would. Held still in time
-   as well: no crt-roll here, and no #crt-optics filter either. Both of those
-   exist to sell one entrance's worth of tube — a still screen a visitor is
-   meant to actually read from doesn't want to be watched drifting for as
-   long as they leave it open, and a bloom-and-fringe filter that fakes a
-   phosphor glow off a canvas's own soft 1-bit dither does something else
-   entirely to a sharp photograph of real work: it just blurs it. So only the
-   part that never touched the picture underneath comes along — scanlines,
-   the column mask, the tube's curved corners, all sitting on top rather
-   than filtering what's beneath them. */
+   under scroll the way a physical sheet of glass would. Held still in time:
+   no crt-roll here, a still screen a visitor is meant to actually read from
+   doesn't want to be watched drifting for as long as they leave it open. No
+   #crt-optics filter either — tried running it against this mesh directly
+   and it did nothing worth keeping: the filter's channel-shift is a fixed
+   number of pixels, and a pattern that repeats every one to three pixels
+   shifts by more than its own period, which washes the fringe into a flat
+   tint rather than showing it. */
 .catalogue-crt {
   position: fixed;
   inset: 0;
@@ -406,6 +404,28 @@ html, body, .bar, .panel, .tile-figure {
   inset: 0;
   background: radial-gradient(ellipse at center, transparent 42%, color-mix(in srgb, var(--ink) 40%, transparent) 100%);
   mix-blend-mode: soft-light;
+}
+
+/* The fringe itself: not a wash over the screen — tried that first, as a
+   pair of edge-anchored radial glows, and it tinted the paper between the
+   tiles along with everything else, which reads as a colour grade over the
+   page rather than an optical artefact in the glass. A CRT's own fringing
+   only ever shows up where there is a bright edge for it to split; it
+   never invents colour over a patch of screen with nothing on it. Moved
+   onto the content itself instead — drop-shadow follows an element's own
+   alpha shape rather than its box, so a red copy and a cyan copy offset a
+   pixel either way hug the actual glyphs, icons, borders and bitmap dither
+   and nothing else. Applied only to lines and bitmaps (the bar, the home
+   tab, the footer, the tile renditions) and never to .tile-real: that one
+   is a photograph of the work, not a piece of the terminal's own type, and
+   it stays exactly as sharp as its own file. */
+.crt-glass .bar,
+.crt-glass .home-tab,
+.crt-glass .foot,
+.crt-glass .bar-btn,
+.crt-glass .ico,
+.crt-glass .tile-bits {
+  filter: drop-shadow(1px 0 0 rgba(255, 45, 45, .45)) drop-shadow(-1px 0 0 rgba(45, 210, 255, .45));
 }
 
 /* ── The two layers of type ──────────────────────────────────────────────── */
