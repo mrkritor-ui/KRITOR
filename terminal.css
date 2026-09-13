@@ -414,18 +414,59 @@ html, body, .bar, .panel, .tile-figure {
    never invents colour over a patch of screen with nothing on it. Moved
    onto the content itself instead — drop-shadow follows an element's own
    alpha shape rather than its box, so a red copy and a cyan copy offset a
-   pixel either way hug the actual glyphs, icons, borders and bitmap dither
-   and nothing else. Applied only to lines and bitmaps (the bar, the home
-   tab, the footer, the tile renditions) and never to .tile-real: that one
-   is a photograph of the work, not a piece of the terminal's own type, and
-   it stays exactly as sharp as its own file. */
+   pixel either way hug the actual glyphs, icons and borders and nothing
+   else. */
 .crt-glass .bar,
 .crt-glass .home-tab,
 .crt-glass .foot,
 .crt-glass .bar-btn,
-.crt-glass .ico,
-.crt-glass .tile-bits {
+.crt-glass .ico {
   filter: drop-shadow(1px 0 0 rgba(255, 45, 45, .45)) drop-shadow(-1px 0 0 rgba(45, 210, 255, .45));
+}
+
+/* The bitmap renditions don't get the same treatment, for two reasons.
+   filter and mask-image on the one element is a genuinely inconsistent
+   combination across engines — a drop-shadow can end up computed against
+   the box's full rectangle rather than the masked artwork silhouette it
+   looks like it should follow, which is exactly the bug this replaces: the
+   fringe was landing on an invisible edge instead of the dithered picture.
+   And a catalogue at SMALL is dozens of tiles at once; a filter is its own
+   rasterised layer per element, and dozens of those is a real cost where
+   dozens of plain masked, blended divs is closer to free.
+
+   So: two more copies of the same mask instead, tinted rather than
+   filtered. --bits is a custom property, and those inherit into
+   pseudo-elements the same as any other, so ::before and ::after pick up
+   the exact silhouette .tile-bits itself is drawn with, no separate lookup
+   needed. Nudged a pixel apart and screen-blended — additive, so it only
+   ever adds colour at the edge two slightly-offset copies of the same
+   shape don't quite cover the same pixels, never darkens or softens the
+   dither underneath. */
+.crt-glass .tile-bits { position: relative; }
+
+.crt-glass .tile-bits::before,
+.crt-glass .tile-bits::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: var(--bits);
+  mask-image: var(--bits);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.crt-glass .tile-bits::before {
+  background-color: rgba(255, 45, 45, .55);
+  transform: translateX(1px);
+}
+
+.crt-glass .tile-bits::after {
+  background-color: rgba(45, 210, 255, .55);
+  transform: translateX(-1px);
 }
 
 /* ── The two layers of type ──────────────────────────────────────────────── */
