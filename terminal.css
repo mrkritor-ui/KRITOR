@@ -593,8 +593,13 @@ html, body, .bar, .panel, .tile-figure {
   clip-path: inset(50%);
 }
 
-/* The store's two flights are the only screens that set the name in type
-   on screen rather than leaving it for a screen reader alone. */
+/* Every screen that arrives on its own clock, rather than waiting on a
+   click, sets the name in type on screen instead of leaving it for a
+   screen reader alone — the gate and the letter grid included now: both
+   auto-advance the same way the store's two flights always have, watched
+   for a beat, named, and gone. */
+.boot[data-mode="gate"] .boot-mark,
+.boot[data-mode="arch"] .boot-mark,
 .boot[data-mode="out"] .boot-mark,
 .boot[data-mode="back"] .boot-mark {
   position: static;
@@ -606,14 +611,16 @@ html, body, .bar, .panel, .tile-figure {
   clip-path: none;
 }
 
-/* KRITOR STORE doesn't arrive with the rest of the screen the way it used
-   to when the canvas underneath was a starfield already in motion — the
-   globe has its own, slower arrival (the bloom, then a beat to actually
-   look at the thing before reading a caption on it), so the whole wordmark
-   block starts invisible and only fades up once the scene itself pokes the
-   .is-announcing class on partway through (see globe() in pixel-fx.js).
-   One rule for the whole core rather than mark/sub/voice separately: they
-   arrive as a block, not staggered.
+/* The name doesn't arrive with the rest of the screen — every one of these
+   scenes has its own slower arrival (a bloom, or just a beat to actually
+   watch the thing move before reading a name over it), so the whole
+   wordmark block starts invisible and only fades up once the scene itself
+   pokes the .is-announcing class on partway through (see globe(),
+   blockGlitch() and letterGrid() in pixel-fx.js). One rule for the whole
+   core rather than mark/sub/voice separately: they arrive as a block, not
+   staggered. The gate and the letter grid write no sub under the name —
+   SUB.gate/arch are both "" in boot-scene.js — so there is nothing to
+   arrive there but KRITOR alone.
 
    The transition lives only on the reveal rule below, not here. Declared
    here too, this would also fire on the very first style pass — the
@@ -622,11 +629,15 @@ html, body, .bar, .panel, .tile-figure {
    before/after change as far as a transition is concerned — and the
    wordmark would visibly fade OUT of view on arrival instead of simply
    starting hidden. */
+.boot[data-mode="gate"] .boot-core,
+.boot[data-mode="arch"] .boot-core,
 .boot[data-mode="out"] .boot-core,
 .boot[data-mode="back"] .boot-core {
   opacity: 0;
 }
 
+.boot.is-announcing[data-mode="gate"] .boot-core,
+.boot.is-announcing[data-mode="arch"] .boot-core,
 .boot.is-announcing[data-mode="out"] .boot-core,
 .boot.is-announcing[data-mode="back"] .boot-core {
   opacity: 1;
@@ -644,8 +655,10 @@ html, body, .bar, .panel, .tile-figure {
 
 .boot-sub:empty { display: none; }
 
-/* Neither gate writes anything over its scene — no name, no line of type,
-   not even the flash that used to ask for one. */
+/* The gate and the letter grid write the name now, but never the line
+   under it — WELCOME TO is a flight landing somewhere; the gate is not
+   going anywhere, it is just opening, and KRITOR alone fading in and out
+   over its own scene already says that. */
 .boot[data-mode="gate"] .boot-welcome,
 .boot[data-mode="arch"] .boot-welcome {
   display: none;
@@ -934,22 +947,10 @@ html[data-view="list"] .bar-scale-mark { left: calc(100% - var(--u) * .5); }
 .bar-loading.is-gone { display: none; }
 .bar-loading-label { display: block; margin-bottom: var(--u); font-size: 12px; }
 
-/* The bar full, the door still shut. Everything else on this screen is either
-   burning or holding still, so the one thing being asked for is the one thing
-   that blinks — and it blinks the way a terminal's cursor does, hard on and
-   hard off with no fade, rather than pulsing like something decorative. Lit
-   for most of the cycle: it is meant to be read, not just noticed.
-
-   Nothing moves but the ink. The label keeps its box whether it is showing or
-   not, so a row that is already sitting on the boot screen never reflows the
-   bar underneath it. */
-.bar-loading.is-waiting .bar-loading-label {
-  animation: bar-prompt 1.1s steps(1, end) infinite;
-}
-
-/* And the same blink for the answer. PRESS TO ENTER asks; WELCOME is what the
-   machine says back, and it is the one thing still moving on a screen that has
-   just been emptied of everything else. */
+/* WELCOME's own blink, once the sequence has emptied the screen of
+   everything else worth watching — hard on and hard off with no fade, the
+   way a terminal's cursor blinks rather than something decorative pulsing.
+   Lit for most of the cycle: it is meant to be read, not just noticed. */
 .bar-loading.is-welcome .bar-loading-label {
   animation: bar-prompt .9s steps(1, end) infinite;
 }
@@ -1878,9 +1879,6 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 @media (prefers-reduced-motion: reduce) {
   .caret { animation: none; }
-  /* Held lit, not taken away — the blinking is the effect, the sentence is the
-     only instruction the door gives. */
-  .bar-loading.is-waiting .bar-loading-label { animation: none; opacity: 1; }
   .bar-progress span { transition: none; }
   /* The block still moves to the stop, it just arrives there. */
   .bar-scale-mark { transition: none; }

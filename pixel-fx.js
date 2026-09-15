@@ -2015,15 +2015,40 @@
     return 1 - (a + (b - a) * ty) / 255;
   }
 
+  /* ── Both doors' own arrival ──────────────────────────────────────────────── */
+
+  /* The gate and the letter grid used to be the one thing on this site that
+     never wrote its own name and never left on its own — a locked door,
+     answered only by a click, however long that took. That read as a second
+     obstacle rather than a threshold: a visitor already had to choose ART
+     or ARCHITECTURE once, on the front door, and asking them to click a
+     second time, on a screen with nothing written on it to click for, was
+     friction with no information in it. Both now arrive the same way the
+     store's two flights always have — watched for a beat, named, and gone —
+     so the whole site tells time the same way. Shared, since the two scenes
+     only ever differed in what they draw, never in when they say their own
+     name: HOLD_BEFORE_TEXT is long enough to watch the loop go around at
+     least once before KRITOR arrives, TEXT_FADE matches the transition on
+     .boot-core in terminal.css, and the three sum to READY_MS — matched by
+     hand to WARP_MS in boot-scene.js, the same way GLOBE_READY_MS already
+     is, so the bar's own fill finishes in step with it. */
+  const DOOR_HOLD_BEFORE_TEXT_MS = 2800;
+  const DOOR_TEXT_FADE_MS = 700;
+  const DOOR_HOLD_AFTER_TEXT_MS = 700;
+  const DOOR_READY_MS = DOOR_HOLD_BEFORE_TEXT_MS + DOOR_TEXT_FADE_MS + DOOR_HOLD_AFTER_TEXT_MS;
+
   /* ── The block glitch: the catalogue's door, now ─────────────────────────── */
 
-  /* No storm, no name cut into it, nothing written over it at all — the door
-     is a field of paper and ink that will not sit still, the way a signal
-     with nothing on it does not sit still. Forty-three real frames of a
-     datamoshed block field, ambient and looping: watched frame by frame its
-     blocks rise and drift right in a single continuous wave, which is
-     exactly the motion a fresh random partition every quarter-second could
-     never reproduce. */
+  /* No storm, nothing written into the picture itself, nothing that ever
+     changes what it's made of — the door is a field of paper and ink that
+     will not sit still, the way a signal with nothing on it does not sit
+     still. Forty-three real frames of a datamoshed block field, ambient and
+     looping: watched frame by frame its blocks rise and drift right in a
+     single continuous wave, which is exactly the motion a fresh random
+     partition every quarter-second could never reproduce. KRITOR arrives
+     over it and leaves again — see DOOR_READY_MS above — but the field
+     itself never resolves into anything; it is still going, underneath,
+     the moment the page goes with it. */
   const ART_TILE_W = 100, ART_TILE_H = 100;    // stored per frame, before the
                                                 // cover crop above fits it to
                                                 // whatever shape the canvas is
@@ -2035,14 +2060,36 @@
 
   function blockGlitch(host) {
     loadFrameSheet(artSheet, ART_SHEET_URL, ART_TILE_W, ART_TILE_H, ART_FRAME_COUNT);
-    return run(host, reduceMotion ? 12 : Infinity, function (W, H) {
+    return run(host, reduceMotion ? 12 : Infinity, function (W, H, info) {
       const cover = frameSheetCover(W, H, ART_TILE_W, ART_TILE_H);
       let t = 0;
       let partMs = 0, partT = 0, dissolve = 0;
 
+      /* The arrival's own clock — always advances, reduced motion included,
+         the same as globe()'s t: it is the sequence's own timekeeping, not
+         a visual knob, and gating it on reduceMotion would freeze the
+         announce and the ready signal at "never" for exactly the visitor
+         who asked this screen to get out of the way fastest. Kept apart
+         from the field's own t above, which does gate on reduceMotion,
+         because that one really is a visual knob — how fast the blocks
+         drift — with no business changing when the name arrives. */
+      let seqT = 0;
+      let announced = false, notifiedReady = false;
+      const boot = host.parentElement || host;
+
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
+          seqT += dt * 1000;
+          if (!announced && seqT >= DOOR_HOLD_BEFORE_TEXT_MS) {
+            announced = true;
+            boot.classList.add("is-announcing");
+          }
+          if (!notifiedReady && seqT >= DOOR_READY_MS) {
+            notifiedReady = true;
+            if (info.notifyReady) info.notifyReady();
+          }
+
           const frames = artSheet.frames;
           if (!frames) {
             /* The sheet hasn't decoded yet — paper, and nothing drawn on
@@ -2112,8 +2159,9 @@
      way the catalogue's own clip is: straight back to the first frame the
      instant the last one plays, cross-faded through the seam the same as
      every other frame-to-frame step, no hold and no stop-start between
-     passes — a continuous replay until the door is answered rather than a
-     resolve that plays once and sits still. */
+     passes — a continuous replay, still going underneath when KRITOR
+     arrives over it and still going underneath when the page goes with
+     it, never a resolve that plays once and sits still. */
   const ARCH_TILE_W = 130, ARCH_TILE_H = 85;   // stored per frame, at the
                                                 // reference's own 724:474
   const ARCH_FRAME_COUNT = 36;
@@ -2124,14 +2172,31 @@
 
   function letterGrid(host) {
     loadFrameSheet(archSheet, ARCH_SHEET_URL, ARCH_TILE_W, ARCH_TILE_H, ARCH_FRAME_COUNT);
-    return run(host, reduceMotion ? 12 : Infinity, function (W, H) {
+    return run(host, reduceMotion ? 12 : Infinity, function (W, H, info) {
       const cover = frameSheetCover(W, H, ARCH_TILE_W, ARCH_TILE_H);
       let t = 0;
       let partMs = 0, partT = 0, dissolve = 0;
 
+      /* See blockGlitch()'s own seqT for why this is a second clock rather
+         than reusing t: the arrival has to keep time under reduced motion
+         even though the field itself goes still. */
+      let seqT = 0;
+      let announced = false, notifiedReady = false;
+      const boot = host.parentElement || host;
+
       return {
         part: function (ms) { partMs = Math.max(1, ms); partT = 0; },
         render: function (dt, bits) {
+          seqT += dt * 1000;
+          if (!announced && seqT >= DOOR_HOLD_BEFORE_TEXT_MS) {
+            announced = true;
+            boot.classList.add("is-announcing");
+          }
+          if (!notifiedReady && seqT >= DOOR_READY_MS) {
+            notifiedReady = true;
+            if (info.notifyReady) info.notifyReady();
+          }
+
           const frames = archSheet.frames;
           if (!frames) {
             bits.fill(0);

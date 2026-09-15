@@ -13,22 +13,24 @@
    loading still gates it — the sequence cannot finish while images are
    outstanding — it just never finishes early.
 
-   On the door the bar also has to ask. The fire waits for a click and used to
-   wait behind a label that still read LOADING, so a full bar and a lit screen
-   sat there saying the machine was busy when in fact it was holding for the
-   one thing nobody had been told to do. Once the bar is full and the door is
-   still shut the label turns into a prompt and blinks — the arcade's own way
-   of saying the machine is not busy, you are. */
+   The gate used to ask something of the bar too — a visitor had already
+   chosen ART or ARCHITECTURE once, on the front door, and the gate held
+   until a second click answered it, with the bar's own label turning into
+   PRESS TO ENTER once it had nothing left to report. That was friction with
+   no information in it, so the gate now arrives and leaves on its own clock
+   the same way every other screen here does (see DOOR_READY_MS in
+   pixel-fx.js) — the bar has nothing left to ask for. */
 (function () {
   "use strict";
 
-  const BOOT_MS = 2400;          // how long the bar takes to fill on the gate
+  const BOOT_MS = 2400;          // fallback bar-fill pace if a scene somehow
+                                  // never resolves on its own (see fillMs below)
   const DEAL_MS = 45;            // gap between works arriving
   const IDLE_MS = 20000;         // idle before the screensaver takes over
   const TYPE_MS = 22;            // ms per character
   const TYPE_LINE_MS = 110;      // extra pause at the end of each line
   const TYPE_MS_REDUCED = 6;     // still types, just briskly
-  const RUSH_MS = 320;           // what is left of the bar once the gate opens
+  const RUSH_MS = 320;           // what is left of the bar once the scene resolves early
   const SETTLE_MS = 320;         // the bar's one travel from boot height to full
 
   /* Answering the door, in three beats and about a second and a third. The
@@ -39,14 +41,6 @@
   const PART_MS = 380;           // the scene dissolving away
   const WHITE_MS = 620;          // the name alone on paper
   const LEAVE_MS = 260;          // and the boot screen itself going
-
-  /* What the loading row says. PRESS covers all three ways in without naming
-     any of them: a tap on a phone, a click on a laptop, Enter or space on a
-     keyboard. TAP is wrong on a desktop, CLICK is wrong on a phone, and PRESS
-     ANY KEY — which is the line this is really quoting — is wrong on both when
-     there is no keyboard to hand. */
-  const LOAD_LABEL = "LOADING";
-  const GATE_LABEL = "PRESS TO ENTER";
 
   const root = document.documentElement;
   const touch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
@@ -145,10 +139,10 @@
   function runBoot(options) {
     const boot = document.getElementById("boot");
     /* The scene is the loading screen's face: the block glitch or the letter
-       grid and their gate, or the globe between the catalogue and the store.
-       It runs alongside the bar filling, and on the gate it is also what the
-       sequence waits for — the machine will not finish coming up until
-       somebody has answered the door. */
+       grid, or the globe between the catalogue and the store. It runs
+       alongside the bar filling and resolves on its own clock — see
+       notifyReady in pixel-fx.js's run() — so the sequence below only ever
+       waits on it, never on an interaction. */
     const scene = window.KritorBoot
       ? window.KritorBoot.mount(options.page || "catalogue")
       : { ready: Promise.resolve(), stop: function () {} };
@@ -156,9 +150,9 @@
        here to pay for the scenes — they were a grid of a thousand elements
        rewritten every frame, and `cursor: none` had to be resolved against
        every one of them as it was created — and a canvas has cost nothing on
-       that count since. It stays off because the door is one picture and one
-       target: the whole screen is the button, and a drawn arrow hunting across
-       it for something to point at says the opposite. */
+       that count since. It stays off because there is nothing to point a
+       drawn arrow at yet: every boot screen is a picture playing itself out,
+       not a control surface. */
     /* The class, not the call: cursor.js is deferred and has not run yet at
        this point in the page. It reads the class when it does. */
     root.classList.add("kc-off");
@@ -173,19 +167,17 @@
 
     let sceneReady = false;
 
-    /* The bar is paced to the scene in front of it. On either gate it fills
-       while you read, so by the time the door is answered it is already done
-       and the click costs nothing. On a warp there is nothing to read, so the
-       bar finishes exactly as the flight lands and the two are one beat
-       rather than one after the other. */
-    const gateLikeScene = scene.mode === "gate" || scene.mode === "arch";
-    let fillMs = gateLikeScene
-      ? BOOT_MS
-      : (window.KritorBoot ? window.KritorBoot.WARP_MS : BOOT_MS);
+    /* Paced to WARP_MS — DOOR_READY_MS in pixel-fx.js is matched to it by
+       hand, the same way GLOBE_READY_MS already is, so every scene finishes
+       its own arrival right around when the bar does regardless of which
+       one is actually showing. Only ever a starting assumption: the
+       compression below means an early resolve always wins. */
+    let fillMs = window.KritorBoot ? window.KritorBoot.WARP_MS : BOOT_MS;
     const loadingRow = document.getElementById("loading-row");
     const loadingLabel = document.getElementById("loading-label");
     const loadingFill = document.getElementById("loading-fill");
     const infoRow = document.getElementById("info-row");
+    const gateLikeScene = scene.mode === "gate" || scene.mode === "arch";
 
     const urls = options.preload || [];
     let loaded = 0;
@@ -203,27 +195,12 @@
     const started = performance.now();
     let ended = false;
 
-    /* Only a door asks for anything. A warp lands on its own, so its bar
-       fills and finishes and is never in a position to prompt. */
-    const gate = gateLikeScene;
-    let prompting = false;
-
-    /* Driven from the frame rather than fired once, so it turns itself off the
-       moment the door is answered. The class blinks it; the text is what says
-       which state the row is in, and the two always change together. */
-    function setPrompt(on) {
-      if (on === prompting) return;
-      prompting = on;
-      loadingLabel.textContent = on ? GATE_LABEL : LOAD_LABEL;
-      loadingRow.classList.toggle("is-waiting", on);
-    }
-
     scene.ready.then(() => {
       sceneReady = true;
-      /* Answered before the bar had filled. Somebody who knocks early is not
-         asking to watch out the rest of a schedule they have already opted
-         out of, so the remaining fill is compressed into one short run rather
-         than held to its original pace. */
+      /* Resolved before the bar had filled — a fast scene, or a slow one
+         still catching up to it — is not worth holding the rest of the fill
+         to its original pace for, so what is left runs as one short burst
+         instead. */
       const elapsed = performance.now() - started;
       if (elapsed < fillMs) fillMs = elapsed + RUSH_MS;
     });
@@ -234,15 +211,10 @@
          sliding — a terminal fills a bar in characters, not pixels. */
       const scripted = Math.min(1, elapsed / fillMs);
       loadingFill.style.width = (Math.round(scripted * 32) / 32 * 100) + "%";
-      /* A full bar in front of a shut door is the whole confusion: the machine
-         has nothing left to do and is waiting on a person who has not been
-         asked. Ask, from the moment there is nothing else the bar could be
-         reporting. Answered early, the bar is still filling and there is
-         nothing to explain — the door is already open before this is true. */
-      setPrompt(gate && !sceneReady && scripted >= 1);
       /* Real loading and the scripted fill both have to be done, and so does
-         the scene — on the fire that is a click, and there is deliberately no
-         timeout on it. */
+         the scene — on its own clock, and there is deliberately no timeout
+         on it beyond the 8s below, which exists only for real loading
+         hanging on a dead connection. */
       if (scripted >= 1 && sceneReady && (loadsDone() || elapsed > 8000)) return end();
       requestAnimationFrame(frame);
     };
@@ -254,10 +226,9 @@
       if (ended) return;
       ended = true;
       loadingFill.style.width = "100%";
-      setPrompt(false);
       loadingLabel.textContent = "WELCOME";
-      /* And it flashes. The prompt asked and has been answered; this is the
-         answer, and the one thing still moving once the picture has gone. */
+      /* And it flashes — the one thing still moving once the picture has
+         gone. */
       loadingRow.classList.add("is-welcome");
 
       /* Beat one: the picture dissolves out from under the name, the line
@@ -266,7 +237,7 @@
          written not to reach it, so it is left standing on white. */
       const welcome = document.getElementById("boot-welcome");
       if (welcome) {
-        welcome.textContent = gate ? "WELCOME TO" : "WELCOME.";
+        welcome.textContent = gateLikeScene ? "WELCOME TO" : "WELCOME.";
         welcome.hidden = false;
       }
       scene.part(PART_MS);
@@ -566,9 +537,9 @@
 
     function start() {
       if (running) return;
-      /* Never over the boot screen. The gate waits for a click and will happily
-         wait longer than the idle timer, and the bouncer arriving on top of the
-         door is the one place this can never appear. */
+      /* Never over the boot screen. A slow connection can leave real loading
+         outstanding well past the idle timer, and the bouncer arriving on
+         top of the door is the one place this can never appear. */
       const boot = document.getElementById("boot");
       if (boot && !boot.classList.contains("is-done")) {
         clearTimeout(idleTimer);
