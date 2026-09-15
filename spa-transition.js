@@ -191,6 +191,14 @@
 
       if (document.startViewTransition) {
         const transition = document.startViewTransition(update);
+        /* ready and updateCallbackDone are separate promises from finished —
+           catching finished alone still leaves these two unhandled, and an
+           aborted transition (a second navigation landing before the first
+           one settles) rejects all three. Nothing here reads what they
+           resolve to; only finished is awaited, so the other two just need
+           a rejection handler to stop the console logging one. */
+        transition.ready.catch(() => {});
+        transition.updateCallbackDone.catch(() => {});
         await transition.finished.catch(() => {});
       } else await update();
 

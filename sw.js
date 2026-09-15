@@ -197,8 +197,34 @@ self.addEventListener(
 
 
     /* -----------------------------------------------------
+       BOOT-SCREEN FRAME SHEETS
+
+       Each is <link rel=preload as="image"> in its page's own
+       <head>, picked up moments later by an <img> element in
+       pixel-fx.js. Answering that second request from here would
+       hand it a response built inside the service worker rather
+       than the one the browser's own preload already fetched —
+       two different worlds, so the browser cannot tell they are
+       the same resource and reports the preload as wasted. Left
+       alone, the <img> request goes straight to the network like
+       any other page-world fetch, and the preload it was always
+       meant to satisfy actually gets used.
+    ----------------------------------------------------- */
+
+    if (
+      url.pathname === "/art-loader-frames.png" ||
+      url.pathname === "/architecture-loader-frames.png" ||
+      url.pathname === "/tiger-loader-frames.png"
+    ) {
+
+      return;
+
+    }
+
+
+    /* -----------------------------------------------------
        ARTWORKS.JS
-       
+
        ALWAYS try the network first.
        This is the catalogue database and must stay current.
     ----------------------------------------------------- */
