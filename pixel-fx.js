@@ -778,8 +778,12 @@
       const dt = now - last;
       if (!uncapped && dt < interval) return;
       last = now;
-      scene.render(Math.min(dt, dtClampMs) / 1000, bits);
-      present();
+      /* A scene's render() may return false to say bits didn't change and
+         there is nothing worth re-blitting — see tigerEyes(), the one scene
+         on the site that sits still for any real length of time. Every
+         other scene never returns anything, which is truthy by omission, so
+         present() still runs on every frame for them exactly as before. */
+      if (scene.render(Math.min(dt, dtClampMs) / 1000, bits) !== false) present();
     };
 
     rebuild();
@@ -2238,6 +2242,23 @@
       let closeResolve = null;
       const closedPromise = new Promise(function (res) { closeResolve = res; });
 
+      /* Unlike every other scene in this file, this one sits still for as
+         long as a visitor lingers on the front door — held open is the
+         ordinary resting state of this whole page, not a brief beat between
+         two motions. Run uncapped the way the block glitch and the letter
+         grid do, that meant real work happening forever for a picture that
+         never changed: the per-pixel sampling pass below (two bilinear
+         reads and a dither compare, times a few hundred cells), then
+         present()'s own pass over the same cells, then the browser
+         re-running the CRT filter's blur-and-channel-shift chain against
+         the canvas because putImageData had touched it again — all of it,
+         every single rAF, and that chain was the actual cost behind the
+         drawn cursor lagging on this page. render() returns false instead
+         of drawing whenever the last frame drawn is bit-for-bit what this
+         one would draw again, which tells the driver in run() to skip
+         present() too — nothing downstream of an unchanged picture runs. */
+      let drawnPos = -1, drawnAppear = -1;
+
       return {
         part: function () {},
         close: function () {
@@ -2289,6 +2310,9 @@
               pos = 0;
             }
           }
+
+          if (pos === drawnPos && appear === drawnAppear) return false;
+          drawnPos = pos; drawnAppear = appear;
 
           const i0 = pos | 0;
           const i1 = i0 + 1 <= lastFrame ? i0 + 1 : i0;

@@ -354,6 +354,20 @@ html, body, .bar, .panel, .tile-figure {
   animation: crt-roll 9s linear infinite;
 }
 
+/* Not on the tiger. Every other boot screen carries this drift for at most
+   a few seconds — a click answers it and the whole layer comes down — so
+   the animation's own cost is as brief as the screen is. The tiger's boot
+   never comes down; it is the front door's ordinary resting state for as
+   long as a visitor stays on it, and an always-running transform here sits
+   behind #crt-optics on the canvas beside it, which is an SVG filter and
+   expensive to recomposite — the two together were the actual cost behind
+   the drawn cursor lagging on this page, not pixel-fx.js's own canvas work.
+   Static instead: the mesh itself, the curve and the fringe are all still
+   there, just not drifting. */
+.boot[data-mode="tiger"] .boot-crt::before {
+  animation: none;
+}
+
 /* The tube's curve: paper falls off toward the ink at the corners the way
    glass does when it is curved and you are not looking at it straight on.
    The frame's own two colours, blended rather than introduced, so a dark
