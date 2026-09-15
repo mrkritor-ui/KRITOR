@@ -42,10 +42,17 @@
 </head>
 <body>
 
-  <!-- The way back to the directory. Above the boot screen, not inside it —
-       the same fixed tab art and architecture both carry; the bar's own
-       CATALOGUE link goes one page over, not all the way out. -->
-  <a class="home-tab" href="/" aria-label="Back to KRITOR">HOME</a>
+  <!-- The way back to the directory — the same fixed tab art and architecture
+       both carry; the bar's own CATALOGUE link goes one page over, not all
+       the way out. Hidden for as long as html.is-booting is set
+       (terminal.css), since the store's two flights land on their own and
+       a second target next to a screen that isn't waiting on a click is
+       just clutter. A pixel icon on a pointer; the word HOME on a touch
+       screen, where the icon alone would be too small to trust. -->
+  <a class="home-tab" href="/" aria-label="Back to KRITOR">
+    <svg class="ico home-tab-icon" viewBox="0 0 9 8" width="18" height="16" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="4" y="0" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/></svg>
+    <span class="home-tab-word">HOME</span>
+  </a>
 
   <!-- The tube's own optics: a bright-pass bloom (threshold, blur, screen
        back over the source) and a genuine channel split for the fringe a

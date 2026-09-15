@@ -704,6 +704,23 @@ html, body, .bar, .panel, .tile-figure {
 
 .bar.is-hidden { display: none; }
 
+/* Shifted clear of the home tab below, which now sits at the same top edge
+   as this one rather than centred on the side — on a pointer the two boxes
+   are small enough to leave each other alone, but on a touch screen the
+   home tab carries the word HOME rather than the icon and this bar would
+   otherwise run edge to edge on a phone and sit right under it. Pushed in
+   by the home tab's own footprint at that size plus a gap, rather than
+   given a fixed width, so whatever is actually inside a given page's bar —
+   filters here, the bag there — still decides how far right its own edge
+   runs. Not on the front door's own bar, which has no home tab to clear:
+   it is the one page a home tab would be pointless on. */
+@media (hover: none), (pointer: coarse) {
+  .bar:not(.bar-landing) {
+    left: calc(var(--page-pad) + 76px);
+    width: auto;
+  }
+}
+
 /* ── The way back ────────────────────────────────────────────────────────── */
 
 /* The bar's own comment calls it the only chrome on the page, and until now
@@ -713,21 +730,21 @@ html, body, .bar, .panel, .tile-figure {
    fixed piece of chrome earns its keep: one constant way back to the front
    door, in the same place on every page that has one.
 
-   Left rather than tucked into the bar itself, because the bar's whole shape
-   changes page to page — filters here, the bag there — and a link that
-   moves with it is a link that has to be relearned each time. Centred on the
-   edge rather than pinned to the top corner, because the bar spans the full
-   width on a phone and a home tab in that corner would be buried under it;
-   the middle of the edge is clear on every width without a second rule for
-   one. */
+   Top-left, on the same edge the bar's own top sits on, rather than tucked
+   into the bar itself — the bar's whole shape changes page to page (filters
+   here, the bag there) and a link that moves with it is a link that has to
+   be relearned each time. The two boxes read as one row of chrome without
+   being one element: this one answers "where am I", the other answers
+   "what can I do here". */
 .home-tab {
   position: fixed;
   z-index: 450;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(env(safe-area-inset-top) + var(--u));
+  left: var(--page-pad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: var(--border) solid var(--ink);
-  border-left: 0;
   background: var(--bg);
   color: var(--ink);
   font: inherit;
@@ -744,6 +761,27 @@ html, body, .bar, .panel, .tile-figure {
   background: var(--ink);
   color: var(--bg);
   outline: 0;
+}
+
+/* Gone for as long as a loading screen is up. is-booting spans the door's
+   own gate as well as the store's two silent flights (see runBoot in
+   terminal-shell.js — it goes on before the scene mounts and comes off the
+   instant the door starts folding away), and on the gate the whole screen
+   is already the one button being waited on; a second target stacked on
+   top of it is a distraction from that click, not a convenience next to
+   it. Back the moment the answer is on its way in, the same beat the bar's
+   own parameters arrive. */
+html.is-booting .home-tab { display: none; }
+
+/* A pixel icon where a pointer can resolve it; the word where a touch
+   screen can't be trusted to — a house drawn this small reads as a smudge
+   at arm's length, and "where does this take me" is not a guess worth
+   making on the one link back to the front door. */
+.home-tab-word { display: none; }
+
+@media (hover: none), (pointer: coarse) {
+  .home-tab-icon { display: none; }
+  .home-tab-word { display: inline; }
 }
 
 /* The pull tab on the top edge. */
