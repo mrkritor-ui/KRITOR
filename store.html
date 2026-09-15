@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>KRITOR</title>
 <link rel="canonical" href="/store/">
-<script>location.replace(new URL("store/", location.href).href + location.search + location.hash);</script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'">
+<script src="/redirect.js?v=__ASSET_VERSION__" data-to="store/"></script>
 </head>
 <body></body>
 </html>

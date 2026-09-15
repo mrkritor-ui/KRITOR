@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>KRITOR</title>
   <link rel="canonical" href="/">
+  <!-- Content-Security-Policy, on every page. GitHub Pages cannot send
+       headers, so this is a meta tag: frame-ancestors does not apply in meta
+       form (see checkout/index.html for the fuller explanation), so this is
+       not clickjacking protection, only script/style/connection lockdown. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -97,6 +102,6 @@
 
   <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
   <script src="/landing.js?v=__ASSET_VERSION__"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+  <script src="/sw-register.js?v=__ASSET_VERSION__"></script>
 </body>
 </html>

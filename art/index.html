@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Art — KRITOR</title>
   <link rel="canonical" href="/art/">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -21,9 +22,12 @@
        nothing is painted in it until it lands. -->
   <link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
   <!-- Loaded async: media="print" keeps it out of the critical path, so a slow
-       or blocked font host can never delay rendering or script execution. -->
-  <link rel="stylesheet" media="print" onload="this.media='all'"
+       or blocked font host can never delay rendering or script execution.
+       font-swap.js switches the media back to "all" on load; that used to be
+       an inline onload attribute here, which the policy above will not run. -->
+  <link id="font-css" rel="stylesheet" media="print"
         href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap">
+  <script src="/font-swap.js?v=__ASSET_VERSION__"></script>
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap"></noscript>
 
   <!-- The door's own footage — pixel-fx.js starts decoding this the moment it
@@ -196,6 +200,6 @@
   <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal.js?v=__ASSET_VERSION__"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+  <script src="/sw-register.js?v=__ASSET_VERSION__"></script>
 </body>
 </html>

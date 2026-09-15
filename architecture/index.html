@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Architecture — KRITOR</title>
   <link rel="canonical" href="/architecture/">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -12,9 +13,6 @@
   <meta name="mobile-web-app-title" content="KRITOR">
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="/icon.png">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <!-- The site face, served from this origin. Preloaded rather than left to
        the stylesheet to discover: it is 4 KB, and font-display: block means
@@ -151,14 +149,11 @@
        catalogue rather than an error. KRITOR_BOOT_PAGE is the one thing
        terminal.js needed taught to it, so this page's boot asks for
        "architecture" instead of the default "catalogue". -->
-  <script>
-    window.ARTWORKS = [];
-    window.KRITOR_BOOT_PAGE = "architecture";
-  </script>
+  <script src="/architecture-boot.js?v=__ASSET_VERSION__"></script>
   <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
   <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal.js?v=__ASSET_VERSION__"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+  <script src="/sw-register.js?v=__ASSET_VERSION__"></script>
 </body>
 </html>

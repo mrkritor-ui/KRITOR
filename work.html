@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <title>KRITOR</title>
 <link rel="canonical" href="/">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'">
 <!-- The site face, served from this origin. Preloaded rather than left to
      the stylesheet to discover: it is 4 KB, and font-display: block means
      nothing is painted in it until it lands. -->
@@ -24,16 +25,5 @@
 <header class="work-header"><a href="/art/?return=catalogue" aria-label="Back to catalogue">+</a></header>
 <main id="work-page"></main>
 <script src="/artworks.js"></script><script src="/image-manifest.js"></script><script src="/tile-image.js?v=1"></script><script src="/work.js?v=3"></script>
-<script>
-(function(){
-  const id=new URLSearchParams(location.search).get('id');
-  if(id && /^work-[A-Za-z0-9_-]+$/.test(id)){
-    history.replaceState(history.state,'','/' + encodeURIComponent(id) + '/');
-    document.querySelectorAll('a[href*="work.html?id="]').forEach(function(a){
-      const u=new URL(a.href,location.href),rid=u.searchParams.get('id');
-      if(rid)a.href='/' + encodeURIComponent(rid) + '/';
-    });
-  }
-})();
-</script>
+<script src="/work-redirect.js?v=__ASSET_VERSION__"></script>
 </body></html>
