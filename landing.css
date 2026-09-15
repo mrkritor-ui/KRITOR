@@ -1,10 +1,12 @@
 /* KRITOR — the landing door.
 
-   No storm, no starfield: the front door is a blank sheet of paper and one
-   panel of chrome, the same panel every other page uses. ART, ARCHITECTURE
-   and STORE are real links — the animation is a courtesy for JS, not a
-   requirement of it, so the site still works with it off. MUSIC has nothing
-   behind it yet, so it is a disabled button, not a broken promise. */
+   The tiger (tigerEyes() in pixel-fx.js, mounted by landing.js) is the
+   scene now; this file is only the bar's own choreography on top of it —
+   the row that asks sliding off, the loading row taking its place. ART,
+   ARCHITECTURE and STORE are real links — every bit of this is a courtesy
+   for JS, not a requirement of it, so the site still works with it off.
+   MUSIC has nothing behind it yet, so it is a disabled button, not a
+   broken promise. */
 
 @view-transition { navigation: auto; }
 

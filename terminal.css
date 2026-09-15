@@ -240,7 +240,8 @@ html, body, .bar, .panel, .tile-figure {
 .boot[data-mode="gate"] .boot-fx,
 .boot[data-mode="arch"] .boot-fx,
 .boot[data-mode="out"] .boot-fx,
-.boot[data-mode="back"] .boot-fx {
+.boot[data-mode="back"] .boot-fx,
+.boot[data-mode="tiger"] .boot-fx {
   top: 0;
   bottom: 0;
 }
@@ -300,7 +301,8 @@ html, body, .bar, .panel, .tile-figure {
 .boot[data-mode="gate"] .boot-crt,
 .boot[data-mode="arch"] .boot-crt,
 .boot[data-mode="out"] .boot-crt,
-.boot[data-mode="back"] .boot-crt {
+.boot[data-mode="back"] .boot-crt,
+.boot[data-mode="tiger"] .boot-crt {
   display: block;
 }
 
@@ -315,8 +317,52 @@ html, body, .bar, .panel, .tile-figure {
 .boot[data-mode="gate"] .boot-fx-canvas,
 .boot[data-mode="arch"] .boot-fx-canvas,
 .boot[data-mode="out"] .boot-fx-canvas,
-.boot[data-mode="back"] .boot-fx-canvas {
+.boot[data-mode="back"] .boot-fx-canvas,
+.boot[data-mode="tiger"] .boot-fx-canvas {
   filter: url(#crt-optics);
+}
+
+/* The tingle: the same optics as the ordinary fringe above, run further and
+   only ever let through in a couple of small patches that drift on and off
+   over the door's whole time on screen — an even fringe reads as a healthy
+   signal's own chromatic aberration, the way it does everywhere else on the
+   site; this reads as the picture itself losing hold for a moment, which is
+   what a door with eyes behind it should feel like even before they move.
+   Backdrop-filter rather than a second canvas: it samples the tiger itself
+   through the clip and re-runs the optics against whatever is actually
+   there, so a patch shows real intensified fringe on the real picture
+   rather than a static graphic laid over it. */
+.boot-fx-tingle {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  -webkit-backdrop-filter: url(#crt-optics-tingle);
+  backdrop-filter: url(#crt-optics-tingle);
+  clip-path: inset(100% 0 0 0);
+  animation: boot-tingle 6.2s steps(1) infinite;
+}
+
+.boot[data-mode="tiger"] .boot-fx-tingle { display: block; }
+
+@keyframes boot-tingle {
+  0%, 58% { clip-path: inset(100% 0 0 0); }
+  60% { clip-path: inset(22% 0 58% 0); }
+  67% { clip-path: inset(100% 0 0 0); }
+  67.1%, 81% { clip-path: inset(100% 0 0 0); }
+  83% { clip-path: inset(61% 0 14% 0); }
+  88% { clip-path: inset(100% 0 0 0); }
+  100% { clip-path: inset(100% 0 0 0); }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .boot-fx-tingle { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-fx-tingle { animation: none; }
 }
 
 /* Scanlines and the column mask, together: one repeating band across the

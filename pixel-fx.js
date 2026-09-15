@@ -806,6 +806,12 @@
       /* Asked to leave. A scene may answer it — the gate dissolves — and one
          that does not simply carries on until it is stopped. */
       part: function (ms) { if (scene && scene.part) scene.part(ms); },
+      /* The same idea as part(), for a scene with its own idea of "leaving"
+         that isn't a dissolve — the tiger closes its eyes instead. Returns
+         whatever the scene's own close() returns (a promise settling once
+         it's actually done), or an already-resolved one for every scene
+         that doesn't define this. */
+      close: function () { return scene && scene.close ? scene.close() : Promise.resolve(); },
       stop: function () {
         stopped = true;
         cancelAnimationFrame(raf);
@@ -2175,6 +2181,136 @@
     });
   }
 
+  /* ── The tiger: the front door's own arrival ─────────────────────────────── */
+
+  /* The front door used to have no scene at all — a blank sheet of paper and
+     the bar, nothing else, answered the moment the bar itself was hit rather
+     than by anything on screen. This is its scene now: a tiger's eyes,
+     opening.
+
+     The reference clip is one continuous blink loop — eyes open, closing,
+     held shut for a beat, opening again, back to open — so open and closed
+     both already exist in the same footage, at opposite ends of the same
+     arc. Fourteen real frames of that arc are kept here (the source clip's
+     own frames 7 through 20 — the shut hold through to fully open again;
+     the other half of the loop, open easing down into shut, is the same
+     motion this scene already has a use for, just run backwards). Frame 0
+     is the shut hold, frame 13 is fully open, and this scene only ever
+     plays that one arc, forwards to arrive and backwards to leave — never
+     the loop itself, which is why it does not use ART_FRAME_MS/loop's
+     modulo-wrap the way the block glitch and the letter grid do.
+
+     Sequence: the shut frame fades up from blank paper — the door isn't
+     merely present, it's a photograph resolving — then the eyes open in
+     one pass and hold there, open, for as long as the visitor stays on
+     this page. Answered not by a click on the scene itself (there is
+     nothing here to click; the bar's own links are the door) but by
+     leaving — landing.js calls close() the moment ART, ARCHITECTURE or
+     STORE is clicked, plays the same arc backwards, and only sends the
+     browser on once the eyes are actually shut, so the cut to whatever
+     comes next lands on a blink rather than mid-motion. */
+  const TIGER_TILE_W = 200, TIGER_TILE_H = 108;
+  const TIGER_FRAME_COUNT = 14;
+  const TIGER_FRAME_MS = 75;           // native pace of the reference clip —
+                                        // the 13-frame arc runs in ~975ms
+  const TIGER_FADE_MS = 1000;          // the shut frame's own fade up from
+                                        // blank paper, before it starts to open
+  const TIGER_SHEET_URL = "/tiger-loader-frames.png";
+  const tigerSheet = { frames: null, requested: false };
+
+  function tigerEyes(host) {
+    loadFrameSheet(tigerSheet, TIGER_SHEET_URL, TIGER_TILE_W, TIGER_TILE_H, TIGER_FRAME_COUNT);
+    return run(host, reduceMotion ? 12 : Infinity, function (W, H, info) {
+      const cover = frameSheetCover(W, H, TIGER_TILE_W, TIGER_TILE_H);
+      const lastFrame = TIGER_FRAME_COUNT - 1;
+
+      /* fade-in  the shut frame rising out of blank paper
+         opening   playing forward, shut toward open
+         held      sitting on the open frame, waiting to be left
+         closing   playing backward, from wherever it was, toward shut
+         closed    sitting on the shut frame — close()'s promise has
+                   resolved and landing.js is free to cut away */
+      let phase = "fade-in";
+      let t = 0;
+      let pos = 0;
+      let closeFromPos = 0;
+      let notifiedOpen = false;
+      let closeResolve = null;
+      const closedPromise = new Promise(function (res) { closeResolve = res; });
+
+      return {
+        part: function () {},
+        close: function () {
+          if (phase !== "closing" && phase !== "closed") {
+            closeFromPos = pos;
+            t = 0;
+            phase = "closing";
+          }
+          return closedPromise;
+        },
+        render: function (dt, bits) {
+          const frames = tigerSheet.frames;
+          if (!frames) { bits.fill(0); return; }
+
+          let appear = 1;
+
+          if (reduceMotion) {
+            /* No motion, but the sequence still has to run to completion —
+               close() is still a real promise landing.js awaits before it
+               navigates, just settled on the next frame instead of after
+               a played-out reverse. */
+            if (phase === "fade-in" || phase === "opening") {
+              phase = "held";
+              if (!notifiedOpen && info.notifyReady) { notifiedOpen = true; info.notifyReady(); }
+            } else if (phase === "closing") {
+              phase = "closed";
+              closeResolve();
+            }
+            pos = phase === "closed" ? 0 : lastFrame;
+          } else {
+            t += dt * 1000;
+            if (phase === "fade-in") {
+              appear = Math.min(1, t / TIGER_FADE_MS);
+              pos = 0;
+              if (appear >= 1) { phase = "opening"; t = 0; }
+            } else if (phase === "opening") {
+              pos = t / TIGER_FRAME_MS;
+              if (pos >= lastFrame) {
+                pos = lastFrame;
+                phase = "held";
+                if (!notifiedOpen && info.notifyReady) { notifiedOpen = true; info.notifyReady(); }
+              }
+            } else if (phase === "held") {
+              pos = lastFrame;
+            } else if (phase === "closing") {
+              pos = closeFromPos - t / TIGER_FRAME_MS;
+              if (pos <= 0) { pos = 0; phase = "closed"; closeResolve(); }
+            } else {
+              pos = 0;
+            }
+          }
+
+          const i0 = pos | 0;
+          const i1 = i0 + 1 <= lastFrame ? i0 + 1 : i0;
+          const mix = pos - i0;
+          const frame0 = frames[i0], frame1 = frames[i1];
+
+          for (let y = 0; y < H; y++) {
+            const row = y * W;
+            const fv = (y - cover.originY) / cover.scale;
+            for (let x = 0; x < W; x++) {
+              const fu = (x - cover.originX) / cover.scale;
+              const c0 = frameSheetSample(frame0, TIGER_TILE_W, TIGER_TILE_H, fu, fv);
+              let coverage = mix > 0 ? c0 + (frameSheetSample(frame1, TIGER_TILE_W, TIGER_TILE_H, fu, fv) - c0) * mix : c0;
+              if (appear < 1) coverage *= appear;
+              bits[row + x] = dither(x, y, coverage);
+            }
+          }
+        },
+      };
+    });
+  }
+
   /* ── The globe: the store's own arrival ──────────────────────────────────── */
 
   /* Australia and Tasmania, simplified to the capes and gulfs a low-resolution
@@ -2424,6 +2560,7 @@
   }
 
   window.KritorFX = {
-    terrain: terrain, blockGlitch: blockGlitch, letterGrid: letterGrid, globe: globe, reduceMotion: reduceMotion,
+    terrain: terrain, blockGlitch: blockGlitch, letterGrid: letterGrid, globe: globe, tigerEyes: tigerEyes,
+    reduceMotion: reduceMotion,
   };
 })();

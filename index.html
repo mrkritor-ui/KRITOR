@@ -18,10 +18,15 @@
        nothing is painted in it until it lands. -->
   <link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
 
+  <!-- The door's own footage — pixel-fx.js starts decoding this the moment it
+       runs, but that is already after the stylesheets and however much else
+       stands ahead of it in the same <head>. Preloaded so the fetch is
+       underway from the first possible moment instead. -->
+  <link rel="preload" href="/tiger-loader-frames.png" as="image">
+
   <link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
   <!-- The same panel every other page uses, so the door and the rooms behind
-       it read as one system. Nothing here draws the boot's storm or the
-       store's starfield: this screen has no scene, only the bar. -->
+       it read as one system. -->
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/landing.css?v=__ASSET_VERSION__">
   <!-- The drawn cursor. cursor.css asks the browser for it; cursor.js draws
@@ -31,6 +36,70 @@
   <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
 </head>
 <body>
+
+  <!-- Same optics as the catalogue's own gate — see art/index.html for the
+       full account of why this is an SVG filter and not a CSS one. A second
+       copy, crt-optics-tingle, runs the same two moves (bright-pass bloom,
+       then a split-and-shift of one channel each way) further than the
+       first — the ordinary fringe below runs at this strength everywhere;
+       the tingle only ever shows in the couple of small patches
+       .boot-fx-tingle's own clip-path opens onto it, in terminal.css. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feComponentTransfer in="SourceGraphic" result="bright">
+        <feFuncR type="linear" slope="3" intercept="-1.6"/>
+        <feFuncG type="linear" slope="3" intercept="-1.6"/>
+        <feFuncB type="linear" slope="3" intercept="-1.6"/>
+      </feComponentTransfer>
+      <feGaussianBlur in="bright" stdDeviation="0.8" result="bloom"/>
+      <feBlend in="SourceGraphic" in2="bloom" mode="screen" result="bloomed"/>
+
+      <feColorMatrix in="bloomed" type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rChan"/>
+      <feOffset in="rChan" dx="-0.6" dy="0" result="rShift"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gChan"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bChan"/>
+      <feOffset in="bChan" dx="0.6" dy="0" result="bShift"/>
+      <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="bShift" mode="screen"/>
+    </filter>
+    <filter id="crt-optics-tingle" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feComponentTransfer in="SourceGraphic" result="bright">
+        <feFuncR type="linear" slope="3.6" intercept="-1.9"/>
+        <feFuncG type="linear" slope="3.6" intercept="-1.9"/>
+        <feFuncB type="linear" slope="3.6" intercept="-1.9"/>
+      </feComponentTransfer>
+      <feGaussianBlur in="bright" stdDeviation="1.1" result="bloom"/>
+      <feBlend in="SourceGraphic" in2="bloom" mode="screen" result="bloomed"/>
+
+      <feColorMatrix in="bloomed" type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rChan"/>
+      <feOffset in="rChan" dx="-1.6" dy="0" result="rShift"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gChan"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bChan"/>
+      <feOffset in="bChan" dx="1.6" dy="0" result="bShift"/>
+      <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="bShift" mode="screen"/>
+    </filter>
+  </svg>
+
+  <!-- Boot. Not a door to answer any more — nothing here waits on a click,
+       and it never goes away; it's the front door's own furniture, same as
+       the bar sitting fixed on top of it. The mode is always "tiger": a
+       tiger's eyes, opening (see tigerEyes() in pixel-fx.js) once on
+       arrival and held open after, then closed again — the same footage,
+       backwards — the instant ART, ARCHITECTURE or STORE is actually
+       clicked (see landing.js), with the hard cut to whatever comes next
+       waiting on that close rather than racing it. -->
+  <div class="boot" id="boot" data-mode="tiger">
+    <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
+    <div class="boot-fx-tingle" aria-hidden="true"></div>
+    <div class="boot-crt" aria-hidden="true"></div>
+  </div>
 
   <!-- Empty on purpose. Nothing arrives here until something is chosen. -->
   <main class="landing" id="landing"></main>
@@ -52,6 +121,7 @@
     </div>
   </div>
 
+  <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
   <script src="/landing.js?v=__ASSET_VERSION__"></script>
   <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
 </body>
