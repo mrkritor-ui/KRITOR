@@ -40,6 +40,12 @@ JSON.parse(s.slice(s.indexOf("["),s.lastIndexOf("]")+1)).forEach(w=>{fs.mkdirSyn
 fs.writeFileSync(p.join(w.id,"index.html"),fs.readFileSync("index.html"))});'
 ```
 
+The same build step also bakes each work's and shop item's own `<title>`,
+description, canonical link, Open Graph/Twitter tags, and JSON-LD directly
+into its generated `index.html` (see `.github/workflows/pages.yml`), and
+writes `sitemap.xml` from the same data. A fresh clone's `/work-01/` and
+`/shop/<id>/` carry only the generic template's tags until that build runs.
+
 ## How it fits together
 
 ```

@@ -345,6 +345,28 @@
     line(list, "WORLDWIDE");
   }));
 
+  /* ── SEO ───────────────────────────────────────────────────────────────── */
+
+  /* An ItemList naming every listed piece and its clean URL — the structured
+     data Google looks for on a category/listing page, separate from the full
+     Product + Offer data that lives on each item's own page (product.js). */
+  if (items.length) {
+    const ld = document.createElement("script");
+    ld.type = "application/ld+json";
+    ld.id = "store-jsonld";
+    ld.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      itemListElement: items.map((item, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: "https://kritor.au/shop/" + encodeURIComponent(item.id) + "/",
+        name: nameOf(item),
+      })),
+    });
+    document.head.appendChild(ld);
+  }
+
   /* ── Wiring ────────────────────────────────────────────────────────────── */
 
   root.dataset.reveal = "on";

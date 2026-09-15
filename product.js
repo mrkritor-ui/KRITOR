@@ -24,7 +24,7 @@
     return;
   }
 
-  document.title = `${item.title || "KRITOR"} — KRITOR`;
+  document.title = `${item.title || "KRITOR"} — KRITOR Store`;
 
   const cart = window.KritorCart;
   const assetPath = cart ? cart.assetPath : p => (p && !p.startsWith("/") ? "/" + p : p || "");
@@ -38,6 +38,58 @@
     window.KritorTileImage ? window.KritorTileImage.pick(path, width) : assetPath(path);
   const sources = item.images || [];
   const hero = sources.length ? rendition(sources[0], 1440) : "";
+
+  (function seo() {
+    const canonicalUrl = `https://kritor.au/shop/${encodeURIComponent(item.id)}/`;
+    const imageUrl = hero ? `https://kritor.au${encodeURI(assetPath(hero))}` : "https://kritor.au/icon.png";
+    const priceText = money(item.price, item.currency);
+    const bits = [item.edition, item.materials, item.size].filter(Boolean);
+    const desc = `${item.title || "Original work"}${bits.length ? ", " + bits.join(", ") : ""} — ${priceText}. An original work by KRITOR, shipped from Melbourne.`;
+
+    function setMeta(attr, key, content) {
+      let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
+      el.setAttribute("content", content);
+    }
+
+    let canon = document.querySelector('link[rel="canonical"]');
+    if (!canon) { canon = document.createElement("link"); canon.rel = "canonical"; document.head.appendChild(canon); }
+    canon.href = canonicalUrl;
+
+    setMeta("name", "description", desc);
+    setMeta("property", "og:type", "website");
+    setMeta("property", "og:site_name", "KRITOR");
+    setMeta("property", "og:title", `${item.title || "KRITOR"} — KRITOR Store`);
+    setMeta("property", "og:description", desc);
+    setMeta("property", "og:url", canonicalUrl);
+    setMeta("property", "og:image", imageUrl);
+    setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:title", `${item.title || "KRITOR"} — KRITOR Store`);
+    setMeta("name", "twitter:description", desc);
+    setMeta("name", "twitter:image", imageUrl);
+
+    let ld = document.getElementById("product-jsonld");
+    if (!ld) { ld = document.createElement("script"); ld.type = "application/ld+json"; ld.id = "product-jsonld"; document.head.appendChild(ld); }
+    const product = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: item.title || "Original work",
+      image: imageUrl,
+      description: desc,
+      sku: item.id,
+      url: canonicalUrl,
+      brand: { "@type": "Brand", name: "KRITOR" },
+      offers: {
+        "@type": "Offer",
+        url: canonicalUrl,
+        priceCurrency: item.currency,
+        price: ((item.price || 0) / 100).toFixed(2),
+        availability: soldOut ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+        itemCondition: "https://schema.org/NewCondition"
+      }
+    };
+    ld.textContent = JSON.stringify(product);
+  })();
 
   function esc(value) {
     return String(value == null ? "" : value).replace(/[&<>"']/g, c => (
@@ -66,7 +118,7 @@
            <img src="${esc(rendition(path, 240))}" alt="" loading="lazy" decoding="async">
          </button>`).join("")}</div>` : ""}
       <section class="meta">
-        <div class="title">${esc(item.title || "Untitled")}</div>
+        <h1 class="title">${esc(item.title || "Untitled")}</h1>
         <div class="year">${esc(item.year || "")}</div>
         <div class="product-price">${esc(money(item.price, item.currency))}</div>
         <div class="details">${details}</div>

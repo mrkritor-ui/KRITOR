@@ -67,6 +67,21 @@ jobs:
             throw new Error('products.js did not export SHOP_ITEMS');
           }
 
+          const SITE = 'https://kritor.au';
+
+          function esc(value) {
+            return String(value == null ? '' : value).replace(/[&<>"']/g, c => (
+              { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+            ));
+          }
+
+          // Defends the </script> boundary of an inlined JSON-LD block against
+          // any field value that happens to contain it — none do today, but a
+          // title or description is free text an artist can edit.
+          function ldJson(data) {
+            return JSON.stringify(data).replace(/<\//g, '<\\/');
+          }
+
           const seen = new Set();
           for (const item of SHOP_ITEMS) {
             if (!item.id || !/^[a-z0-9][a-z0-9-]*$/.test(item.id)) {
@@ -82,11 +97,67 @@ jobs:
 
           fs.writeFileSync('products.json', JSON.stringify(SHOP_ITEMS));
 
-          const productPage = fs.readFileSync('product.html', 'utf8');
+          // Every generated route gets its own <title>, description, canonical,
+          // Open Graph / Twitter Card tags and JSON-LD baked directly into the
+          // HTML at build time — so a crawler that never runs JS (link-preview
+          // bots included) still sees correct per-item metadata, not the
+          // generic template every one of these pages started from.
+          const productTemplate = fs.readFileSync('product.html', 'utf8');
           for (const item of SHOP_ITEMS) {
             const dir = path.join('shop', item.id);
             fs.mkdirSync(dir, { recursive: true });
-            fs.writeFileSync(path.join(dir, 'index.html'), productPage);
+
+            const title = `${item.title || 'KRITOR'} — KRITOR Store`;
+            const bits = [item.edition, item.materials, item.size].filter(Boolean);
+            const priceText = `${item.currency} ${((item.price || 0) / 100).toFixed(2)}`;
+            const desc = `${item.title || 'Original work'}${bits.length ? ', ' + bits.join(', ') : ''} — ${priceText}. An original work by KRITOR, shipped from Melbourne.`;
+            const canonicalUrl = `${SITE}/shop/${encodeURIComponent(item.id)}/`;
+            const imagePath = (item.images || [])[0];
+            const imageUrl = imagePath
+              ? `${SITE}${encodeURI(imagePath.startsWith('/') ? imagePath : '/' + imagePath)}`
+              : `${SITE}/icon.png`;
+            const soldOut = !Number.isFinite(item.stock) ? false : item.stock < 1;
+
+            const jsonLd = ldJson({
+              '@context': 'https://schema.org',
+              '@type': 'Product',
+              name: item.title || 'Original work',
+              image: imageUrl,
+              description: desc,
+              sku: item.id,
+              url: canonicalUrl,
+              brand: { '@type': 'Brand', name: 'KRITOR' },
+              offers: {
+                '@type': 'Offer',
+                url: canonicalUrl,
+                priceCurrency: item.currency,
+                price: ((item.price || 0) / 100).toFixed(2),
+                availability: soldOut ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+                itemCondition: 'https://schema.org/NewCondition',
+              },
+            });
+
+            const head = [
+              '<meta property="og:type" content="website">',
+              '<meta property="og:site_name" content="KRITOR">',
+              `<meta property="og:title" content="${esc(title)}">`,
+              `<meta property="og:description" content="${esc(desc)}">`,
+              `<meta property="og:url" content="${esc(canonicalUrl)}">`,
+              `<meta property="og:image" content="${esc(imageUrl)}">`,
+              '<meta name="twitter:card" content="summary_large_image">',
+              `<meta name="twitter:title" content="${esc(title)}">`,
+              `<meta name="twitter:description" content="${esc(desc)}">`,
+              `<meta name="twitter:image" content="${esc(imageUrl)}">`,
+              `<script type="application/ld+json">${jsonLd}</script>`,
+            ].join('\n');
+
+            const page = productTemplate
+              .replace('<title>KRITOR</title>', `<title>${esc(title)}</title>`)
+              .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">`)
+              .replace('<link rel="canonical" href="/store/">', `<link rel="canonical" href="${esc(canonicalUrl)}">`)
+              .replace('<!--SEO-HEAD-->', head);
+
+            fs.writeFileSync(path.join(dir, 'index.html'), page);
           }
 
           // Work pages resolve their id from the path, so the same file serves
@@ -95,16 +166,75 @@ jobs:
           const artworks = JSON.parse(
             artworksSrc.slice(artworksSrc.indexOf('['), artworksSrc.lastIndexOf(']') + 1)
           );
-          const workPage = fs.readFileSync('work.html', 'utf8');
+          const workTemplate = fs.readFileSync('work.html', 'utf8');
           for (const work of artworks) {
             if (!/^work-[A-Za-z0-9_-]+$/.test(work.id)) {
               throw new Error(`Invalid artwork id: ${JSON.stringify(work.id)}`);
             }
             fs.mkdirSync(work.id, { recursive: true });
-            fs.writeFileSync(path.join(work.id, 'index.html'), workPage);
+
+            const label = work.title && work.title.trim() && work.title !== 'Untitled'
+              ? work.title
+              : `Untitled — Work ${(String(work.id).match(/(\d+)/) || [])[1] || work.id}`;
+            const bits = [];
+            if (work.year) bits.push(work.year);
+            if (work.materials) bits.push(work.materials);
+            if (work.size && !/^—/.test(work.size)) bits.push(work.size);
+            const desc = `${label}${bits.length ? ', ' + bits.join(', ') : ''} — an original work by KRITOR.`;
+            const title = `${label} — KRITOR Art`;
+            const canonicalUrl = `${SITE}/${encodeURIComponent(work.id)}/`;
+            const imagePath = work.image;
+            const imageUrl = imagePath
+              ? `${SITE}${encodeURI(imagePath.startsWith('/') ? imagePath : '/' + imagePath)}`
+              : `${SITE}/icon.png`;
+
+            const jsonLd = ldJson(Object.assign({
+              '@context': 'https://schema.org',
+              '@type': 'VisualArtwork',
+              name: label,
+              url: canonicalUrl,
+              image: imageUrl,
+              creator: { '@type': 'Person', name: 'KRITOR', url: `${SITE}/` },
+              isPartOf: { '@type': 'CollectionPage', name: 'Art Catalogue — KRITOR', url: `${SITE}/art/` },
+            }, work.year ? { dateCreated: String(work.year) } : {}, work.materials ? { artMedium: work.materials } : {}));
+
+            const head = [
+              '<meta property="og:type" content="website">',
+              '<meta property="og:site_name" content="KRITOR">',
+              `<meta property="og:title" content="${esc(title)}">`,
+              `<meta property="og:description" content="${esc(desc)}">`,
+              `<meta property="og:url" content="${esc(canonicalUrl)}">`,
+              `<meta property="og:image" content="${esc(imageUrl)}">`,
+              '<meta name="twitter:card" content="summary_large_image">',
+              `<meta name="twitter:title" content="${esc(title)}">`,
+              `<meta name="twitter:description" content="${esc(desc)}">`,
+              `<meta name="twitter:image" content="${esc(imageUrl)}">`,
+              `<script type="application/ld+json">${jsonLd}</script>`,
+            ].join('\n');
+
+            const page = workTemplate
+              .replace('<title>KRITOR</title>', `<title>${esc(title)}</title>`)
+              .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">`)
+              .replace('<link rel="canonical" href="/">', `<link rel="canonical" href="${esc(canonicalUrl)}">`)
+              .replace('<!--SEO-HEAD-->', head);
+
+            fs.writeFileSync(path.join(work.id, 'index.html'), page);
           }
 
-          console.log(`Built ${SHOP_ITEMS.length} store routes and ${artworks.length} work routes`);
+          // sitemap.xml — every static route plus every generated work and
+          // (listed, in-stock-or-not) shop route. robots.txt (checked into the
+          // repo root) points crawlers at this file.
+          const staticRoutes = ['/', '/about/', '/art/', '/architecture/', '/store/'];
+          const workRoutes = artworks.map(w => `/${encodeURIComponent(w.id)}/`);
+          const shopRoutes = SHOP_ITEMS.filter(i => !i.unlisted).map(i => `/shop/${encodeURIComponent(i.id)}/`);
+          const urls = [...staticRoutes, ...workRoutes, ...shopRoutes];
+          const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+            urls.map(u => `  <url><loc>${esc(SITE + u)}</loc></url>`).join('\n') +
+            '\n</urlset>\n';
+          fs.writeFileSync('sitemap.xml', sitemap);
+
+          console.log(`Built ${SHOP_ITEMS.length} store routes, ${artworks.length} work routes, and a ${urls.length}-url sitemap`);
           JS
 
       # The catalogue is the landing screen, so the originals must never be what
