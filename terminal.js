@@ -395,6 +395,14 @@
     const previous = panelArt.querySelector("img");
     if (previous) previous.remove();
     const img = document.createElement("img");
+    /* The box is sized to the work before a single pixel of it has arrived —
+       the same ratio the tile's own bitmap already carries (see bitsBlock).
+       Without it the box collapses to nothing while the image is still on
+       the wire and then snaps open the instant it lands, which on a slow
+       connection reads as the box arriving after the painting rather than
+       holding its shape the whole time. */
+    const entry = bitsEntry(work.image);
+    if (entry) img.style.aspectRatio = entry.w + " / " + entry.h;
     /* The panel shows the real work. The bitmap is the catalogue's language,
        not a way of hiding the painting from someone who asked to see it. */
     img.src = realFor(work.image, 1440);

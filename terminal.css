@@ -1616,7 +1616,14 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
    liked and the picture stayed the same size in the middle of it. Height is
    the lever, and the type below gave up the room for it. */
 .panel-art { position: relative; display: grid; place-items: center; margin-top: calc(var(--u) * 2); }
-.panel-art img { max-width: 100%; max-height: 62vh; }
+/* width:100% plus object-fit rather than plain intrinsic sizing: the box
+   this reserves — width from the grid track, height from the aspect-ratio
+   openPanel sets from the manifest — has to be real before the picture has
+   loaded a single pixel, or a slow image leaves nothing on screen to hold
+   its shape and the frame only snaps open once the picture already has.
+   object-fit:contain keeps the rendered picture exactly where max-width and
+   max-height alone used to put it, once it arrives. */
+.panel-art img { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; }
 .panel-art img { max-height: 62dvh; }
 
 /* The two halves of the walk. Buttons, so a keyboard can reach them and a

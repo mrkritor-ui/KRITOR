@@ -676,7 +676,15 @@
   /* Reveal a panel as a sequence: the work fades up, its name follows, and the
      record types itself in under both. Returns a canceller, because opening
      another work mid-sequence must not leave the previous one's timers running
-     into the new panel. */
+     into the new panel.
+
+     The fade is meant to catch the painting arriving — held on a fast image
+     (already the common case) it would just be a delay nobody sees. Held on
+     a slow one, it stops the opacity transition from finishing against a
+     blank frame: without the wait, "is-in" reaches full opacity on its own
+     schedule regardless of whether any pixels have arrived, so a slow image
+     then pops in at full opacity, with no fade at all, whenever it finally
+     does load. */
   function revealWork(parts) {
     const timers = [];
     const at = (ms, fn) => timers.push(setTimeout(fn, reduceMotion ? Math.min(ms, 60) : ms));
@@ -685,13 +693,27 @@
     parts.title.classList.remove("is-in");
     parts.meta.textContent = "";
 
-    /* Next frame, so the browser has painted opacity:0 and the transition
-       actually runs instead of the element simply being there. */
-    requestAnimationFrame(() => parts.image.classList.add("is-in"));
-    at(reduceMotion ? 0 : 620, () => parts.title.classList.add("is-in"));
-    at(reduceMotion ? 0 : 1040, () => typeInto(parts.meta, parts.text));
+    function begin() {
+      /* Next frame, so the browser has painted opacity:0 and the transition
+         actually runs instead of the element simply being there. */
+      requestAnimationFrame(() => parts.image.classList.add("is-in"));
+      at(reduceMotion ? 0 : 620, () => parts.title.classList.add("is-in"));
+      at(reduceMotion ? 0 : 1040, () => typeInto(parts.meta, parts.text));
+    }
 
-    return () => { timers.forEach(clearTimeout); stopTyping(); };
+    if (parts.image.complete) begin();
+    else {
+      parts.image.addEventListener("load", begin, { once: true });
+      /* A broken image still has to bring the rest of the panel up. */
+      parts.image.addEventListener("error", begin, { once: true });
+    }
+
+    return () => {
+      parts.image.removeEventListener("load", begin);
+      parts.image.removeEventListener("error", begin);
+      timers.forEach(clearTimeout);
+      stopTyping();
+    };
   }
 
   /* Strike a control twice and let it decay, the way a terminal acknowledges a
