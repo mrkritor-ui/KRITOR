@@ -38,12 +38,7 @@
 <body>
 
   <!-- Same optics as the catalogue's own gate — see art/index.html for the
-       full account of why this is an SVG filter and not a CSS one. A second
-       copy, crt-optics-tingle, runs the same two moves (bright-pass bloom,
-       then a split-and-shift of one channel each way) further than the
-       first — the ordinary fringe below runs at this strength everywhere;
-       the tingle only ever shows in the couple of small patches
-       .boot-fx-tingle's own clip-path opens onto it, in terminal.css. -->
+       full account of why this is an SVG filter and not a CSS one. -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
       <feComponentTransfer in="SourceGraphic" result="bright">
@@ -65,26 +60,6 @@
       <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
       <feBlend in="rg" in2="bShift" mode="screen"/>
     </filter>
-    <filter id="crt-optics-tingle" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
-      <feComponentTransfer in="SourceGraphic" result="bright">
-        <feFuncR type="linear" slope="3.6" intercept="-1.9"/>
-        <feFuncG type="linear" slope="3.6" intercept="-1.9"/>
-        <feFuncB type="linear" slope="3.6" intercept="-1.9"/>
-      </feComponentTransfer>
-      <feGaussianBlur in="bright" stdDeviation="1.1" result="bloom"/>
-      <feBlend in="SourceGraphic" in2="bloom" mode="screen" result="bloomed"/>
-
-      <feColorMatrix in="bloomed" type="matrix"
-        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rChan"/>
-      <feOffset in="rChan" dx="-1.6" dy="0" result="rShift"/>
-      <feColorMatrix in="bloomed" type="matrix"
-        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gChan"/>
-      <feColorMatrix in="bloomed" type="matrix"
-        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bChan"/>
-      <feOffset in="bChan" dx="1.6" dy="0" result="bShift"/>
-      <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
-      <feBlend in="rg" in2="bShift" mode="screen"/>
-    </filter>
   </svg>
 
   <!-- Boot. Not a door to answer any more — nothing here waits on a click,
@@ -97,7 +72,6 @@
        waiting on that close rather than racing it. -->
   <div class="boot" id="boot" data-mode="tiger">
     <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
-    <div class="boot-fx-tingle" aria-hidden="true"></div>
     <div class="boot-crt" aria-hidden="true"></div>
   </div>
 
