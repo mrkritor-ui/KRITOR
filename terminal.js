@@ -84,11 +84,64 @@
     real.alt = "";
     real.loading = "lazy";
     real.decoding = "async";
-    real.src = realFor(work.image, 480);
+    /* Held back rather than fetched with the tile — see warmReals() below.
+       The grid is 1-bit until something is lit, so this is an image nobody
+       has asked to see yet, and on the catalogue that is every tile but one. */
+    real.dataset.src = realFor(work.image, 480);
     figure.appendChild(real);
 
     a.appendChild(figure);
     return a;
+  }
+
+  /* ── The colour underneath ─────────────────────────────────────────────── */
+
+  /* Every tile carries its work in real colours behind the rendition, and on
+     this page all but one of them are invisible: the grid is 1 bit, exactly
+     one work is lit at a time, and the rest only appear under a pointer or
+     when the eye is pressed. Fetched with the tile, that was a 480px
+     rendition per work downloaded during the boot sequence — competing for
+     the connection with the 1-bit renditions the boot is actually waiting on,
+     to paint pixels that were never shown.
+
+     So nothing is fetched until it is wanted. `loading="lazy"` already keeps
+     the ones below the fold off the wire once a src is set, so the whole
+     question is about timing on screen: hand the src over when the work is
+     lit, and hand the rest over when the page has finished arriving and the
+     connection is idle. By the time a pointer reaches a tile the image is
+     already there, and none of it was in the way of the first screen. */
+  function promote(img, priority) {
+    if (!img || !img.dataset.src) return;
+    img.setAttribute("fetchpriority", priority || "low");
+    img.src = img.dataset.src;
+    delete img.dataset.src;
+  }
+
+  function promoteIn(tile) {
+    if (tile) promote(tile.querySelector(".tile-real"), "high");
+  }
+
+  /* True once the boot sequence has handed the page over. Before that there is
+     nothing on screen to warm anything for; after it, every rebuild of the
+     grid — a filter, a view change — deals fresh tiles that need the same
+     treatment, so this is a standing condition rather than a one-shot. */
+  let arrived = false;
+
+  function warmReals() {
+    const run = () => grid.querySelectorAll(".tile-real[data-src]").forEach(img => promote(img));
+    if (window.requestIdleCallback) window.requestIdleCallback(run, {timeout: 2000});
+    else setTimeout(run, 300);
+  }
+
+  /* Straight away and at full priority when the eye is open, because then
+     every tile really is showing its colours; idly otherwise. */
+  function warmForState() {
+    if (!arrived) return;
+    if (root.dataset.colour === "on") {
+      grid.querySelectorAll(".tile-real[data-src]").forEach(img => promote(img, "high"));
+    } else {
+      warmReals();
+    }
   }
 
   const LIST_COLUMNS = ["IDX", "TITLE", "YEAR", "SERIES", "FORMAT", "MATERIAL", "SIZE"];
@@ -155,6 +208,7 @@
     if (view === "list") grid.appendChild(listHead());
     visibleWorks().forEach((w, i) => grid.appendChild(entryFor(w, i)));
     keepOneLit();
+    warmForState();
   }
 
   /* ── The one in colour ─────────────────────────────────────────────────── */
@@ -172,6 +226,9 @@
     const was = grid.querySelector(".tile.is-lit");
     if (was) was.classList.remove("is-lit");
     tile.classList.add("is-lit");
+    /* The one tile on the page whose colours are actually on screen, so its
+       own fetch jumps the queue the deferred ones are waiting in. */
+    promoteIn(tile);
     litId = tile.dataset.workId || null;
   }
 
@@ -502,6 +559,13 @@
       grid.appendChild(entryFor(work, i));
       keepOneLit();
     },
+    /* Not onParams: the works are dealt one at a time after it, so the grid is
+       still empty when it fires and there would be nothing to warm. This is
+       the moment every tile is actually standing. */
+    onDealt: () => {
+      arrived = true;
+      warmReals();
+    },
   });
 
   grid.addEventListener("click", e => {
@@ -523,6 +587,11 @@
   eyeBtn.addEventListener("click", () => {
     const on = root.dataset.colour !== "on";
     root.dataset.colour = on ? "on" : "off";
+    /* Every work at once, which is the one moment on this page where every
+       deferred rendition is genuinely about to be looked at. Ahead of the
+       render() below, which clears the filters and may not rebuild the tiles
+       that are already standing. */
+    warmForState();
     eyeBtn.setAttribute("aria-pressed", String(on));
     /* toggleAttribute, not .hidden — see the note in terminal-shell.js: these
        are <svg>, which has no `hidden` property to assign to. */

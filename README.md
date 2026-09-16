@@ -5,15 +5,14 @@ locally, no dependencies to install to look at it.
 
 ## Branches
 
-| Branch | What it is |
-|---|---|
-| `claude/terminal-redesign-sar634` | **The live site.** Every push deploys. |
-| `redesign/catalogue-v2` | The old catalogue, kept as an archive. Not deployed. |
+The deploy triggers on `main` and on `redesign/catalogue-v2` — both names are
+listed in `.github/workflows/pages.yml` because the default branch is mid-rename
+to `main`, and a trigger that is only correct after somebody remembers to click
+something is a site that quietly stops deploying. Drop the old name from that
+list once the rename is through.
 
-The archive branch's head (`419c1bc`) is an ancestor of the live branch, so the
-old catalogue is still in this history — `git show 419c1bc` reaches it. It no
-longer publishes, because both branches deployed to the same Pages site and a
-push to the old one would have replaced the new.
+The old catalogue's head (`419c1bc`) is an ancestor of this history, so it is
+still reachable — `git show 419c1bc`.
 
 ## Looking at it locally
 
@@ -37,7 +36,7 @@ Deep links (`/work-01/`) need their directories, which the deploy also writes:
 ```sh
 node -e 'const fs=require("fs"),p=require("path");const s=fs.readFileSync("artworks.js","utf8");
 JSON.parse(s.slice(s.indexOf("["),s.lastIndexOf("]")+1)).forEach(w=>{fs.mkdirSync(w.id,{recursive:true});
-fs.writeFileSync(p.join(w.id,"index.html"),fs.readFileSync("index.html"))});'
+fs.writeFileSync(p.join(w.id,"index.html"),fs.readFileSync("work.html"))});'
 ```
 
 The same build step also bakes each work's and shop item's own `<title>`,
@@ -74,11 +73,23 @@ cart.js             cart state and Stripe plumbing. Untouched by the
                     provide [data-bag-slot], and they do not)
 ```
 
-### Two rules worth knowing before editing
+### Three rules worth knowing before editing
 
 **Asset URLs carry `?v=__ASSET_VERSION__`.** The deploy replaces the token, the
 same way it stamps `sw.js`. Hand-numbered versions are how a change ships and
 nobody is served it — that happened for seven deploys.
+
+That stamp is also load-bearing for the service worker, which reads it as a
+promise: a URL carrying `?v=` is treated as immutable and served from the cache
+without asking the network. Give an asset a URL that can change under its own
+name and `sw.js` will happily serve a stale one forever. Everything that must
+stay current — the documents, `artworks.js`, `products.js` — is routed
+network-first there by name, not by guesswork.
+
+**Sources are minified at deploy, never in the repo.** The comments in these
+files are the documentation, and they are stripped on the way out rather than
+left out of the writing — see the minify step in `pages.yml`, which runs last
+because every step before it reads these files as sources.
 
 **Type is pix Chicago, except a work's own name**, which is Jacquarda
 Bastarda 9 (VT323 on the shopfront). pix Chicago is served from `fonts/` —

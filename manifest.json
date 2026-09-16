@@ -1,11 +1,13 @@
 {
-  "name": "Works",
-  "short_name": "Works",
-  "start_url": "./index.html",
+  "name": "KRITOR",
+  "short_name": "KRITOR",
+  "description": "The art catalogue and store of KRITOR, a contemporary artist working in expressionism and mixed media.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#faf9f6",
-  "theme_color": "#faf9f6",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
-    { "src": "icon.png", "sizes": "180x180", "type": "image/png" }
+    { "src": "/icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
   ]
 }

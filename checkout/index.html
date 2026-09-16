@@ -35,9 +35,15 @@
 <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
 <link rel="canonical" href="/checkout/">
 <meta name="theme-color" content="#ffffff">
+<link rel="icon" href="/icon.png" type="image/png">
 <link rel="apple-touch-icon" href="/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- The payment intent is created from checkout.js, well after this page has
+     been parsed, and it is the one request on the site a visitor is actually
+     waiting on money for. The handshakes it needs are opened now instead. -->
+<link rel="preconnect" href="https://api.stripe.com" crossorigin>
+<link rel="preconnect" href="https://kritor-payments.kritor.workers.dev" crossorigin>
 
 <!-- The site face, served from this origin. Preloaded rather than left to
      the stylesheet to discover: it is 4 KB, and font-display: block means

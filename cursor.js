@@ -124,8 +124,27 @@
     }
   }
 
+  /* What the next frame has to work out, gathered rather than done on the
+     spot. Deciding which sprite to wear means running three selector lists
+     against the tree with closest(), and pointer events arrive faster than the
+     page is drawn — pointerover fires on every boundary crossing, so dragging
+     across a grid of tiles is a burst of them between one frame and the next.
+     Answering each one separately is work whose every result but the last is
+     thrown away, so the question is asked once per frame instead, in the same
+     callback that was already writing the transform. */
+  var pendingTarget = null;   /* an element an event handed us */
+  var pendingProbe = false;   /* or: ask the document what is under the pointer */
+
   function render() {
     queued = false;
+    if (pendingProbe) {
+      pendingProbe = false;
+      pendingTarget = live ? document.elementFromPoint(x, y) : null;
+    }
+    if (pendingTarget) {
+      look(pendingTarget);
+      pendingTarget = null;
+    }
     if (root) root.style.transform = "translate3d(" + x + "px," + y + "px,0)";
   }
 
@@ -152,23 +171,13 @@
   }
 
   /* The pointer has not moved but what is under it has — a panel opened, the
-     grid re-laid itself, the page scrolled. Ask the document directly.
-
-     Throttled to a frame, because elementFromPoint measures the layout and the
-     scroll it hangs off can fire faster than the page is drawn. */
-  var looking = false;
-
+     grid re-laid itself, the page scrolled. Ask the document directly, on the
+     next frame: elementFromPoint measures the layout, and the scroll this
+     hangs off fires faster than the page is drawn. */
   function relook() {
-    if (!live || looking) return;
-    looking = true;
+    if (!live) return;
+    pendingProbe = true;
     frame();
-    if (window.requestAnimationFrame) window.requestAnimationFrame(reallyLook);
-    else window.setTimeout(reallyLook, 16);
-  }
-
-  function reallyLook() {
-    looking = false;
-    if (live) look(document.elementFromPoint(x, y));
   }
 
   /* Suspended while a page is playing something expensive over the whole
@@ -240,7 +249,7 @@
     inside = true;
     if (suspended()) return;
     show();
-    look(e.target);
+    pendingTarget = e.target;
     frame();
   }
 
@@ -260,12 +269,19 @@
     window.setTimeout(relook, 280);
   }
 
-  document.addEventListener("pointermove", onMove, true);
-  document.addEventListener("pointerdown", onDown, true);
-  document.addEventListener("pointerover", onMove, true);
-  document.addEventListener("pointerout", onOut, true);
+  /* Passive, every one of them: nothing here ever cancels an event, and saying
+     so up front is what lets the browser scroll and handle input without first
+     waiting to find out whether this file wanted to stop it. Capture stays —
+     the cursor has to see events a page's own handler might not let through.
+     A browser too old to read the options object reads it as truthy, which is
+     the plain `true` these used to pass. */
+  var tap = { capture: true, passive: true };
+  document.addEventListener("pointermove", onMove, tap);
+  document.addEventListener("pointerdown", onDown, tap);
+  document.addEventListener("pointerover", onMove, tap);
+  document.addEventListener("pointerout", onOut, tap);
   window.addEventListener("blur", hide);
-  window.addEventListener("scroll", relook, true);
+  window.addEventListener("scroll", relook, tap);
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) hide();
   });
