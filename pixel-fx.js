@@ -2032,9 +2032,20 @@
      .boot-core in terminal.css, and the three sum to READY_MS — matched by
      hand to WARP_MS in boot-scene.js, the same way GLOBE_READY_MS already
      is, so the bar's own fill finishes in step with it. */
-  const DOOR_HOLD_BEFORE_TEXT_MS = 2800;
+  /* The holds are the part of a boot screen that is purely ceremony — time
+     spent watching something that has already finished arriving. Every scene
+     already stills its own motion for a visitor who asked for less of it, but
+     the waiting went on for its full length regardless, which left exactly
+     that visitor looking at a near-static title card for four seconds. The
+     clocks still run — freezing them is what would strand the ready signal at
+     "never" — there is simply less to wait through. Fades are left alone:
+     they are matched to transitions in the stylesheet, and shortening one side
+     of that pair only desynchronises it. */
+  const HOLD = reduceMotion ? 0.25 : 1;
+
+  const DOOR_HOLD_BEFORE_TEXT_MS = 2800 * HOLD;
   const DOOR_TEXT_FADE_MS = 700;
-  const DOOR_HOLD_AFTER_TEXT_MS = 700;
+  const DOOR_HOLD_AFTER_TEXT_MS = 700 * HOLD;
   const DOOR_READY_MS = DOOR_HOLD_BEFORE_TEXT_MS + DOOR_TEXT_FADE_MS + DOOR_HOLD_AFTER_TEXT_MS;
 
   /* ── The block glitch: the catalogue's door, now ─────────────────────────── */
@@ -2055,7 +2066,7 @@
   const ART_FRAME_COUNT = 43;
   const ART_FRAME_MS = 40;             // native pace of the reference clip —
                                         // 43 frames loop in 1.72s
-  const ART_SHEET_URL = "/art-loader-frames.png";
+  const ART_SHEET_URL = "/art-loader-frames.webp";
   const artSheet = { frames: null, requested: false };
 
   function blockGlitch(host) {
@@ -2167,7 +2178,7 @@
   const ARCH_FRAME_COUNT = 36;
   const ARCH_FRAME_MS = 50;            // native pace of the reference clip —
                                         // 36 frames loop in 1.8s
-  const ARCH_SHEET_URL = "/architecture-loader-frames.png";
+  const ARCH_SHEET_URL = "/architecture-loader-frames.webp";
   const archSheet = { frames: null, requested: false };
 
   function letterGrid(host) {
@@ -2284,7 +2295,7 @@
                                         // the 13-frame arc runs in ~975ms
   const TIGER_FADE_MS = 1000;          // the shut frame's own fade up from
                                         // blank paper, before it starts to open
-  const TIGER_SHEET_URL = "/tiger-loader-frames.png";
+  const TIGER_SHEET_URL = "/tiger-loader-frames.webp";
   const tigerSheet = { frames: null, requested: false };
 
   function tigerEyes(host) {
@@ -2492,11 +2503,15 @@
                                                         // and a half
   const GLOBE_NOISE_SCALE = 0.11;        // coarseness of the bloom-in field —
                                           // smaller reads as bigger clusters
-  const GLOBE_BLOOM_MS = 1600;
-  const GLOBE_HOLD_BEFORE_TEXT_MS = 800;
+  /* The bloom is already resolved to its finished state under reduced motion
+     (see bloomEase below), so at full length it is 1.6 seconds of waiting for
+     something that is not going to happen — it is scaled here with the holds
+     rather than left out of them. */
+  const GLOBE_BLOOM_MS = 1600 * HOLD;
+  const GLOBE_HOLD_BEFORE_TEXT_MS = 800 * HOLD;
   const GLOBE_TEXT_FADE_MS = 700;        // matched by the CSS transition on
                                           // .boot-mark/.boot-sub
-  const GLOBE_HOLD_AFTER_TEXT_MS = 1100;
+  const GLOBE_HOLD_AFTER_TEXT_MS = 1100 * HOLD;
   const GLOBE_READY_MS = GLOBE_BLOOM_MS + GLOBE_HOLD_BEFORE_TEXT_MS
     + GLOBE_TEXT_FADE_MS + GLOBE_HOLD_AFTER_TEXT_MS;
   const GLOBE_SHIMMER_MS = 90;           // how long the ocean's dither phase

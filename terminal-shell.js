@@ -135,7 +135,10 @@
   /* page     which screen this is, so the boot scene knows whether to burn or fly
      preload  urls whose arrival gates the sequence
      onParams called once the bar should show its parameter rows
-     onDeal    called per item, in order, as the works arrive */
+     onDeal    called per item, in order, as the works arrive
+     onDealt   called once the last of them has — which is a later moment than
+               onParams by the whole length of the deal, and the one where the
+               page is finally all there */
   function runBoot(options) {
     const boot = document.getElementById("boot");
     /* The scene is the loading screen's face: the block glitch or the letter
@@ -327,10 +330,11 @@
        or not the row was ever added. */
     function deal() {
       const items = options.items || [];
-      if (reduceMotion) { items.forEach((item, i) => options.onDeal(item, i)); return; }
+      const dealt = () => { if (options.onDealt) options.onDealt(); };
+      if (reduceMotion) { items.forEach((item, i) => options.onDeal(item, i)); return dealt(); }
       let i = 0;
       const next = () => {
-        if (i >= items.length) return;
+        if (i >= items.length) return dealt();
         options.onDeal(items[i], i);
         i += 1;
         setTimeout(next, DEAL_MS);

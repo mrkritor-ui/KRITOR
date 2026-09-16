@@ -266,6 +266,27 @@ jobs:
       - name: Build 1-bit renditions
         run: python tools/terminal-images.py
 
+      # The sources in this repo are heavily commented on purpose — that is how
+      # the thing explains itself — and every one of those comments was being
+      # served to every visitor along with the code. Minified here so the
+      # explanation stays in the repo and only the code goes on the wire:
+      # roughly 423 KB of CSS and JS becomes 158 KB, and pixel-fx.js alone
+      # drops from 128 KB to 31 KB, which is parse time on a phone as much as
+      # it is transfer.
+      #
+      # Deliberately the last thing before the upload. Every step above reads
+      # these files as sources — products.js is require()d, artworks.js is
+      # sliced by hand in two places — and all of that wants the original.
+      #
+      # Identifiers are not renamed: esbuild leaves the top-level names of a
+      # file it is not bundling alone, which is what keeps ARTWORKS, SHOP_ITEMS
+      # and the window.Kritor* handles reachable across files.
+      - name: Minify CSS and JS
+        run: |
+          npx --yes esbuild@0.25.0 *.js *.css --minify --outdir=.minified --log-level=error
+          cp .minified/*.js .minified/*.css .
+          rm -rf .minified
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

@@ -41,12 +41,34 @@ OUT_DIR = ROOT / "derived"
 MANIFEST = ROOT / "image-manifest.js"
 
 # Tile widths in CSS pixels top out around 500 on a very wide screen; at 3x DPR
-# that is 1500 device pixels. Anything beyond that is invisible detail on a
-# grid tile, and the work page has its own larger rendition.
-WIDTHS = [240, 480, 960, 1440]
+# that is 1500 device pixels. The 1920 on the end is not for a tile at all — it
+# is the work page's pinch-zoom inspector, which magnifies to 5x and used to
+# reach for the multi-megabyte original to do it.
+WIDTHS = [240, 480, 960, 1440, 1920]
 
 LQIP_WIDTH = 20
-QUALITY = {"webp": 80, "avif": 55}
+
+# Quality is a ramp, not a constant, because these renditions are not looked at
+# the same way. A 240px tile is a thumbnail on a 1-bit grid and can take real
+# compression without anyone being able to tell; a 1920px rendition is a
+# painting being inspected at arm's length, and these are expressionist works
+# whose whole subject is mark-making — the first thing a too-low quality takes
+# off them is exactly the texture that is the point. So the small end gets
+# squeezed harder than it was and the large end is allowed more than it was,
+# which makes the catalogue lighter and the close look better at the same time.
+QUALITY = {
+    "webp": {240: 74, 480: 78, 960: 82, 1440: 85, 1920: 86},
+    "avif": {240: 50, 480: 54, 960: 58, 1440: 62, 1920: 64},
+}
+
+
+def quality_for(fmt, width):
+    """The ramp above, with anything off the end held at the nearest step."""
+    steps = QUALITY[fmt]
+    for step in sorted(steps):
+        if width <= step:
+            return steps[step]
+    return steps[max(steps)]
 
 SOURCE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG"}
 
@@ -88,8 +110,17 @@ def slug(rel):
     return re.sub(r"[^a-z0-9]+", "-", rel.lower().rsplit(".", 1)[0]).strip("-")
 
 
+# The widths and qualities above, as bytes, folded into every derived
+# filename's digest. Renditions are cached across CI runs and rebuilt only when
+# the file they would be written to is missing, so a change to quality alone —
+# same source, same name — would be answered out of the cache with the old
+# encoding forever. Deriving this from the settings rather than hand-bumping a
+# number means it cannot be forgotten.
+RECIPE = json.dumps([WIDTHS, QUALITY], sort_keys=True).encode()
+
+
 def fingerprint(path):
-    return hashlib.sha1(path.read_bytes()).hexdigest()[:12]
+    return hashlib.sha1(path.read_bytes() + RECIPE).hexdigest()[:12]
 
 
 def has_alpha(im):
@@ -134,11 +165,20 @@ def build_one(rel, path, force):
 
         formats = [("webp", "WEBP")] + ([("avif", "AVIF")] if HAVE_AVIF else [])
 
+        # Never upscale, but do stop at the original's own width rather than at
+        # the last step below it — a 1080px original used to break out of this
+        # loop at 1440 and leave 960 as its largest rendition, so the work page
+        # was showing a 960 of something it had 1080 of. Clamping and
+        # de-duplicating gives it 240, 480, 960, 1080 instead.
+        targets = []
         for width in WIDTHS:
-            # Never upscale — a 400px original gains nothing from a 1440 variant.
-            if width > native_width and entry["webp"]:
-                break
             target = min(width, native_width)
+            if target not in targets:
+                targets.append(target)
+            if width >= native_width:
+                break
+
+        for target in targets:
             resized = im.copy()
             resized.thumbnail((target, target * 10), Image.Resampling.LANCZOS)
 
@@ -146,7 +186,7 @@ def build_one(rel, path, force):
                 name = f"{stem}-{digest}-{target}.{key}"
                 out_path = OUT_DIR / name
                 if force or not out_path.exists():
-                    save_args = {"quality": QUALITY[key]}
+                    save_args = {"quality": quality_for(key, target)}
                     if key == "webp":
                         save_args["method"] = 6
                     resized.save(out_path, pil_format, **save_args)
