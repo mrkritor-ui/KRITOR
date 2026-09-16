@@ -54,7 +54,6 @@ const SHELL_FILES = [
   "/terminal.js",
   "/tile-image.js",
   "/artworks.js",
-  "/icon.png",
 ].map(path => (path.endsWith("/") ? path : `${path}?v=${VERSION}`));
 
 /* Not versioned, and not wanted in a versioned bucket either: the face and the
@@ -68,6 +67,13 @@ const SHELL_FILES = [
 const STABLE_FILES = [
   "/fonts/pix-chicago.woff2",
   "/tiger-loader-frames.webp",
+  /* The mark, in the three forms the pages ask for it. Here rather than in the
+     shell list above because every page references these unstamped — a
+     precache of "/icon.png?v=…" would store a URL nothing ever requests, which
+     is the exact failure the old worker had for its whole list. */
+  "/favicon.ico",
+  "/icon.svg",
+  "/icon.png",
 ];
 
 const IMMUTABLE_PREFIXES = ["/derived/", "/derived-1bit/"];
