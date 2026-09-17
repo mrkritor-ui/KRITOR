@@ -1,44 +1,229 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>KRITOR</title>
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/icon.png">
-<meta name="description" content="An original work by KRITOR, a contemporary artist working in expressionism and mixed media.">
-<link rel="canonical" href="/">
-<!-- The site face, served from this origin. Preloaded rather than left to
-     the stylesheet to discover: it is 4 KB, and font-display: block means
-     nothing is painted in it until it lands. -->
-<link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" as="script" href="/artworks.js">
-<link rel="preload" as="script" href="/work.js?v=3">
-<link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
-<link rel="stylesheet" href="/work.css?v=5">
-<link rel="stylesheet" href="/zoom.css?v=4">
-<script src="/zoom-transition.js?v=3"></script>
-<!-- The drawn cursor. cursor.css asks the browser for it; cursor.js draws
-     it, which is the half that cannot be silently declined. -->
-<link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
-<script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
-<!--SEO-HEAD-->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>KRITOR</title>
+  <meta name="description" content="An original work by KRITOR, a contemporary artist working in expressionism and mixed media.">
+  <link rel="canonical" href="/">
+  <link rel="manifest" href="/manifest.json">
+  <!--SEO-HEAD-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-title" content="KRITOR">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- The site face, served from this origin. Preloaded rather than left to
+       the stylesheet to discover: it is 4 KB, and font-display: block means
+       nothing is painted in it until it lands. -->
+  <link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- Loaded async: media="print" keeps it out of the critical path, so a slow
+       or blocked font host can never delay rendering or script execution. -->
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap"></noscript>
+
+  <!-- The door's own footage — pixel-fx.js starts decoding this the moment it
+       runs, but that is already after the stylesheet, the fonts and however
+       much else stands ahead of it in the same <head>. Preloaded so the
+       fetch is underway from the first possible moment instead, the same
+       reasoning as the font two lines up. -->
+  <link rel="preload" href="/art-loader-frames.webp" as="image" type="image/webp" fetchpriority="high">
+
+  <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
+  <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
+  <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
+  <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
 </head>
-<body>
-<header class="work-header"><a href="/art/?return=catalogue" aria-label="Back to catalogue">+</a></header>
-<main id="work-page"></main>
-<script src="/artworks.js"></script><script src="/image-manifest.js"></script><script src="/tile-image.js?v=1"></script><script src="/work.js?v=3"></script>
-<script>
-(function(){
-  const id=new URLSearchParams(location.search).get('id');
-  if(id && /^work-[A-Za-z0-9_-]+$/.test(id)){
-    history.replaceState(history.state,'','/' + encodeURIComponent(id) + '/');
-    document.querySelectorAll('a[href*="work.html?id="]').forEach(function(a){
-      const u=new URL(a.href,location.href),rid=u.searchParams.get('id');
-      if(rid)a.href='/' + encodeURIComponent(rid) + '/';
-    });
-  }
-})();
-</script>
-</body></html>
+<body class="crt-glass">
+
+  <!-- A work permalink is the catalogue itself, deep-linked: same chrome, same
+       boot, same panel — see the "opening" lookup near the bottom of
+       terminal.js, which reads this page's own URL and opens straight to the
+       work once the machine says WELCOME. This file is a copy of /art/'s
+       markup rather than an include, the same duplication already accepted
+       between here, architecture/ and store/ — a static site has no template
+       layer to share it through. Keep the two in step by hand. -->
+
+  <!-- The way back to the directory. Not part of the door's ceremony — hidden
+       for as long as html.is-booting is set (terminal.css), since the gate
+       is already the one thing on screen worth clicking while it's up. A
+       pixel icon on a pointer; the word HOME on a touch screen, where the
+       icon alone would be too small to trust. -->
+  <a class="home-tab" href="/" aria-label="Back to KRITOR">
+    <svg class="ico home-tab-icon" viewBox="0 0 9 8" width="18" height="16" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="4" y="0" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/></svg>
+    <span class="home-tab-word">HOME</span>
+  </a>
+
+  <!-- The tube's own optics: a bright-pass bloom (threshold, blur, screen
+       back over the source) and a genuine channel split for the fringe a
+       CRT's three guns leave at any edge — the same two moves the reference
+       shader at gist.github.com/BenMakesGames/3d00a6072c6ed1f4118d992178
+       91429b makes in HLSL, done here in filter primitives.
+
+       This used to run at the canvas's full on-screen size — a few hundred
+       thousand pixels of Gaussian blur, recomputed every repaint, wide
+       enough to stutter a page. pixel-fx.js now sizes the canvas element
+       itself to its small native grid and scales it up with a CSS transform
+       instead of a width/height, which is the part that actually matters
+       here: a filter costs what the ELEMENT'S OWN box costs to render, not
+       what it is later stretched to on screen, so the blur runs against the
+       same few hundred cells the block glitch is drawn on rather than against a
+       1920-pixel-wide canvas, and the transform's own upscale is a GPU
+       compositing step that costs nothing extra. Hidden and sized to
+       nothing: it exists only to be pointed at by url(#crt-optics). -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feComponentTransfer in="SourceGraphic" result="bright">
+        <feFuncR type="linear" slope="3" intercept="-1.6"/>
+        <feFuncG type="linear" slope="3" intercept="-1.6"/>
+        <feFuncB type="linear" slope="3" intercept="-1.6"/>
+      </feComponentTransfer>
+      <feGaussianBlur in="bright" stdDeviation="0.8" result="bloom"/>
+      <feBlend in="SourceGraphic" in2="bloom" mode="screen" result="bloomed"/>
+
+      <feColorMatrix in="bloomed" type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rChan"/>
+      <feOffset in="rChan" dx="-0.6" dy="0" result="rShift"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="gChan"/>
+      <feColorMatrix in="bloomed" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bChan"/>
+      <feOffset in="bChan" dx="0.6" dy="0" result="bShift"/>
+      <feBlend in="rShift" in2="gChan" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="bShift" mode="screen"/>
+    </filter>
+  </svg>
+
+  <!-- Boot. Covers the page while it loads; the bar sits above it. The mode
+       attribute boot-scene.js writes here is always "gate" — this page never
+       flies anywhere, it only ever answers the door — and that mode is what
+       decides the block glitch runs in .boot-fx below.
+
+       Nothing is drawn into the picture and nothing is set over it either —
+       the block glitch is the whole screen, with a CRT skin laid over the
+       canvas rather than into it: crt-optics above for the bloom and the
+       channel fringe, scanlines and a column mask and a vignette in
+       terminal.css for the mesh and the curve. The <p> tags below are left
+       for anything reading the page rather than looking at it. -->
+  <div class="boot" id="boot">
+    <div class="boot-fx" id="boot-fx" aria-hidden="true"></div>
+    <div class="boot-crt" aria-hidden="true"></div>
+    <div class="boot-statement">
+      <div class="boot-core">
+        <p class="boot-mark">KRITOR</p>
+        <p class="boot-sub" id="boot-sub"></p>
+        <p class="boot-welcome" id="boot-welcome" hidden>WELCOME.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- The same glass the boot looks through, left over the catalogue once
+       the boot is gone — see the comment on .catalogue-crt in terminal.css
+       for why it carries the mesh and the curve but not the roll or the
+       bloom filter. Fixed over the whole page rather than scoped to the
+       grid, the same way the boot's own glass sits over its whole screen. -->
+  <div class="catalogue-crt" aria-hidden="true"></div>
+
+  <!-- The bar. Not a header: the only chrome on the page, and one of the only
+       two things on the site that can be clicked. -->
+  <div class="bar" id="bar">
+    <button class="bar-tab" id="bar-tab" type="button" aria-label="Show filters"><svg class="ico" viewBox="0 0 7 4" width="14" height="8" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/></svg></button>
+
+    <div class="bar-row" id="info-row" hidden>
+      <button class="bar-btn" id="info-btn" type="button" aria-pressed="false"><svg class="ico" data-info="off" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg><svg class="ico" data-info="on" hidden viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg> INFO</button>
+      <div class="bar-views">
+        <div>
+          <button class="bar-btn" data-view="zoom" type="button">LARGE</button>
+          <button class="bar-btn" data-view="grid" type="button">SMALL</button>
+          <button class="bar-btn" data-view="list" type="button">LIST</button>
+          <!-- The scale reads as well as rules: the block sits on the stop
+               for whichever view is on. Drawn in CSS rather than typed out of
+               pipes and dots, so it stays on the pixel unit whatever the face
+               does to the width of a full stop. -->
+          <span class="bar-scale" aria-hidden="true"><span class="bar-scale-mark"></span></span>
+        </div>
+      </div>
+      <button class="bar-btn" id="shuffle-btn" type="button" aria-label="Randomise the order"><svg class="ico" viewBox="0 0 9 9" width="18" height="18" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/></svg></button>
+        <button class="bar-btn" id="eye-btn" type="button" aria-pressed="false" aria-label="Reveal every work in colour"><svg class="ico" data-eye="shut" viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/></svg><svg class="ico" data-eye="open" hidden viewBox="0 0 11 7" width="22" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/></svg></button>
+        <div class="bar-modes">
+        <button class="bar-btn" data-theme-btn="dark" type="button" aria-pressed="false" aria-label="Terminal mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/></svg></button>
+        <button class="bar-btn" data-theme-btn="light" type="button" aria-pressed="true" aria-label="Paper mode"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="3" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/></svg></button>
+      </div>
+    </div>
+
+    <!-- Already in the bar's slot: the loading row does not travel here, it
+         retracts from here once it has said WELCOME. It is also where the door
+         asks: once the bar is full and the fire is still waiting, LOADING
+         becomes PRESS TO ENTER and blinks until somebody answers. Announced,
+         because a full bar that has stopped moving tells a screen reader
+         nothing about whose turn it is. -->
+    <div class="bar-loading" id="loading-row">
+      <span class="bar-loading-label" id="loading-label" aria-live="polite">LOADING</span>
+      <div class="bar-progress"><span id="loading-fill"></span></div>
+    </div>
+
+    <div class="bar-drawer" id="drawer">
+      <div class="filters" id="filters-pane"></div>
+      <div class="info-pane" id="info-pane" hidden>
+        <p>KRITOR IS AN ARTIST. THE WORK IS EXPRESSIONIST: MEDIUMS LAYERED UNTIL A PICTURE ARRIVES, THEN LIVED WITH FOR MONTHS, WATCHING IT DEVELOP AND ALLOWING THE PROCESS TO BECOME REFLECTIVE.</p>
+        <p>I OFTEN PLACE MYSELF WITHIN THE WORK, SURROUNDED BY AN EVENT, PLACE, OR MOMENT FROM MY LIFE.</p>
+        <p>CONTACT: <a href="mailto:info@kritor.au">INFO@KRITOR.AU</a></p>
+      </div>
+    </div>
+
+    <div class="bar-scroll"><span id="scroll-fill"></span></div>
+  </div>
+
+  <main class="grid view-grid" id="grid" aria-label="Artwork catalogue"></main>
+  <footer class="foot">
+    <p>KRITOR MAKES THINGS.<br>A CHOICE MADE AT 17<br>TO NOT TAKE TIME FOR GRANTED.</p>
+    <p>ALL RIGHTS RESERVED. &copy; 2026 KRITOR.</p>
+  </footer>
+
+  <!-- The work panel. Opens over the catalogue rather than navigating, but
+       still pushes /work-xx/ so deep links and the built routes survive. On
+       this page it is what the visitor arrived to see: terminal.js finds
+       this work's id in the URL once the boot hands over and opens the panel
+       itself, without a pushState, so the address bar never moves. -->
+  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Work">
+    <div class="panel-inner">
+      <div class="panel-art" id="panel-art"></div>
+      <h2 class="panel-title" id="panel-title"></h2>
+      <button class="panel-esc" id="panel-esc" type="button" aria-label="Close"><svg class="ico" viewBox="0 0 7 7" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg></button>
+      <div class="panel-meta" id="panel-meta"></div>
+      <div class="panel-foot" id="panel-foot"></div>
+    </div>
+  </div>
+
+  <!-- Old shares still point at /work.html?id=work-01. terminal.js only ever
+       reads the path, so that id is folded into a clean /work-01/ address
+       here, before terminal.js runs, rather than teaching the shared file
+       about a query string every other page that loads it never has. -->
+  <script>
+  (function(){
+    var id=new URLSearchParams(location.search).get('id');
+    if(id && /^work-[A-Za-z0-9_-]+$/.test(id)){
+      history.replaceState(history.state,'','/' + encodeURIComponent(id) + '/');
+    }
+  })();
+  </script>
+
+  <script src="/artworks.js?v=__ASSET_VERSION__"></script>
+  <script src="/image-manifest.js?v=__ASSET_VERSION__"></script>
+  <script src="/terminal-manifest.js?v=__ASSET_VERSION__"></script>
+  <script src="/tile-image.js?v=__ASSET_VERSION__"></script>
+  <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
+  <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
+  <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
+  <script src="/terminal.js?v=__ASSET_VERSION__"></script>
+  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+</body>
+</html>
