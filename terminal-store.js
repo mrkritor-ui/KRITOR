@@ -20,6 +20,12 @@
     ? SHOP_ITEMS.filter(item => !item.unlisted)
     : [];
 
+  /* /shop/<id>/ is this same page, deep-linked — see the opening comment in
+     product.html. Resolved from the path alone, the same way terminal.js
+     resolves a work id for the catalogue's own panel. */
+  const opening = items.find(i =>
+    i.id === location.pathname.replace(/\/+$/, "").split("/").pop());
+
   const stockOf = item => (Number.isFinite(item.stock) ? item.stock : 1);
   const soldOut = item => stockOf(item) <= 0;
   const firstImage = item => (item.images || [])[0] || "";
@@ -403,6 +409,7 @@
     preload: items.map(item => realFor(firstImage(item), 480)),
     items: items,
     onDeal: item => grid.appendChild(tileFor(item)),
+    onParams: () => { if (opening) openPanel(opening); },
   });
 
   grid.addEventListener("click", e => {
