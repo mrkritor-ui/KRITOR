@@ -19,6 +19,16 @@
 
   const VIEWS = ["zoom", "grid", "list"];
 
+  /* AR Quick Look is a WebKit-only hint on <a rel="ar">: it works everywhere
+     Safari's engine does (iOS, iPadOS, macOS) and is otherwise ignored, which
+     leaves the link pointing at a raw .usdz — a dead download on Android and
+     desktop Chrome/Firefox. Feature-detect it so the button only appears
+     where tapping it actually opens something. */
+  const SUPPORTS_QUICK_LOOK = (() => {
+    const a = document.createElement("a");
+    return !!(a.relList && a.relList.supports && a.relList.supports("ar"));
+  })();
+
   const root = document.documentElement;
   const grid = document.getElementById("grid");
   const bar = document.getElementById("bar");
@@ -480,7 +490,7 @@
     const list = sequence();
     const at = list.findIndex(w => w.id === work.id);
     panelFoot.textContent = "";
-    if (work.ar && work.ar.enabled && work.ar.file) {
+    if (SUPPORTS_QUICK_LOOK && work.ar && work.ar.enabled && work.ar.file) {
       const ar = document.createElement("a");
       ar.className = "panel-ar";
       ar.href = "/" + String(work.ar.file).replace(/^\//, "");
