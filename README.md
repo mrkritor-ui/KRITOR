@@ -32,17 +32,19 @@ A third tool is never run by the deploy — it's for sharing a work off-site
 with a sense of its actual size:
 
 ```sh
-python3 tools/gallery-mockup.py                 # every work with a recorded size, both shots
+python3 tools/gallery-mockup.py                 # every work with a recorded size
 python3 tools/gallery-mockup.py work-01 work-05  # just these
+python3 tools/gallery-mockup.py work-21 --size work-21=70x100  # no recorded size yet
 ```
 
-Drops each work into the same plain room — white wall, concrete floor, one
-wooden chair — sized from its own `size` field, so the chair is a constant
-scale reference across the whole set: a bigger painting really does look
-bigger, not just more zoomed-in. Writes two shots per work to
-`derived-gallery/`, `<id>-medium.png` (a close, tight crop) and
-`<id>-long.png` (a wide, establishing room shot) — see the tool's own
-docstring for `--shot`, `--ppcm`, and `--no-caption`.
+Composites each work onto the reference photo at `tools/gallery-refs/`, at
+its true physical size, centred on the frame and hung at the calibration
+figure's eye level. The photo carries its own scale: the tool measures that
+figure's pixel height against their real height (`--person-height`, default
+160cm) and derives pixels-per-centimetre from it, so every painting mocked
+up against the same photo is in true relative scale to every other one.
+Writes `<id>-context.png` to `derived-gallery/` — see the tool's own
+docstring for how the calibration works and for `--photo`.
 
 Without them the pages still work — tiles fall back to the original images —
 but the catalogue downloads megabytes instead of kilobytes.
