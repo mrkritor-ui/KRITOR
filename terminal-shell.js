@@ -725,6 +725,8 @@
       if (scale === 1) { tx = 0; ty = 0; }
       clampPan();
       art.style.touchAction = scale > 1 ? "none" : "";
+      const el = currentImg();
+      if (el) el.style.willChange = "";
       place(true);
     }
 
@@ -754,14 +756,20 @@
     }
 
     art.addEventListener("pointerdown", e => {
-      if (e.pointerType !== "touch" || !currentImg()) return;
+      const el = currentImg();
+      if (e.pointerType !== "touch" || !el) return;
       touches.set(e.pointerId, { sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY });
       if (touches.size === 2) {
         panFrom = null;
+        /* Only while a finger is actually moving it — left on permanently
+           this used to promote the work above the click zones beside it on a
+           mouse, which never runs this gesture at all to turn it back off. */
+        el.style.willChange = "transform";
         const [a, b] = [...touches.values()];
         const mid = anchorAt((a.x + b.x) / 2, (a.y + b.y) / 2);
         pinch = Object.assign({ dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, scale: scale }, mid);
       } else if (touches.size === 1 && scale > 1) {
+        el.style.willChange = "transform";
         panFrom = { x: e.clientX, y: e.clientY, tx: tx, ty: ty };
       }
     }, { passive: true });
