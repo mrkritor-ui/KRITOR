@@ -1627,9 +1627,6 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 }
 .panel-art img { max-width: 100%; max-height: 62vh; }
 .panel-art img { max-height: 62dvh; }
-/* Scaled and panned by the pinch below. will-change keeps that transform off
-   the main thread while a finger is still moving it. */
-.panel-art img { will-change: transform; }
 
 /* The two halves of the walk. Buttons, so a keyboard can reach them and a
    screen reader is told what they are, but drawn as nothing at all: the work
