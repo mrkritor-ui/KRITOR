@@ -143,6 +143,7 @@
        mounted once and live in here, and emptying the box took them with it. */
     const previous = panelArt.querySelector("img");
     if (previous) previous.remove();
+    panelNav.reset();   // a new item opens at rest, whatever the last one was left at
     const img = document.createElement("img");
     img.src = realFor(firstImage(item), 1440);
     img.alt = nameOf(item);
@@ -424,7 +425,7 @@
   document.getElementById("panel-esc").addEventListener("click", closePanel);
   panel.addEventListener("click", e => { if (e.target === panel) closePanel(); });
 
-  T.mountPanelNav({
+  const panelNav = T.mountPanelNav({
     art: panelArt,
     surface: panel.querySelector(".panel-inner"),
     step: step,
