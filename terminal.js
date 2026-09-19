@@ -451,6 +451,7 @@
        mounted once and live in here, and emptying the box took them with it. */
     const previous = panelArt.querySelector("img");
     if (previous) previous.remove();
+    panelNav.reset();   // a new work opens at rest, whatever the last one was left at
     const img = document.createElement("img");
     /* The panel shows the real work. The bitmap is the catalogue's language,
        not a way of hiding the painting from someone who asked to see it. */
@@ -527,7 +528,7 @@
   view = VIEWS.includes(savedView) ? savedView : "grid";
   markView(view);
 
-  T.mountPanelNav({
+  const panelNav = T.mountPanelNav({
     art: panelArt,
     surface: panel.querySelector(".panel-inner"),
     step: step,

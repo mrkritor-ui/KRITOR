@@ -619,11 +619,22 @@
   const SWIPE_MIN = 55;        // px of travel before a drag is a swipe
   const SWIPE_BIAS = 1.4;      // how much more horizontal than vertical
 
-  /* art      the box the two halves are laid over
+  /* The two-finger hold every phone gallery already trained a visitor to
+     try: pinch to scale the work up, let go and it stays there, one finger
+     then pans around it, a double-tap snaps it back. Fingers land on the
+     work itself (`art`), not on `surface` — the swipe below still owns that
+     box, and simply stops offering swipes once the work is off its 1× rest. */
+  const ZOOM_MAX = 4;
+  const DOUBLE_TAP_SCALE = 2.5;
+  const DOUBLE_TAP_MS = 300;    // gap allowed between the two taps
+  const DOUBLE_TAP_PX = 32;     // how close together, and how still, each tap must be
+
+  /* art      the box the two halves are laid over, and the work is zoomed in
      surface  what the swipe is read on
      step     called with -1 or 1 */
   function mountPanelNav(options) {
     const step = options.step;
+    const art = options.art;
 
     ["prev", "next"].forEach(dir => {
       const zone = document.createElement("button");
@@ -638,7 +649,7 @@
         e.stopPropagation();
         step(dir === "prev" ? -1 : 1);
       });
-      options.art.appendChild(zone);
+      art.appendChild(zone);
     });
 
     /* Read on the panel's own box rather than on the backdrop, where the same
@@ -650,6 +661,11 @@
 
     surface.addEventListener("pointerdown", e => {
       if (e.pointerType !== "touch") return;
+      /* A second finger landing is a pinch starting, not a swipe candidate —
+         checked here rather than trusted to the pinch handler below, which
+         sees this same touch first (art sits inside surface) but whose own
+         cancellation this handler would otherwise overwrite right back. */
+      if (touches.size > 1) { id = -1; return; }
       id = e.pointerId;
       sx = e.clientX;
       sy = e.clientY;
@@ -658,6 +674,7 @@
     surface.addEventListener("pointerup", e => {
       if (e.pointerId !== id) return;
       id = -1;
+      if (scale > 1) return;   // the work is zoomed — panning owns the drag now
       const dx = e.clientX - sx;
       const dy = e.clientY - sy;
       /* Horizontal, and decisively so. The panel scrolls under the finger, and
@@ -668,6 +685,145 @@
     }, { passive: true });
 
     surface.addEventListener("pointercancel", () => { id = -1; }, { passive: true });
+
+    /* ── Pinch-to-zoom ────────────────────────────────────────────────────── */
+
+    const touches = new Map();   // pointerId -> {sx, sy, x, y}: down point and live point
+    let scale = 1, tx = 0, ty = 0;
+    let pinch = null;            // anchor + start scale/distance, set while two fingers are down
+    let panFrom = null;          // {x, y, tx, ty}, set while one finger drags a zoomed work
+    let lastTap = null;          // {time, x, y} of the previous lone tap
+
+    function currentImg() { return art.querySelector("img"); }
+
+    function place(withTransition) {
+      const el = currentImg();
+      if (!el) return;
+      el.style.transition = withTransition ? "transform .25s ease" : "";
+      el.style.transform = (scale === 1 && tx === 0 && ty === 0)
+        ? "" : "translate(" + tx + "px, " + ty + "px) scale(" + scale + ")";
+    }
+
+    /* Keeps the work from drifting past its own edge: past a certain scale
+       there is more of it than the box, and the box's centre is where that
+       extra should run out either side. */
+    function clampPan() {
+      const el = currentImg();
+      if (!el) return;
+      const rect = art.getBoundingClientRect();
+      const maxX = Math.max(0, (el.offsetWidth * scale - rect.width) / 2);
+      const maxY = Math.max(0, (el.offsetHeight * scale - rect.height) / 2);
+      tx = Math.min(maxX, Math.max(-maxX, tx));
+      ty = Math.min(maxY, Math.max(-maxY, ty));
+    }
+
+    /* Settles scale and pan back inside bounds and hands the drag to whoever
+       owns it next: past 1× a single finger pans the work, so the swipe above
+       needs to fall silent and the panel needs to stop trying to scroll. */
+    function settle() {
+      scale = Math.min(ZOOM_MAX, Math.max(1, scale));
+      if (scale === 1) { tx = 0; ty = 0; }
+      clampPan();
+      art.style.touchAction = scale > 1 ? "none" : "";
+      place(true);
+    }
+
+    /* Where a viewport point (ax, ay) currently sits on the unscaled work —
+       the point a pinch or a double-tap has to keep still as scale changes. */
+    function anchorAt(ax, ay) {
+      const rect = art.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      return { cx: cx, cy: cy, ix: (ax - cx - tx) / scale, iy: (ay - cy - ty) / scale };
+    }
+
+    function zoomTo(next, ax, ay) {
+      const a = anchorAt(ax, ay);
+      scale = next;
+      tx = ax - a.cx - a.ix * scale;
+      ty = ay - a.cy - a.iy * scale;
+      settle();
+    }
+
+    function reset() {
+      scale = 1; tx = 0; ty = 0;
+      pinch = null; panFrom = null; lastTap = null;
+      touches.clear();
+      art.style.touchAction = "";
+      place(false);
+    }
+
+    art.addEventListener("pointerdown", e => {
+      if (e.pointerType !== "touch" || !currentImg()) return;
+      touches.set(e.pointerId, { sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY });
+      if (touches.size === 2) {
+        panFrom = null;
+        const [a, b] = [...touches.values()];
+        const mid = anchorAt((a.x + b.x) / 2, (a.y + b.y) / 2);
+        pinch = Object.assign({ dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, scale: scale }, mid);
+      } else if (touches.size === 1 && scale > 1) {
+        panFrom = { x: e.clientX, y: e.clientY, tx: tx, ty: ty };
+      }
+    }, { passive: true });
+
+    art.addEventListener("pointermove", e => {
+      if (!touches.has(e.pointerId)) return;
+      const t = touches.get(e.pointerId);
+      t.x = e.clientX; t.y = e.clientY;
+
+      if (touches.size === 2 && pinch) {
+        const [a, b] = [...touches.values()];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        scale = Math.min(ZOOM_MAX, Math.max(1, pinch.scale * (dist / pinch.dist)));
+        tx = mx - pinch.cx - pinch.ix * scale;
+        ty = my - pinch.cy - pinch.iy * scale;
+        clampPan();
+        art.style.touchAction = "none";
+        place(false);
+      } else if (touches.size === 1 && panFrom) {
+        tx = panFrom.tx + (e.clientX - panFrom.x);
+        ty = panFrom.ty + (e.clientY - panFrom.y);
+        clampPan();
+        place(false);
+      }
+    }, { passive: true });
+
+    function release(e) {
+      if (!touches.has(e.pointerId)) return;
+      const t = touches.get(e.pointerId);
+      touches.delete(e.pointerId);
+      if (touches.size < 2) pinch = null;
+
+      if (touches.size === 0) {
+        panFrom = null;
+        settle();
+        /* A tap that barely moved, twice, close together: the double-tap
+           that zooms in on where it landed, or all the way back out. */
+        const moved = Math.hypot(e.clientX - t.sx, e.clientY - t.sy);
+        if (moved < DOUBLE_TAP_PX) {
+          const now = Date.now();
+          const tap = lastTap;
+          lastTap = { time: now, x: e.clientX, y: e.clientY };
+          if (tap && now - tap.time <= DOUBLE_TAP_MS &&
+              Math.hypot(e.clientX - tap.x, e.clientY - tap.y) <= DOUBLE_TAP_PX) {
+            lastTap = null;
+            zoomTo(scale > 1 ? 1 : DOUBLE_TAP_SCALE, e.clientX, e.clientY);
+          }
+        } else {
+          lastTap = null;
+        }
+      } else if (touches.size === 1 && scale > 1) {
+        /* One finger lifted out of a pinch — the other keeps panning rather
+           than the gesture simply ending. */
+        const [p] = [...touches.values()];
+        panFrom = { x: p.x, y: p.y, tx: tx, ty: ty };
+      }
+    }
+    art.addEventListener("pointerup", release, { passive: true });
+    art.addEventListener("pointercancel", release, { passive: true });
+
+    return { reset: reset };
   }
 
   /* Where you are in the walk, and how to move through it — which is not the

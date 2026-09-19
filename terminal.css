@@ -1615,9 +1615,21 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
    height long before it runs out of width, so the box could be as wide as it
    liked and the picture stayed the same size in the middle of it. Height is
    the lever, and the type below gave up the room for it. */
-.panel-art { position: relative; display: grid; place-items: center; margin-top: calc(var(--u) * 2); }
+.panel-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-top: calc(var(--u) * 2);
+  /* A pinch holds the work well past its own box on a small screen — clipped
+     here rather than let loose over the title and record underneath it, or
+     added to what the panel itself thinks it needs to scroll. */
+  overflow: hidden;
+}
 .panel-art img { max-width: 100%; max-height: 62vh; }
 .panel-art img { max-height: 62dvh; }
+/* Scaled and panned by the pinch below. will-change keeps that transform off
+   the main thread while a finger is still moving it. */
+.panel-art img { will-change: transform; }
 
 /* The two halves of the walk. Buttons, so a keyboard can reach them and a
    screen reader is told what they are, but drawn as nothing at all: the work
