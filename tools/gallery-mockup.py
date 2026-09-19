@@ -175,7 +175,7 @@ def composite(photo, painting_path, w_cm, h_cm, ppcm, cx, eye_y):
     _blurred_rect(out,
                   (left - w_px * 0.03, top + h_px * 0.3,
                    left + w_px * 1.03, top + h_px + h_px * 0.08),
-                  blur=max(10, w_px * 0.045), opacity=110)
+                  blur=max(10, w_px * 0.045), opacity=70)
 
     out.paste(painting, (left, top))
     ImageDraw.Draw(out, "RGBA").rectangle(
