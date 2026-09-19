@@ -16,6 +16,12 @@
 /derived-1bit/
 /terminal-manifest.js
 
+# Contextual gallery mockups, built on demand by tools/gallery-mockup.py.
+# Nobody's site page reads these — they're for sharing a work off-site with
+# a sense of scale — so there's nothing here to go stale, only megabytes to
+# not carry in the repo.
+/derived-gallery/
+
 node_modules/
 __pycache__/
 *.pyc

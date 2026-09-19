@@ -28,6 +28,22 @@ python3 tools/build-images.py        # responsive renditions + image-manifest.js
 python3 tools/terminal-images.py     # 1-bit renditions + terminal-manifest.js
 ```
 
+A third tool is never run by the deploy — it's for sharing a work off-site
+with a sense of its actual size:
+
+```sh
+python3 tools/gallery-mockup.py                 # every work with a recorded size, both shots
+python3 tools/gallery-mockup.py work-01 work-05  # just these
+```
+
+Drops each work into the same plain room — white wall, concrete floor, one
+wooden chair — sized from its own `size` field, so the chair is a constant
+scale reference across the whole set: a bigger painting really does look
+bigger, not just more zoomed-in. Writes two shots per work to
+`derived-gallery/`, `<id>-medium.png` (a close, tight crop) and
+`<id>-long.png` (a wide, establishing room shot) — see the tool's own
+docstring for `--shot`, `--ppcm`, and `--no-caption`.
+
 Without them the pages still work — tiles fall back to the original images —
 but the catalogue downloads megabytes instead of kilobytes.
 
