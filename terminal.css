@@ -1855,6 +1855,12 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
      browser's chrome. The vh line stays as the fallback. */
   .panel-inner { border: 0; width: 100%; max-height: 100vh; height: 100%; }
   .panel-inner { max-height: 100dvh; }
+  /* The work was landing flush under the status bar with the rest of the
+     screen empty below it. A fixed push down reads better here than true
+     vertical centring, which would clip the top of a work tall enough to
+     need the scroll this box already keeps for one. */
+  .panel-inner { padding-top: calc(var(--u) * 2.5 + 12vh); }
+  .panel-inner { padding-top: calc(var(--u) * 2.5 + 12dvh); }
 }
 
 /* Touch targets. Everything in the bar was drawn at type size — 18 to 26px
