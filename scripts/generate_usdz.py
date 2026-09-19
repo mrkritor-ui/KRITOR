@@ -4,11 +4,9 @@ Source image
 ------------
 The texture comes from the artwork's own `image` in artworks.js. Adding a work
 to the catalogue is therefore all it takes to get AR — there is no second upload
-to remember, and no way for the two to drift apart.
-
-`images/ar/<id>.<ext>` is still honoured as an optional override, for the cases
-where the AR texture genuinely should differ from the catalogue image — a crop
-without the studio floor, say, or a straightened photograph.
+to remember, and no way for the two to drift apart. One image per work, full
+stop — no separate AR override, so there is nothing that can show one picture
+on the wall and a different one in the catalogue.
 
 Transparency
 ------------
@@ -40,7 +38,6 @@ from pxr import Usd, UsdGeom, UsdShade, UsdUtils, Sdf, Gf
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ARTWORKS_FILE = os.path.join(ROOT, "artworks.js")
 AR_ROOT = os.path.join(ROOT, "ar")
-AR_OVERRIDE_ROOT = os.path.join(ROOT, "images", "ar")
 
 # Every work ships on 38mm gallery-wrap stretcher bars. A flat plane made the
 # painting vanish edge-on in AR — real canvases have real depth — so the mesh
@@ -58,8 +55,6 @@ CANVAS_EDGE_COLOR = Gf.Vec3f(0.86, 0.83, 0.76)
 # and only costs the viewer time.
 MAX_TEXTURE = 2048
 
-IMAGE_EXTENSIONS = (".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG", ".webp", ".WEBP")
-
 
 def read_artworks():
     with open(ARTWORKS_FILE, "r", encoding="utf-8") as f:
@@ -75,19 +70,13 @@ def read_artworks():
 
 
 def resolve_source(artwork):
-    """The override if one exists, otherwise the artwork's catalogue image."""
-    artwork_id = str(artwork.get("id", ""))
-    for extension in IMAGE_EXTENSIONS:
-        override = os.path.join(AR_OVERRIDE_ROOT, artwork_id + extension)
-        if os.path.isfile(override):
-            return override, True
-
+    """The artwork's own catalogue image — the only source AR ever reads."""
     relative = (artwork.get("image") or "").lstrip("/")
     if relative:
         base = os.path.join(ROOT, relative)
         if os.path.isfile(base):
-            return base, False
-    return None, False
+            return base
+    return None
 
 
 def prepare_texture(source_path, destination_dir):
@@ -253,7 +242,7 @@ def create_usdz(artwork, problems):
         problems.append(f"{artwork_id}: ar.enabled but width/height are {width}x{height}")
         return False
 
-    source_path, is_override = resolve_source(artwork)
+    source_path = resolve_source(artwork)
     if not source_path:
         problems.append(f"{artwork_id}: ar.enabled but no image found")
         return False
@@ -273,8 +262,7 @@ def create_usdz(artwork, problems):
 
     size = os.path.getsize(output_path) / 1024.0
     print(f"  {artwork_id:<9} {width:g}x{height:g}cm  "
-          f"{'transparent' if transparent else 'opaque':<11}  "
-          f"{'override' if is_override else 'catalogue image'}  ->  {size:.0f} KB")
+          f"{'transparent' if transparent else 'opaque':<11}  ->  {size:.0f} KB")
     return True
 
 
