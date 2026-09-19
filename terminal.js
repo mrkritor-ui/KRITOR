@@ -19,15 +19,10 @@
 
   const VIEWS = ["zoom", "grid", "list"];
 
-  /* AR Quick Look is a WebKit-only hint on <a rel="ar">: it works everywhere
-     Safari's engine does (iOS, iPadOS, macOS) and is otherwise ignored, which
-     leaves the link pointing at a raw .usdz — a dead download on Android and
-     desktop Chrome/Firefox. Feature-detect it so the button only appears
-     where tapping it actually opens something. */
-  const SUPPORTS_QUICK_LOOK = (() => {
-    const a = document.createElement("a");
-    return !!(a.relList && a.relList.supports && a.relList.supports("ar"));
-  })();
+  /* AR Quick Look is a walk-around-the-room feature — it only means anything
+     on a phone. Restrict to iPhone rather than everything <a rel="ar">
+     happens to work on (that also includes desktop Safari). */
+  const SUPPORTS_QUICK_LOOK = /iPhone/.test(navigator.userAgent);
 
   const root = document.documentElement;
   const grid = document.getElementById("grid");
