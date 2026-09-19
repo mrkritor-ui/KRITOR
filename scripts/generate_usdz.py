@@ -19,6 +19,14 @@ a channel that is uniformly opaque is dropped because it encodes nothing. That
 is the same rule the web renditions follow.
 
 Upload a good PNG and it comes out the other side intact.
+
+Depth
+-----
+Every work is a real object, not a poster — see CANVAS_DEPTH_CM. The mesh is
+a box that deep, back face flush against the wall, front face (the artwork's
+own texture) proud of it by the stretcher's depth. The sides and back carry a
+plain canvas tint (CANVAS_EDGE_COLOR); there is no photograph of the actual
+edge to texture them with.
 """
 
 import json
@@ -33,6 +41,17 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ARTWORKS_FILE = os.path.join(ROOT, "artworks.js")
 AR_ROOT = os.path.join(ROOT, "ar")
 AR_OVERRIDE_ROOT = os.path.join(ROOT, "images", "ar")
+
+# Every work ships on 38mm gallery-wrap stretcher bars. A flat plane made the
+# painting vanish edge-on in AR — real canvases have real depth — so the mesh
+# is a box this deep, not a card. Change this if a particular run of works
+# uses a different stretcher.
+CANVAS_DEPTH_CM = 3.8
+
+# The stretcher's own edge, not the painting — there is no photograph of it
+# to go on, so this is a plain raw-canvas tint rather than a guess at
+# whatever the front photo would look like stretched around the side.
+CANVAS_EDGE_COLOR = Gf.Vec3f(0.86, 0.83, 0.76)
 
 # A USDZ is downloaded over mobile data the moment someone taps "View in AR",
 # so the texture is capped. Beyond this, detail is invisible at arm's length
@@ -111,6 +130,10 @@ def create_usd(artwork, texture_path, usd_path, transparent):
     width = float(ar["width"]) / 100.0
     height = float(ar["height"]) / 100.0
     x, y = width / 2.0, height / 2.0
+    depth = CANVAS_DEPTH_CM / 100.0
+    # The back face sits flush against the wall; the front sits proud of it
+    # by the stretcher's depth — this is what an AR wall placement anchors to.
+    back_z, front_z = 0.0, depth
 
     stage = Usd.Stage.CreateNew(usd_path)
     stage.SetMetadata("metersPerUnit", 1.0)
@@ -119,14 +142,16 @@ def create_usd(artwork, texture_path, usd_path, transparent):
     root = UsdGeom.Xform.Define(stage, "/Painting")
     stage.SetDefaultPrim(root.GetPrim())
 
-    # One flat plane, whatever the image. A box behind the work would show
-    # through wherever a cutout PNG is transparent, and branching on the picture
-    # is the guesswork this is meant to avoid.
+    # The front face only — the painting itself. Transparency in the source
+    # photo (a trimmed canvas corner, work-20/21/22 today) shows straight
+    # through to the wall behind it, the same as before this face gained a
+    # box behind it: whatever is back there is a separate mesh (see below),
+    # not something a hole in this face would reveal.
     art = UsdGeom.Mesh.Define(stage, "/Painting/Artwork")
     set_no_subdivision(art)
     art.CreatePointsAttr([
-        Gf.Vec3f(-x, -y, 0.0), Gf.Vec3f(x, -y, 0.0),
-        Gf.Vec3f(x, y, 0.0), Gf.Vec3f(-x, y, 0.0),
+        Gf.Vec3f(-x, -y, front_z), Gf.Vec3f(x, -y, front_z),
+        Gf.Vec3f(x, y, front_z), Gf.Vec3f(-x, y, front_z),
     ])
     art.CreateFaceVertexCountsAttr([4])
     art.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
@@ -135,6 +160,39 @@ def create_usd(artwork, texture_path, usd_path, transparent):
     primvars = UsdGeom.PrimvarsAPI(art)
     uv = primvars.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
     uv.Set([Gf.Vec2f(0, 0), Gf.Vec2f(1, 0), Gf.Vec2f(1, 1), Gf.Vec2f(0, 1)])
+
+    if depth > 0:
+        # The stretcher itself: back face plus the four side edges, in a
+        # plain raw-canvas tint (see CANVAS_EDGE_COLOR) rather than the
+        # artwork's own texture — there is no photograph of the actual edge
+        # to put there.
+        edge = UsdGeom.Mesh.Define(stage, "/Painting/Edge")
+        set_no_subdivision(edge)
+        edge.CreatePointsAttr([
+            Gf.Vec3f(-x, -y, back_z), Gf.Vec3f(x, -y, back_z),    # 0, 1
+            Gf.Vec3f(x, y, back_z), Gf.Vec3f(-x, y, back_z),      # 2, 3
+            Gf.Vec3f(-x, -y, front_z), Gf.Vec3f(x, -y, front_z),  # 4, 5
+            Gf.Vec3f(x, y, front_z), Gf.Vec3f(-x, y, front_z),    # 6, 7
+        ])
+        edge.CreateFaceVertexCountsAttr([4, 4, 4, 4, 4])
+        edge.CreateFaceVertexIndicesAttr([
+            0, 3, 2, 1,  # back
+            0, 1, 5, 4,  # bottom
+            3, 7, 6, 2,  # top
+            0, 4, 7, 3,  # left
+            1, 2, 6, 5,  # right
+        ])
+        edge.CreateDoubleSidedAttr(True)
+
+        edge_material = UsdShade.Material.Define(stage, "/Painting/EdgeMaterial")
+        edge_shader = UsdShade.Shader.Define(stage, "/Painting/EdgeMaterial/Shader")
+        edge_shader.CreateIdAttr("UsdPreviewSurface")
+        edge_shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(CANVAS_EDGE_COLOR)
+        edge_shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.9)
+        edge_shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
+        edge_shader.CreateOutput("surface", Sdf.ValueTypeNames.Token)
+        edge_material.CreateSurfaceOutput().ConnectToSource(edge_shader.GetOutput("surface"))
+        UsdShade.MaterialBindingAPI(edge.GetPrim()).Bind(edge_material)
 
     material = UsdShade.Material.Define(stage, "/Painting/ArtworkMaterial")
     shader = UsdShade.Shader.Define(stage, "/Painting/ArtworkMaterial/Shader")
