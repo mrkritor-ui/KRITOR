@@ -457,10 +457,9 @@
      image actually renders, so the move lands exactly on the wall at any
      screen size without that rect needing to be worked out twice. */
 
-  const WALL_MOVE_MS = 800;      // the artwork's translate+scale
   const WALL_SETTLE_AT = 550;    // the mockup starts fading in before the move finishes
   const WALL_MOCKUP_MS = 400;    // its own fade, ending a little after the move (~950ms total)
-  const WALL_REDUCED_MS = 320;   // prefers-reduced-motion: a plain crossfade instead
+  const WALL_CLOSE_MS = 400;     // closing: one plain fade of the whole thing, no reverse move
 
   function loadImage(src) {
     return new Promise(resolve => {
@@ -538,17 +537,15 @@
         if (wallRoot === root) wallRoot = null;
       }
 
+      /* Closing does not reverse the opening move — flying the artwork back
+         off the wall and shrinking it into the panel again read as busy.
+         The whole thing (mockup, artwork, white) just fades out together as
+         one flat picture, and the panel is straightforwardly there under it. */
       function reverse() {
         if (!wallClose) return;
         wallClose = null;
-        root.classList.remove("is-settled");
-        flyer.style.visibility = "visible";
-        requestAnimationFrame(() => {
-          root.classList.remove("is-active");
-          if (T.reduceMotion) flyer.style.opacity = "1";
-          else flyer.style.transform = "translate(0px, 0px) scale(1, 1)";
-        });
-        setTimeout(cleanup, (T.reduceMotion ? WALL_REDUCED_MS : WALL_MOVE_MS) + 60);
+        root.classList.add("is-closing");
+        setTimeout(cleanup, WALL_CLOSE_MS + 40);
       }
       wallClose = reverse;
       wallRoot = root;

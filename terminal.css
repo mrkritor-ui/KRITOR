@@ -1744,6 +1744,15 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   position: fixed;
   inset: 0;
   z-index: 800;   /* above the panel (500) and the screensaver (700) */
+  transition: opacity .4s ease-out;
+}
+
+/* Closing does not reverse the opening move — the whole composed picture
+   (white, artwork, mockup) just fades out together as one flat image,
+   straight back to the panel underneath it. */
+.wall-transition.is-closing {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .wall-fade {
