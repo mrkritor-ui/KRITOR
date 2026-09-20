@@ -419,6 +419,8 @@
   const panelFoot = document.getElementById("panel-foot");
   let current = null;
   let cancelReveal = null;
+  let wallClose = null;   // reverses an open "view on wall" transition
+  let wallRoot = null;    // that transition's root, for an instant close on navigation
 
   /* The order the panel walks, which is not the grid's. Works are grouped by
      series so stepping through takes you along a body of work before moving
@@ -445,7 +447,151 @@
     openPanel(list[((at < 0 ? 0 : at) + delta + list.length) % list.length], true);
   }
 
+  /* ── View on wall ──────────────────────────────────────────────────────── */
+
+  /* A painting on white space says nothing about how big it actually is on a
+     real wall. tools/gallery-mockup.py composites it into a photographed
+     room at its true physical size and records the painting's own pixel
+     rect within that mockup (work.wall.x/y/w/h, against the mockup file's
+     own natural size) — read here and scaled to however large the mockup
+     image actually renders, so the move lands exactly on the wall at any
+     screen size without that rect needing to be worked out twice. */
+
+  const WALL_MOVE_MS = 800;      // the artwork's translate+scale
+  const WALL_SETTLE_AT = 550;    // the mockup starts fading in before the move finishes
+  const WALL_MOCKUP_MS = 400;    // its own fade, ending a little after the move (~950ms total)
+  const WALL_REDUCED_MS = 320;   // prefers-reduced-motion: a plain crossfade instead
+
+  function loadImage(src) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(img);
+      img.src = src;
+    });
+  }
+
+  function openWallView(work, sourceImg) {
+    if (wallClose) return;   // one at a time
+    const wall = work.wall;
+
+    loadImage("/" + String(wall.image).replace(/^\//, "")).then(mockupImg => {
+      /* The fetch failed, or the panel moved on to another work while it was
+         in flight — either way there is nothing to land it on. */
+      if (!mockupImg.naturalWidth || current !== work) return;
+
+      /* Measured now, not at the click — the preload above is a network
+         wait, and the panel scrolls, so the artwork's screen position isn't
+         settled until the moment the transition is actually about to run. */
+      const startRect = sourceImg.getBoundingClientRect();
+
+      const root = document.createElement("div");
+      root.className = "wall-transition";
+      root.setAttribute("role", "dialog");
+      root.setAttribute("aria-modal", "true");
+      root.setAttribute("aria-label", titleOf(work) + " on a wall");
+
+      const fadeEl = document.createElement("div");
+      fadeEl.className = "wall-fade";
+      root.appendChild(fadeEl);
+
+      /* The artwork itself, lifted out of the panel and pinned over it at
+         its exact current screen position — everything behind it (panel,
+         grid, chrome) is what the white layer above is covering. */
+      const flyer = sourceImg.cloneNode(true);
+      flyer.removeAttribute("style");
+      flyer.className = "wall-flyer";
+      flyer.style.left = startRect.left + "px";
+      flyer.style.top = startRect.top + "px";
+      flyer.style.width = startRect.width + "px";
+      flyer.style.height = startRect.height + "px";
+      root.appendChild(flyer);
+
+      const stage = document.createElement("div");
+      stage.className = "wall-stage";
+      stage.appendChild(mockupImg);
+      root.appendChild(stage);
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "panel-esc wall-close";
+      close.setAttribute("aria-label", "Close");
+      close.innerHTML = document.getElementById("panel-esc").innerHTML;
+      root.appendChild(close);
+
+      document.body.appendChild(root);
+
+      /* Read only once the mockup has actually been laid out, so this is the
+         size it rendered at on this screen, not its file dimensions. */
+      const mockupRect = mockupImg.getBoundingClientRect();
+      const toScreen = mockupRect.width / mockupImg.naturalWidth;
+      const dx = (mockupRect.left + wall.x * toScreen) - startRect.left;
+      const dy = (mockupRect.top + wall.y * toScreen) - startRect.top;
+      const sx = (wall.w * toScreen) / startRect.width;
+      const sy = (wall.h * toScreen) / startRect.height;
+
+      let cleaned = false;
+      function cleanup() {
+        if (cleaned) return;
+        cleaned = true;
+        root.remove();
+        if (wallRoot === root) wallRoot = null;
+      }
+
+      function reverse() {
+        if (!wallClose) return;
+        wallClose = null;
+        root.classList.remove("is-settled");
+        flyer.style.visibility = "visible";
+        requestAnimationFrame(() => {
+          root.classList.remove("is-active");
+          if (T.reduceMotion) flyer.style.opacity = "1";
+          else flyer.style.transform = "translate(0px, 0px) scale(1, 1)";
+        });
+        setTimeout(cleanup, (T.reduceMotion ? WALL_REDUCED_MS : WALL_MOVE_MS) + 60);
+      }
+      wallClose = reverse;
+      wallRoot = root;
+      close.addEventListener("click", reverse);
+
+      /* Two frames, not one: the browser needs a committed layout at the
+         start position before the transform below is what actually
+         transitions, rather than the state the element simply appears in. */
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        root.classList.add("is-active");
+        if (T.reduceMotion) {
+          flyer.style.opacity = "0";
+        } else {
+          flyer.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + sx + ", " + sy + ")";
+        }
+      }));
+
+      if (T.reduceMotion) {
+        setTimeout(() => root.classList.add("is-settled"), 20);
+      } else {
+        setTimeout(() => root.classList.add("is-settled"), WALL_SETTLE_AT);
+        /* Only once the mockup is fully opaque on top of it — the artwork
+           underneath was never seen to disappear, just covered. */
+        setTimeout(() => { flyer.style.visibility = "hidden"; },
+                   WALL_SETTLE_AT + WALL_MOCKUP_MS + 30);
+      }
+
+      close.focus();
+    });
+  }
+
+  /* An instant close, no reverse animation — for when the panel is about to
+     show a different work entirely (stepping to next/prev, or closing
+     outright) and an open wall view would otherwise be left pointing at a
+     work that is no longer the one on screen. */
+  function wallForceClose() {
+    if (wallRoot) wallRoot.remove();
+    wallRoot = null;
+    wallClose = null;
+  }
+
   function openPanel(work, push) {
+    wallForceClose();
     if (cancelReveal) cancelReveal();
     /* Only the work is replaced. The two halves that walk the sequence are
        mounted once and live in here, and emptying the box took them with it. */
@@ -490,6 +636,19 @@
       ar.appendChild(document.createElement("img"));
       panelFoot.appendChild(ar);
     }
+    if (work.wall && work.wall.enabled && work.wall.image) {
+      const wallBtn = document.createElement("button");
+      wallBtn.type = "button";
+      /* .panel-ar's own class, so the two read as a matched pair — this one
+         just runs the transition instead of navigating. */
+      wallBtn.className = "panel-ar";
+      wallBtn.textContent = "VIEW ON WALL";
+      wallBtn.addEventListener("click", () => {
+        const img = panelArt.querySelector("img");
+        if (img) openWallView(work, img);
+      });
+      panelFoot.appendChild(wallBtn);
+    }
     const index = document.createElement("span");
     index.className = "panel-index";
     index.textContent = T.walkLabel(at, list.length);
@@ -507,6 +666,7 @@
   }
 
   function closePanel(pop) {
+    wallForceClose();
     current = null;
     if (cancelReveal) { cancelReveal(); cancelReveal = null; }
     T.stopTyping();
@@ -617,11 +777,14 @@
 
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
-      if (panel.classList.contains("is-open")) closePanel(false);
+      if (wallClose) wallClose();
+      else if (panel.classList.contains("is-open")) closePanel(false);
       else barUI.rest();
       return;
     }
-    if (!panel.classList.contains("is-open")) return;
+    /* The walk is paused while a wall view is up — Escape backs out of that
+       first, rather than stepping the panel underneath it out from under it. */
+    if (!panel.classList.contains("is-open") || wallRoot) return;
     if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); step(1); }
     if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); step(-1); }
   });

@@ -180,7 +180,12 @@ def composite(photo, painting_path, w_cm, h_cm, ppcm, cx, eye_y):
     out.paste(painting, (left, top))
     ImageDraw.Draw(out, "RGBA").rectangle(
         [left, top, left + w_px - 1, top + h_px - 1], outline=(20, 18, 14, 60), width=1)
-    return out
+    # The painting's own pixel rect within this mockup — the site's "View on
+    # wall" transition reads this (scaled to the mockup <img>'s rendered
+    # size) to land the artwork exactly on the wall, so it rides along with
+    # the image rather than needing to be worked out again by hand.
+    rect = {"x": left, "y": top, "w": w_px, "h": h_px}
+    return out, rect
 
 
 def parse_size_arg(value):
@@ -242,10 +247,14 @@ def main():
             continue
 
         out_path = out_dir / f"{work['id']}-context.png"
-        composite(photo, image_path, w_cm, h_cm, cal["ppcm"], photo.width / 2,
-                  cal["eye_y"]).save(out_path)
+        image, rect = composite(photo, image_path, w_cm, h_cm, cal["ppcm"], photo.width / 2,
+                                 cal["eye_y"])
+        image.save(out_path)
+        (out_dir / f"{work['id']}-context.json").write_text(json.dumps(rect))
         rendered += 1
-        print(f"  {work['id']:<10} {w_cm:g} × {h_cm:g} cm  ->  {out_path.relative_to(ROOT)}")
+        print(f"  {work['id']:<10} {w_cm:g} × {h_cm:g} cm  "
+              f"rect=({rect['x']},{rect['y']},{rect['w']},{rect['h']})  ->  "
+              f"{out_path.relative_to(ROOT)}")
 
     print(f"\n{rendered} contextual mockup(s) written to {out_dir.relative_to(ROOT)}/")
 

@@ -135,5 +135,15 @@ place each, so filling them in later is a data change and nothing else.
 }
 ```
 
+`wall` is optional, and only present on a work at all once it has one — see
+`tools/gallery-mockup.py`. `x`/`y`/`w`/`h` are the painting's own pixel rect
+within that mockup file (the tool prints them), which is what lets the work
+panel's VIEW ON WALL button land the artwork exactly on the wall at any
+screen size:
+
+```js
+wall: { enabled: true, image: "wall/work-18.jpg", x: 930, y: 440, w: 139, h: 139 }
+```
+
 Items for sale are separate — see `products.js` and `shop/README.md`. The
 catalogue is the whole archive; the store is only what is for sale.

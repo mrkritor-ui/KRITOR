@@ -1715,15 +1715,92 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
    runs of spaces, and HTML would otherwise collapse them all to one. */
 .panel-index { margin-left: auto; white-space: pre; }
 
+/* Shared by the AR link and the "view on wall" button below — a <button>
+   carries its own native chrome an <a> never had, so it is reset here too,
+   harmlessly for the link, so the two are pixel-identical rather than only
+   looking it. */
 .panel-ar {
+  display: inline-block;
   border: var(--border) solid var(--ink);
+  margin: 0;
   padding: var(--u) calc(var(--u) * 1.5);
+  background: var(--bg);
   color: var(--ink);
-  text-decoration: none;
+  font: inherit;
   font-size: 10px;
+  text-decoration: none;
 }
+.panel-ar::-moz-focus-inner { border: 0; padding: 0; }
 
 .panel-ar:hover { background: var(--ink); color: var(--bg); }
+
+/* ── View on wall ────────────────────────────────────────────────────────── */
+
+/* The transition "view on wall" runs: white over everything, the artwork
+   itself lifted free of the panel and carried to its place in the mockup,
+   the mockup fading in once it lands. See openWallView in terminal.js —
+   this is purely the four layers it drives, stacked in DOM order. */
+.wall-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 800;   /* above the panel (500) and the screensaver (700) */
+}
+
+.wall-fade {
+  position: absolute;
+  inset: 0;
+  /* White specifically, not var(--bg) — the point is a blank page the
+     painting alone stands on, in dark mode exactly as in light. */
+  background: #fff;
+  opacity: 0;
+  transition: opacity .5s ease-out;
+}
+
+.wall-transition.is-active .wall-fade { opacity: 1; }
+
+.wall-flyer {
+  position: fixed;
+  z-index: 2;
+  transform-origin: top left;
+  transition: transform .8s cubic-bezier(.65, 0, .35, 1);
+}
+
+.wall-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--u) * 2);
+}
+
+.wall-stage img {
+  max-width: 100%;
+  max-height: 90vh;
+  max-height: 90dvh;
+  opacity: 0;
+  transition: opacity .4s ease-out;
+}
+
+.wall-transition.is-settled .wall-stage img { opacity: 1; }
+
+.wall-close {
+  position: fixed;
+  top: calc(var(--u) * 2);
+  right: calc(var(--u) * 2);
+  z-index: 3;
+  opacity: 0;
+  transition: opacity .3s ease-out;
+  pointer-events: none;
+}
+
+.wall-transition.is-settled .wall-close { opacity: 1; pointer-events: auto; }
+
+/* Movement is the one thing this skips: the artwork stays put and only
+   opacity changes, everything else keeping its duration. */
+@media (prefers-reduced-motion: reduce) {
+  .wall-flyer { transition: opacity .3s ease-out; }
+}
 
 /* ── Foot ────────────────────────────────────────────────────────────────── */
 
