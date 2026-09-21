@@ -15,7 +15,7 @@
 
   /* The archive does not yet fill every year, but the filter is a range the
      work sits inside rather than a list of years that happen to have one. */
-  const YEAR_RANGE = [2020, 2026];
+  const YEAR_RANGE = [2019, 2026];
 
   const VIEWS = ["zoom", "grid", "list"];
 
@@ -30,7 +30,13 @@
   const materialOf = w => (w.materials || "—").toUpperCase();
   const titleOf = w => (w.title || "UNTITLED").toUpperCase();
 
-  const byYear = (a, b) => (b.year || 0) - (a.year || 0);
+  /* work.year is either a single number or a "YYYY-YYYY" range string, so
+     sorting and the year filter both go through the range it spans. */
+  const yearSpan = w => {
+    const m = String(w.year || "").match(/^(\d{4})(?:-(\d{4}))?$/);
+    return m ? [Number(m[1]), Number(m[2] || m[1])] : [0, 0];
+  };
+  const byYear = (a, b) => yearSpan(b)[1] - yearSpan(a)[1];
   let works = ARTWORKS.slice().sort(byYear);
 
   const bitsEntry = path =>
@@ -49,9 +55,11 @@
   /* ── Views ─────────────────────────────────────────────────────────────── */
 
   function visibleWorks() {
-    return works.filter(w =>
-      (!filters.format || formatOf(w) === filters.format) &&
-      (!filters.year || String(w.year) === filters.year));
+    return works.filter(w => {
+      const [start, end] = yearSpan(w);
+      return (!filters.format || formatOf(w) === filters.format) &&
+        (!filters.year || (Number(filters.year) >= start && Number(filters.year) <= end));
+    });
   }
 
   function bitsBlock(work) {
