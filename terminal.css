@@ -1104,6 +1104,16 @@ html.is-entering .bar-drawer.is-open { animation: bar-arrive .28s ease; }
     position: static;
     border-width: var(--border) 0 0 0;
   }
+
+  /* Desktop keeps a filtered column's list open once the pointer leaves,
+     since is-open is only ever set by a click there and hover alone would
+     otherwise close it with no other way to see what's active. On a touch
+     layout every open is already a click, so that same rule just traps the
+     list open with no way to collapse it — a wide list wedged into a narrow
+     column stays wedged there for the rest of the visit. Tapping the title
+     again already toggles is-open off; let that close the list here too,
+     without touching the filter itself. */
+  .filter-col.is-filtered:not(.is-open) .filter-list { display: none; }
 }
 
 /* The highlight is the width of the word, not of the column: a full-width
