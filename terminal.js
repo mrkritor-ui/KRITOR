@@ -452,6 +452,13 @@
     const list = sequence();
     if (!list.length || !current) return;
     const at = list.findIndex(w => w.id === current.id);
+    /* A zone still holding focus from the click that started this walk would
+       otherwise keep its focus-visible ring lit over whatever work scrolls in
+       next — the button itself never moves, only the picture behind it does.
+       Letting go here means the ring never outlives the click that drew it. */
+    if (document.activeElement && document.activeElement.classList.contains("panel-zone")) {
+      document.activeElement.blur();
+    }
     openPanel(list[((at < 0 ? 0 : at) + delta + list.length) % list.length], true);
   }
 
