@@ -49,7 +49,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageChops, ImageFilter, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -87,11 +87,34 @@ def sources():
     return out
 
 
+def content_bbox(im, alpha):
+    """The rectangle actually holding the work, trimmed of whatever studio
+    wall or transparent margin the export happened to include.
+
+    Without this, the grid's aspect-ratio comes from the export canvas —
+    several of these are square Instagram-style crops around a portrait or
+    landscape painting — and the tile ends up the canvas's shape, not the
+    work's: a stubby square standing next to correctly-proportioned
+    neighbours, with the actual painting shrunk into a corner of it."""
+    if alpha.getextrema()[0] < 250:
+        # Real transparency already marks where the work is.
+        mask = alpha.point(lambda v: 255 if v > 10 else 0)
+    else:
+        # Fully opaque: the studio wall around a photographed canvas reads as
+        # flat near-white, which is exactly what the saturation/highpass
+        # conversion below fades out anyway — so trim it the same way here.
+        mask = ImageChops.invert(im.convert("L")).point(lambda v: 255 if v > 8 else 0)
+    return mask.getbbox() or (0, 0, im.width, im.height)
+
+
 def load(path, grid):
     """Greyscale-ready RGBA plus a hard alpha mask, both at the pixel grid."""
     with Image.open(ROOT / path) as im:
         im = im.convert("RGBA")
     alpha = im.getchannel("A")
+    bbox = content_bbox(im, alpha)
+    im = im.crop(bbox)
+    alpha = alpha.crop(bbox)
     height = max(1, round(im.height * grid / im.width))
     return (
         im.resize((grid, height), Image.Resampling.LANCZOS),
