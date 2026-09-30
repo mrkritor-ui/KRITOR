@@ -48,51 +48,6 @@ const SHOP_ITEMS = [
     shippingCents: {AU: 3500, NZ: 6500, default: 9500},
     shipping: "Rolled and shipped from Melbourne. 2–3 weeks.",
     description: ""
-  },
-  {
-    id: "yung-brother-original",
-    title: "Yung Brother",
-    year: 2026,
-    price: 180000,
-    currency: "AUD",
-    images: ["images/work-08.png"],
-    size: "30 × 40 cm",
-    materials: "Mixed media on canvas",
-    edition: "Original",
-    stock: 1,
-    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
-    shipping: "Rolled and shipped from Melbourne. 2–3 weeks.",
-    description: ""
-  },
-  {
-    id: "her-face-original",
-    title: "Her Face",
-    year: 2023,
-    price: 180000,
-    currency: "AUD",
-    images: ["images/work-04.png"],
-    size: "30 × 40 cm",
-    materials: "Mixed media on canvas",
-    edition: "Original",
-    stock: 1,
-    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
-    shipping: "Rolled and shipped from Melbourne. 2–3 weeks.",
-    description: ""
-  },
-  {
-    id: "painters-retreat-study",
-    title: "Painters Retreat Study",
-    year: 2025,
-    price: 95000,
-    currency: "AUD",
-    images: ["images/work-07.png"],
-    size: "15 × 10 cm",
-    materials: "Mixed media on board",
-    edition: "Original",
-    stock: 1,
-    shippingCents: {AU: 3500, NZ: 6500, default: 9500},
-    shipping: "Rolled and shipped from Melbourne. 2–3 weeks.",
-    description: ""
   }
 ];
 
