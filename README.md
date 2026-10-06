@@ -89,7 +89,23 @@ cart.js             cart state and Stripe plumbing. Untouched by the
                     redesign; the terminal pages use it as state only
                     (it injects its own drawer only for pages that
                     provide [data-bag-slot], and they do not)
+analytics.js        the Google tag (GA4) — see below
 ```
+
+### Analytics
+
+The Google tag lives in `analytics.js` and nowhere else; the measurement ID is
+the one `ID` constant at the top of it. Every public page loads the file with a
+single `<script … defer>` line (`/`, `/art/`, `/architecture/`, `/store/`,
+`/about/`, and the `work.html` / `product.html` templates every `/work-xx/` and
+`/shop/<id>/` is built from) — a new page gets the tag by adding that one line.
+
+It is skipped on `localhost` so local testing never reaches the reports, and it
+is deliberately **not** on `/checkout/`: that page's Content-Security-Policy
+names Stripe and nothing else as a script source, and letting Google in there is
+a decision to make on purpose rather than a side effect. Opening a work pushes
+`/work-xx/` onto the history, which GA4's enhanced measurement already reports
+as a page view, so nothing needs to call `gtag()` for that.
 
 ### Three rules worth knowing before editing
 
