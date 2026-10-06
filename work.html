@@ -30,6 +30,9 @@
   <link rel="preload" href="/art-loader-frames.webp" as="image" type="image/webp" fetchpriority="high">
 
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
+  <!-- Without script there is no boot to wait for and no bar to use; the plain
+       list in the <noscript> below is the page. -->
+  <noscript><style>.boot,.bar,.catalogue-crt{display:none!important}</style></noscript>
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
   <!-- Google tag (GA4) — see analytics.js. -->
@@ -176,6 +179,7 @@
     <div class="bar-scroll"><span id="scroll-fill"></span></div>
   </div>
 
+  <!--NOSCRIPT-->
   <main class="grid view-grid" id="grid" aria-label="Artwork catalogue"></main>
   <footer class="foot">
     <p>KRITOR MAKES THINGS.<br>A CHOICE MADE AT 17<br>TO NOT TAKE TIME FOR GRANTED.</p>

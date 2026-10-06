@@ -1892,6 +1892,30 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 .foot p { margin: 0 0 calc(var(--u) * 2.5); }
 .foot p:last-child { margin-bottom: 0; }
 
+/* ── Without JavaScript ──────────────────────────────────────────────────── */
+
+/* Every room draws itself with script. With none, the boot overlay and the bar
+   are hidden by the <noscript><style> in each page's head and this plain list
+   is the page: filled in at build time by tools/build-routes.js, and inside a
+   <noscript>, so a browser that runs script never renders it. */
+.nojs {
+  position: relative;
+  z-index: 1;
+  max-width: 46em;
+  margin: 0 auto;
+  padding: calc(var(--u) * 12) var(--page-pad) calc(var(--u) * 8);
+  font-size: 13px;
+  line-height: 2;
+  letter-spacing: .06em;
+  color: var(--ink);
+}
+.nojs h1 { margin: 0 0 calc(var(--u) * 3); font: inherit; font-size: 20px; text-transform: uppercase; }
+.nojs p, .nojs ul { margin: 0 0 calc(var(--u) * 3); }
+.nojs ul { padding: 0; list-style: none; }
+.nojs a { color: inherit; }
+.nojs img { display: block; max-width: 100%; height: auto; }
+.nojs-nav { text-transform: uppercase; }
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 /* The table has no floor to scroll under: it drops columns instead. A sideways

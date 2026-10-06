@@ -75,6 +75,7 @@
        it read as one system. -->
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/landing.css?v=__ASSET_VERSION__">
+  <noscript><style>.boot{display:none!important}</style></noscript>
   <!-- The drawn cursor. cursor.css asks the browser for it; cursor.js draws
        it, which is the half that cannot be silently declined. -->
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
@@ -124,7 +125,7 @@
   </div>
 
   <!-- Empty on purpose. Nothing arrives here until something is chosen. -->
-  <main class="landing" id="landing"></main>
+  <main class="landing" id="landing"><!--NOSCRIPT--></main>
 
   <div class="bar bar-landing" id="bar">
     <div class="bar-row" id="menu-options">
