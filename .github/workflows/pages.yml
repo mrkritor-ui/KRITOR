@@ -119,6 +119,12 @@ jobs:
       #
       # The payment worker is deployed from backend/ with wrangler, not from the
       # site, and reads products.json, which stays.
+      # Pages serves exactly what is in this folder, to the public, with no
+      # step after this one that reads it. A broken link, an unfilled
+      # placeholder or a page with no title stops the run here instead.
+      - name: Check the built site
+        run: node tools/check-site.js
+
       - name: Leave the project's own files out of the site
         run: |
           rm -rf backend tools scripts node_modules
