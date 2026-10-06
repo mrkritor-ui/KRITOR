@@ -85,10 +85,9 @@ terminal-store.js   the store: tiles, the bag, add to bag
 terminal.css        the whole visual system
 cursor.css          the drawn cursor, shared by every page including checkout
 
-cart.js             cart state and Stripe plumbing. Untouched by the
-                    redesign; the terminal pages use it as state only
-                    (it injects its own drawer only for pages that
-                    provide [data-bag-slot], and they do not)
+cart.js             cart state, in localStorage. No UI of its own — the
+                    store's bag and the checkout's summary both paint
+                    from it (the Stripe plumbing is checkout.js)
 analytics.js        the Google tag (GA4) — see below
 ```
 
