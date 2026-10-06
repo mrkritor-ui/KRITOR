@@ -42,6 +42,8 @@
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
+  <!-- Google tag (GA4) — see analytics.js. -->
+  <script src="/analytics.js?v=__ASSET_VERSION__" defer></script>
   <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
 </head>
 <body>
@@ -151,8 +153,8 @@
   </footer>
 
 
-  <!-- The bag. cart.js holds the state; this is the terminal's own drawer,
-       which is why the page deliberately provides no [data-bag-slot]. -->
+  <!-- The bag. cart.js holds the state and has no UI of its own; this is the
+       terminal's drawer. -->
   <div class="bag" id="bag" role="dialog" aria-label="Bag">
     <div class="bag-head">
       <span>BAG</span><span class="hatch"></span>

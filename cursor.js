@@ -77,10 +77,10 @@
   var queued = false;
   var live = false;         /* true once the drawn cursor has taken over */
 
-  /* The about page swaps the whole <body> out on navigation, which takes the
-     cursor with it. Anything that lost its element rebuilds here rather than
-     leaving the page with the system cursor switched off and nothing drawn in
-     its place — that failure is the one this file exists to make impossible. */
+  /* Anything that replaces <body> takes the cursor's element with it. A page
+     that lost its element rebuilds here rather than being left with the system
+     cursor switched off and nothing drawn in its place — that failure is the
+     one this file exists to make impossible. */
   function ensure() {
     if (root && !(root.isConnected !== undefined ? root.isConnected : document.contains(root))) {
       root = null;

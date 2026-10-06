@@ -13,12 +13,11 @@ changes the archive.
 
 Both go through the same image pipeline: `tools/build-images.py` reads
 `artworks.js` and `products.js`, and the Pages workflow runs it on every deploy
-to produce AVIF/WebP renditions and blur placeholders. You never generate
-thumbnails by hand, and there is nothing to commit.
+to produce WebP renditions at several widths. You never generate thumbnails by
+hand, and there is nothing to commit.
 
 Transparency is carried through untouched — upload a PNG with a transparent
-background and every rendition keeps it, right down to the inline placeholder.
-Nothing crops, flattens, or guesses at what the background is.
+background and every rendition keeps it. Nothing crops, flattens, or guesses at what the background is.
 
 ---
 
@@ -64,9 +63,8 @@ shop/artshed-original/03-framed.png
 ```
 
 **4. Push.** The deploy builds the renditions for your new photographs
-automatically — several widths in AVIF and WebP, plus the tiny inline
-placeholder the grid paints first. Nothing is committed back, and the store
-never serves your full-size originals.
+automatically — several widths in WebP. Nothing is committed back, and the
+store's pages never ask for your full-size originals.
 
 The item page appears at `/shop/artshed-original/` — no extra file needed, the
 `/shop/` directory resolves any id via `product.html`.

@@ -5,9 +5,8 @@
    carries Stripe, a Content-Security-Policy and a live payment path — none of
    which belongs inside a panel on the shopfront.
 
-   Cart state is cart.js, unchanged. It injects its own drawer only when a page
-   provides [data-bag-slot]; this page provides none, so it is used purely as
-   the state layer and the bag below is the terminal's own. */
+   Cart state is cart.js, which has no UI of its own; the bag below is the
+   terminal's. */
 (function () {
   "use strict";
 

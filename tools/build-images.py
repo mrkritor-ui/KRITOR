@@ -2,16 +2,21 @@
 """KRITOR — responsive image pipeline.
 
 The catalogue is the landing screen, so what it costs to paint is the whole
-first impression. This builds, for every artwork and shop image:
+first impression. This builds, for every artwork and shop image, WebP at several
+widths, so a phone downloads a phone-sized image instead of a print-sized one.
 
-  * AVIF and WebP at several widths, so a phone downloads a phone-sized image
-    instead of a print-sized one
-  * a ~20px LQIP baked into a data URI, so a tile shows the work's colours on
-    the very first paint with no network request at all
+It used to build AVIF alongside and a ~20px blur placeholder baked into the
+manifest as a data URI. Both were for tile-image.js's <picture> builder, which
+stopped being called when the grid went 1-bit — the real photographs now only
+ever arrive through pick(), which reads the WebP list — so every deploy was
+encoding, publishing and shipping URLs for files nothing requested.
 
 Output goes to derived/ and image-manifest.js. Nothing is committed — the Pages
 workflow runs this at deploy time, so the derivatives can never drift from the
-originals and the repo never carries two copies of every painting.
+originals and the repo never carries two copies of every painting. Anything in
+derived/ that the new manifest does not name is deleted at the end: the
+workflow restores that folder from a cache, and without this a file the build
+stopped producing would be restored and published for ever.
 
 Run locally the same way CI does:
 
@@ -20,21 +25,13 @@ Run locally the same way CI does:
 Add --force to rebuild everything, ignoring the cache.
 """
 
-import base64
 import hashlib
-import io
 import json
 import re
 import sys
 from pathlib import Path
 
 from PIL import Image
-
-try:
-    import pillow_avif  # noqa: F401  (registers the AVIF plugin with Pillow)
-    HAVE_AVIF = True
-except ImportError:
-    HAVE_AVIF = False
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "derived"
@@ -46,8 +43,6 @@ MANIFEST = ROOT / "image-manifest.js"
 # reach for the multi-megabyte original to do it.
 WIDTHS = [240, 480, 960, 1440, 1920]
 
-LQIP_WIDTH = 20
-
 # Quality is a ramp, not a constant, because these renditions are not looked at
 # the same way. A 240px tile is a thumbnail on a 1-bit grid and can take real
 # compression without anyone being able to tell; a 1920px rendition is a
@@ -56,19 +51,15 @@ LQIP_WIDTH = 20
 # off them is exactly the texture that is the point. So the small end gets
 # squeezed harder than it was and the large end is allowed more than it was,
 # which makes the catalogue lighter and the close look better at the same time.
-QUALITY = {
-    "webp": {240: 74, 480: 78, 960: 82, 1440: 85, 1920: 86},
-    "avif": {240: 50, 480: 54, 960: 58, 1440: 62, 1920: 64},
-}
+QUALITY = {240: 74, 480: 78, 960: 82, 1440: 85, 1920: 86}
 
 
-def quality_for(fmt, width):
+def quality_for(width):
     """The ramp above, with anything off the end held at the nearest step."""
-    steps = QUALITY[fmt]
-    for step in sorted(steps):
+    for step in sorted(QUALITY):
         if width <= step:
-            return steps[step]
-    return steps[max(steps)]
+            return QUALITY[step]
+    return QUALITY[max(QUALITY)]
 
 SOURCE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG"}
 
@@ -133,16 +124,6 @@ def has_alpha(im):
     return im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info)
 
 
-def lqip_data_uri(im):
-    """A tiny blurred stand-in, small enough to inline. Around 300-600 bytes."""
-    tiny = im.copy()
-    tiny.thumbnail((LQIP_WIDTH, LQIP_WIDTH), Image.Resampling.LANCZOS)
-    buffer = io.BytesIO()
-    tiny.save(buffer, "WEBP", quality=40, method=6)
-    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-    return f"data:image/webp;base64,{encoded}"
-
-
 def build_one(rel, path, force):
     with Image.open(path) as im:
         # Transparency survives the whole pipeline. Converting to RGB here is
@@ -158,12 +139,8 @@ def build_one(rel, path, force):
             "width": native_width,
             "height": native_height,
             "ratio": round(native_width / native_height, 4) if native_height else 1,
-            "lqip": lqip_data_uri(im),
             "webp": [],
-            "avif": [],
         }
-
-        formats = [("webp", "WEBP")] + ([("avif", "AVIF")] if HAVE_AVIF else [])
 
         # Never upscale, but do stop at the original's own width rather than at
         # the last step below it — a 1080px original used to break out of this
@@ -182,18 +159,12 @@ def build_one(rel, path, force):
             resized = im.copy()
             resized.thumbnail((target, target * 10), Image.Resampling.LANCZOS)
 
-            for key, pil_format in formats:
-                name = f"{stem}-{digest}-{target}.{key}"
-                out_path = OUT_DIR / name
-                if force or not out_path.exists():
-                    save_args = {"quality": quality_for(key, target)}
-                    if key == "webp":
-                        save_args["method"] = 6
-                    resized.save(out_path, pil_format, **save_args)
-                entry[key].append({"w": resized.width, "url": f"derived/{name}"})
+            name = f"{stem}-{digest}-{target}.webp"
+            out_path = OUT_DIR / name
+            if force or not out_path.exists():
+                resized.save(out_path, "WEBP", quality=quality_for(target), method=6)
+            entry["webp"].append({"w": resized.width, "url": f"derived/{name}"})
 
-        if not entry["avif"]:
-            entry.pop("avif")
         return entry
 
 
@@ -206,7 +177,7 @@ def main():
         print("No source images found — nothing to do.")
         return
 
-    print(f"Building {len(sources)} images  (avif: {'yes' if HAVE_AVIF else 'no'})")
+    print(f"Building {len(sources)} images")
 
     manifest, original_total, derived_total = {}, 0, 0
     for rel, path in sources:
@@ -220,7 +191,14 @@ def main():
         derived_total += (ROOT / smallest).stat().st_size
         print(f"  {rel:<26} {path.stat().st_size/1024:8.0f} KB -> "
               f"{(ROOT / smallest).stat().st_size/1024:6.1f} KB  "
-              f"({len(entry['webp'])} widths, lqip {len(entry['lqip'])} B)")
+              f"({len(entry['webp'])} widths)")
+
+    keep = {Path(v["url"]).name for entry in manifest.values() for v in entry["webp"]}
+    stale = [f for f in OUT_DIR.iterdir() if f.is_file() and f.name not in keep]
+    for f in stale:
+        f.unlink()
+    if stale:
+        print(f"Pruned {len(stale)} stale file(s) from {OUT_DIR.name}/")
 
     MANIFEST.write_text(
         "/* Generated by tools/build-images.py at deploy time — do not edit. */\n"

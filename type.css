@@ -1,8 +1,8 @@
 /* KRITOR — typography.
 
    One typeface across every surface: nav, work and product meta, bag, checkout.
-   Loaded on every page and deliberately NOT tagged as a page style, so the SPA
-   swap leaves it in place.
+   Loaded by the front door and the checkout; the terminal pages carry the same
+   face in terminal.css.
 
    The face is pix Chicago — Etienne Desclides' bitmap redraw of Chicago, the
    system font of the first Macintosh and later of the iPod. It is served from

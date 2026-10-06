@@ -23,7 +23,7 @@ python3 -m http.server 8899          # then open http://127.0.0.1:8899/
 Two things the deploy builds that a fresh clone does not have:
 
 ```sh
-pip install Pillow pillow-avif-plugin numpy
+pip install Pillow numpy
 python3 tools/build-images.py        # responsive renditions + image-manifest.js
 python3 tools/terminal-images.py     # 1-bit renditions + terminal-manifest.js
 ```
@@ -85,11 +85,26 @@ terminal-store.js   the store: tiles, the bag, add to bag
 terminal.css        the whole visual system
 cursor.css          the drawn cursor, shared by every page including checkout
 
-cart.js             cart state and Stripe plumbing. Untouched by the
-                    redesign; the terminal pages use it as state only
-                    (it injects its own drawer only for pages that
-                    provide [data-bag-slot], and they do not)
+cart.js             cart state, in localStorage. No UI of its own — the
+                    store's bag and the checkout's summary both paint
+                    from it (the Stripe plumbing is checkout.js)
+analytics.js        the Google tag (GA4) — see below
 ```
+
+### Analytics
+
+The Google tag lives in `analytics.js` and nowhere else; the measurement ID is
+the one `ID` constant at the top of it. Every public page loads the file with a
+single `<script … defer>` line (`/`, `/art/`, `/architecture/`, `/store/`,
+`/about/`, and the `work.html` / `product.html` templates every `/work-xx/` and
+`/shop/<id>/` is built from) — a new page gets the tag by adding that one line.
+
+It is skipped on `localhost` so local testing never reaches the reports, and it
+is deliberately **not** on `/checkout/`: that page's Content-Security-Policy
+names Stripe and nothing else as a script source, and letting Google in there is
+a decision to make on purpose rather than a side effect. Opening a work pushes
+`/work-xx/` onto the history, which GA4's enhanced measurement already reports
+as a page view, so nothing needs to call `gtag()` for that.
 
 ### Three rules worth knowing before editing
 

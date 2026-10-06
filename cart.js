@@ -1,8 +1,12 @@
-/* KRITOR BAG — cart state + drawer UI.
+/* KRITOR BAG — cart state.
 
-   State lives in localStorage so the bag survives navigation, refreshes and
-   the SPA page swaps. The drawer markup is injected by this script, so any
-   page that loads cart.js gets the bag button and drawer for free.
+   State lives in localStorage so the bag survives navigation and refreshes,
+   and a change in one tab reaches the others. There is no UI here: the store's
+   own bag (terminal-store.js) and the checkout's summary (checkout.js) both
+   paint from this and subscribe to it. A drawer used to be injected here for
+   any page that provided [data-bag-slot]; none ever did once the store moved
+   onto the terminal shell, so it was deleted rather than kept reachable only
+   in theory.
 
    Public API (window.KritorCart):
      add(id, qty)      addItem, clamped to the item's stock
@@ -13,7 +17,10 @@
      subtotal()        total in cents
      currency()        the bag's currency
      clear()           empty it
-     open() / close()  drawer
+     maxFor(item)      the most of an item that can be bagged
+     money(cents, code)   formatted for display
+     thumbFor(item)    a small rendition URL for a bag line
+     assetPath(path)   a site-rooted asset URL
      subscribe(fn)     called on every change, returns an unsubscribe fn
 */
 (function () {
@@ -43,6 +50,10 @@
 
   /* ---------- storage ---------- */
 
+  function notify() {
+    listeners.forEach(fn => { try { fn(); } catch (_) {} });
+  }
+
   function read() {
     try {
       const raw = JSON.parse(localStorage.getItem(KEY) || "[]");
@@ -55,8 +66,7 @@
 
   function write(lines) {
     try { localStorage.setItem(KEY, JSON.stringify(lines)); } catch (_) {}
-    listeners.forEach(fn => { try { fn(); } catch (_) {} });
-    paint();
+    notify();
   }
 
   /* Drop lines whose item has been delisted or gone out of stock, and clamp
@@ -153,177 +163,14 @@
     return window.KritorTileImage ? window.KritorTileImage.pick(first, 240) : assetPath(first);
   }
 
-  /* ---------- drawer UI ---------- */
-
-  let root = null;
-  let button = null;
-
-  function ensureUI() {
-    if (root || !document.body) return;
-    /* A page opts into the bag by putting [data-bag-slot] where the button
-       should sit. Pages without one — the catalogue, About — get no bag, which
-       also keeps the SPA from growing one when you navigate back out of the
-       store. */
-    const slot = document.querySelector("[data-bag-slot]");
-    if (!slot) return;
-    root = document.createElement("div");
-    root.className = "bag-root is-slotted";
-    root.innerHTML = `
-      <button class="bag-button" type="button" aria-label="Open bag" aria-haspopup="dialog">
-        <svg class="bag-icon" viewBox="0 0 20 22" aria-hidden="true" focusable="false">
-          <path d="M2.6 6.4h14.8l-1.15 14.1H3.75z"/>
-          <path d="M6.9 6.4V4.7a3.1 3.1 0 0 1 6.2 0v1.7"/>
-        </svg>
-        <span class="bag-count" aria-hidden="true">0</span>
-      </button>
-      <div class="bag-scrim" hidden></div>
-      <aside class="bag-drawer" role="dialog" aria-modal="true" aria-label="Your bag" hidden>
-        <header class="bag-head">
-          <span>Bag</span>
-          <button class="bag-close" type="button" aria-label="Close bag">Close</button>
-        </header>
-        <div class="bag-lines"></div>
-        <footer class="bag-foot">
-          <div class="bag-subtotal"><span>Subtotal</span><span class="bag-subtotal-value">—</span></div>
-          <p class="bag-note">Shipping and any duties calculated at checkout.</p>
-          <a class="bag-checkout" href="/checkout/">Checkout</a>
-        </footer>
-      </aside>`;
-    document.body.appendChild(root);
-
-    /* Move just the button into the header slot; the drawer and scrim stay on
-       body so no header stacking context can clip them. */
-    button = root.querySelector(".bag-button");
-    slot.appendChild(button);
-
-    button.addEventListener("click", open);
-    root.querySelector(".bag-close").addEventListener("click", close);
-    root.querySelector(".bag-scrim").addEventListener("click", close);
-
-    /* Same rendition fallback as the checkout summary, for the same reason:
-       the checkout page carries a Content-Security-Policy and this file loads
-       there too, so the inline onerror this replaces would not run. */
-    root.querySelector(".bag-lines").addEventListener("error", event => {
-      const img = event.target;
-      if (!img || img.tagName !== "IMG" || !img.dataset.fallback) return;
-      const fallback = img.dataset.fallback;
-      delete img.dataset.fallback;
-      img.src = fallback;
-    }, true);
-
-    root.querySelector(".bag-lines").addEventListener("click", event => {
-      const button = event.target.closest("button[data-bag-action]");
-      if (!button) return;
-      const id = button.dataset.bagId;
-      const line = lines().find(l => l.item.id === id);
-      if (!line) return;
-      const action = button.dataset.bagAction;
-      if (action === "inc") setQty(id, line.qty + 1);
-      else if (action === "dec") setQty(id, line.qty - 1);
-      else if (action === "remove") remove(id);
-    });
-
-    document.addEventListener("keydown", event => {
-      if (event.key === "Escape") close();
-    });
-
-    paint();
-  }
-
-  function open() {
-    if (!root) return;
-    root.querySelector(".bag-scrim").hidden = false;
-    const drawer = root.querySelector(".bag-drawer");
-    drawer.hidden = false;
-    requestAnimationFrame(() => root.classList.add("is-open"));
-    document.documentElement.classList.add("bag-locked");
-  }
-
-  function close() {
-    if (!root || !root.classList.contains("is-open")) return;
-    root.classList.remove("is-open");
-    document.documentElement.classList.remove("bag-locked");
-    const drawer = root.querySelector(".bag-drawer");
-    const scrim = root.querySelector(".bag-scrim");
-    setTimeout(() => {
-      if (root.classList.contains("is-open")) return;
-      drawer.hidden = true;
-      scrim.hidden = true;
-    }, 420);
-  }
-
-  function escapeHtml(value) {
-    return String(value == null ? "" : value).replace(/[&<>"']/g, c => (
-      {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]
-    ));
-  }
-
-  function paint() {
-    if (!root || !button) return;
-    const all = lines();
-    const units = all.reduce((n, l) => n + l.qty, 0);
-
-    button.querySelector(".bag-count").textContent = String(units);
-    button.classList.toggle("has-items", units > 0);
-
-    const body = root.querySelector(".bag-lines");
-    if (!all.length) {
-      body.innerHTML = `<p class="bag-empty">Your bag is empty.</p>`;
-    } else {
-      body.innerHTML = all.map(({item, qty}) => {
-        const max = maxFor(item);
-        return `
-          <div class="bag-line">
-            <a class="bag-line-image" href="/shop/${encodeURIComponent(item.id)}/">
-              <img src="${escapeHtml(thumbFor(item))}" alt="${escapeHtml(item.title)}" loading="lazy"
-                   data-fallback="${escapeHtml(assetPath((item.images || [])[0]))}">
-            </a>
-            <div class="bag-line-body">
-              <a class="bag-line-title" href="/shop/${encodeURIComponent(item.id)}/">${escapeHtml(item.title)}</a>
-              <span class="bag-line-meta">${escapeHtml(item.edition || "")}${item.size ? " · " + escapeHtml(item.size) : ""}</span>
-              <div class="bag-qty" role="group" aria-label="Quantity for ${escapeHtml(item.title)}">
-                <button type="button" data-bag-action="dec" data-bag-id="${escapeHtml(item.id)}" aria-label="Decrease quantity">−</button>
-                <span aria-live="polite">${qty}</span>
-                <button type="button" data-bag-action="inc" data-bag-id="${escapeHtml(item.id)}" aria-label="Increase quantity" ${qty >= max ? "disabled" : ""}>+</button>
-              </div>
-            </div>
-            <div class="bag-line-right">
-              <span class="bag-line-price">${escapeHtml(money(item.price * qty, item.currency))}</span>
-              <button class="bag-line-remove" type="button" data-bag-action="remove" data-bag-id="${escapeHtml(item.id)}">Remove</button>
-            </div>
-          </div>`;
-      }).join("");
-    }
-
-    root.querySelector(".bag-subtotal-value").textContent = all.length ? money(subtotal()) : "—";
-    root.querySelector(".bag-checkout").classList.toggle("is-disabled", !all.length);
-  }
-
   /* Another tab changed the bag. */
   window.addEventListener("storage", event => {
-    if (event.key === KEY) { paint(); listeners.forEach(fn => { try { fn(); } catch (_) {} }); }
+    if (event.key === KEY) notify();
   });
-
-  /* The SPA replaces document.body on navigation, which takes the drawer with
-     it — rebuild on each swap. */
-  /* Rebuild against the current body. Any previous root is discarded first —
-     on a fresh page load this is a no-op, and after an SPA swap it stops a
-     second drawer being stacked on top of the old one. */
-  function attach() {
-    document.querySelectorAll(".bag-root").forEach(node => node.remove());
-    document.querySelectorAll("[data-bag-slot] .bag-button").forEach(node => node.remove());
-    root = null;
-    button = null;
-    ensureUI();
-  }
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", attach);
-  else attach();
-  window.addEventListener("kritor:page-rendered", attach);
 
   window.KritorCart = {
     add, setQty, remove, clear, lines, count, subtotal, currency,
-    money, maxFor, thumbFor, assetPath, open, close,
+    money, maxFor, thumbFor, assetPath,
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
   };
 })();
