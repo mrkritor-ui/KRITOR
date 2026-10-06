@@ -670,11 +670,13 @@
     /* Series and format are how the catalogue is *sorted* — they are in the
        bar's parameters and in LIST, where they do work. Beside the painting
        they were two lines of filing between the name and the object itself. */
-    const lines = [
-      String(work.year || ""),
-      "MATERIAL: " + materialOf(work),
-      "SIZE: " + (work.size || "—"),
-    ];
+    /* A line the record cannot fill is left out rather than printed as a
+       dash: "MATERIAL: —" under every painting reads as the catalogue
+       admitting it was never finished. LIST keeps its dashes, where a column
+       needs something to stand in the cell. */
+    const lines = [String(work.year || "")];
+    if (work.materials) lines.push("MATERIAL: " + materialOf(work));
+    if (/\d/.test(work.size || "")) lines.push("SIZE: " + work.size);
     if (work.text) lines.push("", work.text.toUpperCase());
 
     /* Where this work sits in the walk, and the AR model when the work has

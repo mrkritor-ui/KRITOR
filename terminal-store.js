@@ -158,10 +158,11 @@
 
     panelTitle.textContent = nameOf(item);
 
+    /* A line the record cannot fill is left out, not printed as a dash. */
     const lines = [
       String(item.year || ""),
-      "MATERIAL: " + String(item.materials || "—").toUpperCase(),
-      "SIZE: " + String(item.size || "—").toUpperCase(),
+      item.materials ? "MATERIAL: " + String(item.materials).toUpperCase() : "",
+      /\d/.test(item.size || "") ? "SIZE: " + String(item.size).toUpperCase() : "",
       "EDITION: " + String(item.edition || "ORIGINAL").toUpperCase(),
       soldOut(item) ? "SOLD OUT" : money(item.price),
     ].filter(Boolean);
@@ -399,7 +400,7 @@
   }));
   filtersPane.appendChild(T.filterColumn("SHIPPING", list => {
     line(list, "AUSTRALIA");
-    line(list, "WORLDWIDE");
+    line(list, "SELECTED COUNTRIES");
   }));
 
   /* ── SEO ───────────────────────────────────────────────────────────────── */
