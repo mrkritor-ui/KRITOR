@@ -23,7 +23,7 @@ python3 -m http.server 8899          # then open http://127.0.0.1:8899/
 Two things the deploy builds that a fresh clone does not have:
 
 ```sh
-pip install Pillow pillow-avif-plugin numpy
+pip install Pillow numpy
 python3 tools/build-images.py        # responsive renditions + image-manifest.js
 python3 tools/terminal-images.py     # 1-bit renditions + terminal-manifest.js
 ```
