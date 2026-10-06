@@ -154,7 +154,7 @@ jobs:
             const page = productTemplate
               .replace('<title>KRITOR</title>', `<title>${esc(title)}</title>`)
               .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">`)
-              .replace('<link rel="canonical" href="/store/">', `<link rel="canonical" href="${esc(canonicalUrl)}">`)
+              .replace('<link rel="canonical" href="https://kritor.au/store/">', `<link rel="canonical" href="${esc(canonicalUrl)}">`)
               .replace('<!--SEO-HEAD-->', head);
 
             fs.writeFileSync(path.join(dir, 'index.html'), page);
@@ -167,15 +167,27 @@ jobs:
             artworksSrc.slice(artworksSrc.indexOf('['), artworksSrc.lastIndexOf(']') + 1)
           );
           const workTemplate = fs.readFileSync('work.html', 'utf8');
+          // The same naming rule terminal.js uses for the tab title and the
+          // accessible names (workLabel there): untitled works carry their
+          // number, and so do works that share a name — two pages with the same
+          // title, description and structured data cannot be told apart by a
+          // search engine, a bookmark or a link preview.
+          const titleCounts = new Map();
+          for (const w of artworks) {
+            const t = (w.title || '').trim();
+            titleCounts.set(t, (titleCounts.get(t) || 0) + 1);
+          }
           for (const work of artworks) {
             if (!/^work-[A-Za-z0-9_-]+$/.test(work.id)) {
               throw new Error(`Invalid artwork id: ${JSON.stringify(work.id)}`);
             }
             fs.mkdirSync(work.id, { recursive: true });
 
-            const label = work.title && work.title.trim() && work.title !== 'Untitled'
-              ? work.title
-              : `Untitled — Work ${(String(work.id).match(/(\d+)/) || [])[1] || work.id}`;
+            const num = (String(work.id).match(/(\d+)/) || [])[1] || work.id;
+            const name = (work.title || '').trim();
+            const label = !name || name === 'Untitled'
+              ? `Untitled — Work ${num}`
+              : (titleCounts.get(name) > 1 ? `${name} — Work ${num}` : name);
             const bits = [];
             if (work.year) bits.push(work.year);
             if (work.materials) bits.push(work.materials);
@@ -215,7 +227,7 @@ jobs:
             const page = workTemplate
               .replace('<title>KRITOR</title>', `<title>${esc(title)}</title>`)
               .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">`)
-              .replace('<link rel="canonical" href="/">', `<link rel="canonical" href="${esc(canonicalUrl)}">`)
+              .replace('<link rel="canonical" href="https://kritor.au/art/">', `<link rel="canonical" href="${esc(canonicalUrl)}">`)
               .replace('<!--SEO-HEAD-->', head);
 
             fs.writeFileSync(path.join(work.id, 'index.html'), page);
@@ -224,7 +236,8 @@ jobs:
           // sitemap.xml — every static route plus every generated work and
           // (listed, in-stock-or-not) shop route. robots.txt (checked into the
           // repo root) points crawlers at this file.
-          const staticRoutes = ['/', '/about/', '/art/', '/architecture/', '/store/'];
+          // /architecture/ joins this list, and loses its noindex, when it has work in it.
+          const staticRoutes = ['/', '/about/', '/art/', '/store/'];
           const workRoutes = artworks.map(w => `/${encodeURIComponent(w.id)}/`);
           const shopRoutes = SHOP_ITEMS.filter(i => !i.unlisted).map(i => `/shop/${encodeURIComponent(i.id)}/`);
           const urls = [...staticRoutes, ...workRoutes, ...shopRoutes];

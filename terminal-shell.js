@@ -85,6 +85,7 @@
 
   function setTheme(theme, animate) {
     root.dataset.theme = theme;
+    if (window.KritorTheme) window.KritorTheme.paintChrome(theme);
     document.querySelectorAll("[data-theme-btn]").forEach(b =>
       b.setAttribute("aria-pressed", String(b.dataset.themeBtn === theme)));
     try { localStorage.setItem("kritor-theme", theme); } catch (e) {}

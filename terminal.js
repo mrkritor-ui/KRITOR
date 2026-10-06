@@ -30,6 +30,28 @@
   const materialOf = w => (w.materials || "—").toUpperCase();
   const titleOf = w => (w.title || "UNTITLED").toUpperCase();
 
+  /* A work's name as a person, a screen reader, a tab and an analytics report
+     should have it. titleOf() is the shouting version the grid and the list
+     draw; this is what goes in the accessible names, the alt text and the
+     document title — natural case, because a screen reader may spell an
+     all-capitals word out letter by letter, and CSS already handles how it
+     looks. Several works share a name ("Untitled Head" twice) and a visitor,
+     a bookmark or a report cannot tell them apart by it, so those and the
+     untitled ones carry their number. The same rule builds each work's own
+     page in .github/workflows/pages.yml: keep the two in step. */
+  const workNumber = w => (String(w.id).match(/(\d+)/) || [])[1] || w.id;
+  const titleCounts = new Map();
+  ARTWORKS.forEach(w => {
+    const t = (w.title || "").trim();
+    titleCounts.set(t, (titleCounts.get(t) || 0) + 1);
+  });
+  const workLabel = w => {
+    const t = (w.title || "").trim();
+    if (!t || t === "Untitled") return "Untitled — Work " + workNumber(w);
+    return titleCounts.get(t) > 1 ? t + " — Work " + workNumber(w) : t;
+  };
+  const CATALOGUE_TITLE = "Art Catalogue — KRITOR";
+
   /* work.year is either a single number or a "YYYY-YYYY" range string, so
      sorting and the year filter both go through the range it spans. */
   const yearSpan = w => {
@@ -69,7 +91,7 @@
     const bits = document.createElement("div");
     bits.className = "tile-bits";
     bits.setAttribute("role", "img");
-    bits.setAttribute("aria-label", titleOf(work));
+    bits.setAttribute("aria-label", workLabel(work));
     const entry = bitsEntry(work.image);
     bits.style.setProperty("--bits", 'url("' + bitsUrl(work.image) + '")');
     bits.style.aspectRatio = entry ? entry.w + " / " + entry.h : "1 / 1";
@@ -81,7 +103,7 @@
     a.className = "tile";
     a.href = "/" + encodeURIComponent(work.id) + "/";
     a.dataset.workId = work.id;
-    a.setAttribute("aria-label", titleOf(work) + ", " + (work.year || ""));
+    a.setAttribute("aria-label", workLabel(work) + ", " + (work.year || ""));
 
     const figure = document.createElement("figure");
     figure.className = "tile-figure";
@@ -503,7 +525,7 @@
       root.className = "wall-transition";
       root.setAttribute("role", "dialog");
       root.setAttribute("aria-modal", "true");
-      root.setAttribute("aria-label", titleOf(work) + " on a wall");
+      root.setAttribute("aria-label", workLabel(work) + " on a wall");
 
       const fadeEl = document.createElement("div");
       fadeEl.className = "wall-fade";
@@ -614,7 +636,7 @@
     /* The panel shows the real work. The bitmap is the catalogue's language,
        not a way of hiding the painting from someone who asked to see it. */
     img.src = realFor(work.image, 1440);
-    img.alt = titleOf(work);
+    img.alt = workLabel(work) + (work.year ? ", " + work.year : "");
     panelArt.appendChild(img);
 
     /* The name is set apart from the record: it goes under the work in the
@@ -674,6 +696,10 @@
       image: img, title: panelTitle, meta: panelMeta, text: lines.join("\n"),
     });
 
+    /* Before the push, not after: the address changes to /work-xx/ and the tab,
+       the history entry and the page view an analytics tag records for it
+       should all say which work that is, not still "Art Catalogue". */
+    document.title = workLabel(work) + " — KRITOR Art";
     if (push) history.pushState({ workId: work.id }, "", "/" + encodeURIComponent(work.id) + "/");
   }
 
@@ -686,6 +712,7 @@
     bar.classList.remove("is-hidden");
     barUI.measure();
     document.body.style.overflow = "";
+    document.title = CATALOGUE_TITLE;
     if (!pop) history.pushState({}, "", "/art/");
   }
 
