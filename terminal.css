@@ -1952,6 +1952,8 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 }
 
 .foot p { margin: 0 0 calc(var(--u) * 2.5); }
+.foot a { color: inherit; text-underline-offset: 3px; }
+.foot a:hover, .foot a:focus-visible { background: var(--ink); color: var(--bg); outline: 0; text-decoration: none; }
 .foot p:last-child { margin-bottom: 0; }
 
 /* ── Forced colours ──────────────────────────────────────────────────────── */
