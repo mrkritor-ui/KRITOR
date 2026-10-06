@@ -163,6 +163,17 @@ html[data-page="store"][data-theme="dark"] {
   color-scheme: light;
 }
 
+/* And its grid is the shop's, not the archive's. The catalogue's eight columns
+   (three on a phone) are right for seventeen works to scan and wrong for one
+   thing for sale: the only item was a 93px thumbnail on a phone and 121px on a
+   desktop, hugging the left edge of an empty screen. Columns of a proper size,
+   centred, however many there are. */
+html[data-page="store"] .grid,
+html[data-page="store"] .grid.view-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 360px));
+  justify-content: center;
+}
+
 /* So neither switch is offered there. */
 html[data-page="store"] .bar-modes,
 html[data-page="store"] #eye-btn { display: none; }
@@ -778,7 +789,7 @@ html, body, .bar, .panel, .tile-figure {
 .bar {
   position: fixed;
   top: calc(env(safe-area-inset-top) + var(--u));
-  right: var(--page-pad);
+  right: max(var(--page-pad), env(safe-area-inset-right));
   /* Above the boot screen, below the work panel. The loading row lives in here
      and has to be legible while the boot statement is still up — that is the
      whole sequence: the bar is on screen from the first frame, and the works
@@ -839,7 +850,7 @@ html, body, .bar, .panel, .tile-figure {
   position: fixed;
   z-index: 450;
   top: calc(env(safe-area-inset-top) + var(--u));
-  left: var(--page-pad);
+  left: max(var(--page-pad), env(safe-area-inset-left));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -855,11 +866,16 @@ html, body, .bar, .panel, .tile-figure {
   cursor: var(--cur-arrow);
 }
 
-.home-tab:hover,
 .home-tab:focus-visible {
   background: var(--ink);
   color: var(--bg);
   outline: 0;
+}
+/* Hover inversions are for a pointer that can hover. A tap leaves :hover stuck
+   on until the next tap elsewhere, so on a phone a one-shot control read as a
+   selected toggle for as long as it was left alone. */
+@media (hover: hover) and (pointer: fine) {
+  .home-tab:hover { background: var(--ink); color: var(--bg); }
 }
 
 /* Gone for as long as a loading screen is up. is-booting spans the door's
@@ -953,11 +969,14 @@ html.is-booting .home-tab { display: none; }
    the bar, the filters and the table, so anything that inverts is actionable. */
 .bar-btn[aria-pressed="true"],
 .bar-btn.is-active,
-.bar-btn:hover,
+.bar-btn:active,
 .bar-btn:focus-visible {
   background: var(--ink);
   color: var(--bg);
   outline: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .bar-btn:hover { background: var(--ink); color: var(--bg); }
 }
 
 /* Focus, hover and "selected" are all the same inversion, so on a button that
@@ -1158,7 +1177,8 @@ html.is-entering .bar-drawer.is-open { animation: bar-arrive .28s ease; }
   cursor: var(--cur-arrow);
 }
 
-.filter-clear:hover, .filter-clear:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+.filter-clear:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+@media (hover: hover) and (pointer: fine) { .filter-clear:hover { background: var(--ink); color: var(--bg); } }
 
 /* The values hang out of the header rather than sitting under it: opening one
    must not resize the bar or move the other two columns. */
@@ -1419,7 +1439,8 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
   cursor: var(--cur-arrow);
 }
 
-.tile-add:hover, .tile-add:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+.tile-add:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+@media (hover: hover) and (pointer: fine) { .tile-add:hover { background: var(--ink); color: var(--bg); } }
 .tile-add[disabled] { opacity: .35; cursor: var(--cur-arrow); }
 .tile.is-sold-out .tile-name { text-decoration: line-through; }
 
@@ -1428,7 +1449,7 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
 .bag {
   position: fixed;
   top: calc(env(safe-area-inset-top) + var(--u));
-  right: var(--page-pad);
+  right: max(var(--page-pad), env(safe-area-inset-right));
   z-index: 460;
   width: min(460px, calc(100vw - var(--page-pad) * 2));
   max-height: 80vh;
@@ -1501,7 +1522,7 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
   cursor: var(--cur-arrow);
 }
 
-.qty button:hover:not([disabled]) { background: var(--ink); color: var(--bg); }
+@media (hover: hover) and (pointer: fine) { .qty button:hover:not([disabled]) { background: var(--ink); color: var(--bg); } }
 .qty button[disabled] { opacity: .35; cursor: var(--cur-arrow); }
 .qty output { min-width: calc(var(--u) * 3); text-align: center; }
 
@@ -1520,7 +1541,7 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
   cursor: var(--cur-arrow);
 }
 
-.bag-go:hover, .panel-add:hover:not([disabled]) { background: var(--ink); color: var(--bg); }
+@media (hover: hover) and (pointer: fine) { .bag-go:hover, .panel-add:hover:not([disabled]) { background: var(--ink); color: var(--bg); } }
 .bag-go.is-disabled, .panel-add[disabled] { opacity: .35; pointer-events: none; }
 
 /* The buy controls under a store work, in the same panel the catalogue uses. */
@@ -1553,7 +1574,8 @@ html[data-colour="on"] .tile-bits { visibility: hidden; }
 
 /* No rules between rows. The inversion on hover is the only structure the
    table needs, and it is the same gesture the bar uses for a chosen value. */
-a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+a.row:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+@media (hover: hover) and (pointer: fine) { a.row:hover { background: var(--ink); color: var(--bg); } }
 
 .row-head { color: var(--dim); }
 
@@ -1698,7 +1720,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 .panel-esc {
   position: absolute;
   top: calc(var(--u) * 2);
-  right: calc(var(--u) * 2);
+  right: max(calc(var(--u) * 2), env(safe-area-inset-right));
   border: var(--border) solid var(--ink);
   background: var(--bg);
   color: var(--ink);
@@ -1714,7 +1736,8 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   cursor: var(--cur-arrow);
 }
 
-.panel-esc:hover, .panel-esc:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+.panel-esc:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+@media (hover: hover) and (pointer: fine) { .panel-esc:hover { background: var(--ink); color: var(--bg); } }
 
 /* 46vh was what kept the work small: a portrait painting is capped by its
    height long before it runs out of width, so the box could be as wide as it
@@ -1799,11 +1822,15 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
     /* The first row is the slack: the work spans all three, so whatever it is
        taller than the type collects here and the record sits on the work's
        bottom edge rather than floating beside its middle. */
-    grid-template-rows: 1fr auto auto;
+    grid-template-rows: minmax(min-content, 1fr) auto auto;
     column-gap: calc(var(--u) * 3);
   }
 
-  .panel-art { grid-column: 1; grid-row: 1 / span 3; margin-top: 0; }
+  /* min-content, not a share of what is left: on a phone held sideways or a
+     short laptop window the work's own height is more than the panel, and the
+     row used to shrink and clip the bottom of the painting. It keeps its
+     height now and the panel scrolls. */
+  .panel-art { grid-column: 1; grid-row: 1 / span 3; margin-top: 0; min-height: min-content; }
   .panel-art img { max-height: 78vh; }
   .panel-art img { max-height: 78dvh; }
 
@@ -1850,7 +1877,8 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 }
 .panel-ar::-moz-focus-inner { border: 0; padding: 0; }
 
-.panel-ar:hover { background: var(--ink); color: var(--bg); }
+@media (hover: hover) and (pointer: fine) { .panel-ar:hover { background: var(--ink); color: var(--bg); } }
+.panel-ar:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
 
 /* ── View on wall ────────────────────────────────────────────────────────── */
 
@@ -1913,8 +1941,8 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 .wall-close {
   position: fixed;
-  top: calc(var(--u) * 2);
-  right: calc(var(--u) * 2);
+  top: max(calc(var(--u) * 2), calc(env(safe-area-inset-top) + var(--u)));
+  right: max(calc(var(--u) * 2), env(safe-area-inset-right));
   z-index: 3;
   opacity: 0;
   transition: opacity .3s ease-out;
@@ -1953,7 +1981,8 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 
 .foot p { margin: 0 0 calc(var(--u) * 2.5); }
 .foot a { color: inherit; text-underline-offset: 3px; }
-.foot a:hover, .foot a:focus-visible { background: var(--ink); color: var(--bg); outline: 0; text-decoration: none; }
+.foot a:focus-visible { background: var(--ink); color: var(--bg); outline: 0; text-decoration: none; }
+@media (hover: hover) and (pointer: fine) { .foot a:hover { background: var(--ink); color: var(--bg); text-decoration: none; } }
 .foot p:last-child { margin-bottom: 0; }
 
 /* ── Forced colours ──────────────────────────────────────────────────────── */
@@ -1968,6 +1997,23 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   .tile-bits, .bag-thumb, .row-preview, .screensaver-cell {
     forced-color-adjust: none;
     background-color: CanvasText;
+  }
+}
+
+/* ── Short and narrow screens ────────────────────────────────────────────── */
+
+/* The bar is fixed, so page scroll moves the grid and never the bar: a drawer
+   taller than the screen (the YEARS list on a 320px phone, either of the
+   filters held sideways at 390px high) had its lower values off the bottom
+   with no way to reach them. It scrolls inside itself instead. Where the menus
+   are static, which is every case here — hanging a menu out over the page is
+   the pointer layout's — nothing is clipped by doing so. */
+@media (hover: none), (max-width: 899px) {
+  .bar {
+    max-height: calc(100vh - env(safe-area-inset-top) - 16px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
@@ -2008,7 +2054,11 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 }
 
 @media (max-width: 899px) {
-  .bar { left: var(--page-pad); right: var(--page-pad); width: auto; }
+  .bar {
+    left: max(var(--page-pad), env(safe-area-inset-left));
+    right: max(var(--page-pad), env(safe-area-inset-right));
+    width: auto;
+  }
 
   /* Where the bar spans the width it cannot overlay the catalogue — opening
      the drawer would bury the first rows. --bar-h is measured from the bar
@@ -2062,7 +2112,7 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   /* What is left is what an index needs to be read as one: a number, a name,
      and a date. Everything else has already gone by 1279px. */
   .row {
-    grid-template-columns: 4ch minmax(0, 1fr) 5ch;
+    grid-template-columns: 4ch minmax(0, 1fr) 9ch;
     gap: var(--u);
     padding: calc(var(--u) * 1.25) var(--page-pad);
   }
@@ -2133,6 +2183,15 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   .tile-add { width: 100%; height: calc(var(--u) * 5.5); font-size: 12px; }
   .qty button { width: 44px; height: 44px; }
   .panel-esc { min-height: 44px; min-width: 44px; }
+  .home-tab { min-height: 44px; min-width: 44px; }
+  .panel-ar, .panel-add { min-height: 44px; }
+
+  /* The face is drawn at 78% (size-adjust, above), so an 8px caption is 6px of
+     letter: the price, the size and the edition of the one thing in the shop
+     were set smaller than a phone can render legibly. 10px is the face's own
+     crisp size; the price line is 11. The look is the same, all capitals. */
+  .tile-detail, .panel-meta { font-size: 11px; }
+  .panel-foot, .panel-index, .bag-line-price { font-size: 10px; }
   .info-pane a { display: inline-block; padding: calc(var(--u) * 1.5) 0; }
 }
 

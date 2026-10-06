@@ -457,6 +457,19 @@
   let panelModal = null;  // the same for the panel
   let returnId = null;    // the work focus goes back to if whatever opened the panel is gone
 
+  /* History. Opening a work from the grid pushes one entry (/work-xx/) on top of
+     the catalogue's own. Stepping to the next work replaces that entry rather
+     than adding another, and closing goes back to the catalogue's entry rather
+     than pushing a third — so the browser's Back button leaves the catalogue
+     the way it arrived, instead of reopening the work that was just closed and
+     then needing a press for every work walked past.
+       pushed          the current entry is one this page put on top of the
+                       catalogue, so closing can simply go back
+       cataloguePushed this page has pushed at least once, so the entry below a
+                       /work-xx/ one is the catalogue's own (not another site) */
+  let pushed = false;
+  let cataloguePushed = false;
+
   /* The order the panel walks, which is not the grid's. Works are grouped by
      series so stepping through takes you along a body of work before moving
      on — the grid is sorted by year, and walking that would scatter a series
@@ -635,6 +648,7 @@
   }
 
   function openPanel(work, push) {
+    const walking = panel.classList.contains("is-open");
     wallForceClose();
     if (cancelReveal) cancelReveal();
     /* Only the work is replaced. The two halves that walk the sequence are
@@ -670,7 +684,12 @@
     const list = sequence();
     const at = list.findIndex(w => w.id === work.id);
     panelFoot.textContent = "";
-    if (work.ar && work.ar.enabled && work.ar.file) {
+    /* rel="ar" is Apple's Quick Look; it is the only thing that opens these
+       USDZ files. Offered elsewhere it was a button that downloaded a file the
+       phone could do nothing with, so it is offered only where the browser
+       says it understands it. */
+    const canAr = (() => { const probe = document.createElement("a"); return !!(probe.relList && probe.relList.supports && probe.relList.supports("ar")); })();
+    if (canAr && work.ar && work.ar.enabled && work.ar.file) {
       const ar = document.createElement("a");
       ar.className = "panel-ar";
       ar.href = "/" + String(work.ar.file).replace(/^\//, "");
@@ -722,7 +741,15 @@
        the history entry and the page view an analytics tag records for it
        should all say which work that is, not still "Art Catalogue". */
     document.title = workLabel(work) + " — KRITOR Art";
-    if (push) history.pushState({ workId: work.id }, "", "/" + encodeURIComponent(work.id) + "/");
+    if (push) {
+      const url = "/" + encodeURIComponent(work.id) + "/";
+      if (walking) {
+        history.replaceState({ workId: work.id }, "", url);
+      } else {
+        history.pushState({ workId: work.id }, "", url);
+        pushed = cataloguePushed = true;
+      }
+    }
   }
 
   function closePanel(pop) {
@@ -738,7 +765,17 @@
     barUI.measure();
     document.body.style.overflow = "";
     document.title = CATALOGUE_TITLE;
-    if (!pop) history.pushState({}, "", "/art/");
+    if (!pop) history.replaceState({}, "", "/art/");
+    pushed = false;
+  }
+
+  /* What every way of closing a work asks for (the X, the backdrop, Escape).
+     When the work's entry is one this page pushed, going back is the close: the
+     popstate it fires does the rest. Otherwise (a deep link, a reload) there is
+     nothing below to go back to, so the address is simply rewritten. */
+  function requestClose() {
+    if (pushed) history.back();
+    else closePanel(false);
   }
 
   /* ── Wiring ────────────────────────────────────────────────────────────── */
@@ -803,7 +840,7 @@
     openPanel(work, true);
   });
 
-  document.getElementById("panel-esc").addEventListener("click", () => closePanel(false));
+  document.getElementById("panel-esc").addEventListener("click", requestClose);
   document.getElementById("shuffle-btn").addEventListener("click", randomise);
 
   /* The eye drops the bitmap and shows every work in its real colours, and
@@ -833,7 +870,7 @@
   });
   /* Clicking the backdrop closes it: the panel is a box on the catalogue, so
      the catalogue around it should still be a way out. */
-  panel.addEventListener("click", e => { if (e.target === panel) closePanel(false); });
+  panel.addEventListener("click", e => { if (e.target === panel) requestClose(); });
   /* Buttons only: the root carries data-view now, and binding this to it would
      make every click anywhere on the page a view switch. */
   document.querySelectorAll("button[data-view]").forEach(b =>
@@ -842,7 +879,7 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       if (wallClose) wallClose();
-      else if (panel.classList.contains("is-open")) closePanel(false);
+      else if (panel.classList.contains("is-open")) requestClose();
       else barUI.rest();
       return;
     }
@@ -858,8 +895,12 @@
   window.addEventListener("popstate", () => {
     const id = location.pathname.replace(/\/+$/, "").split("/").pop();
     const work = works.find(w => w.id === id);
-    if (work) openPanel(work, false);
-    else if (panel.classList.contains("is-open")) closePanel(true);
+    if (work) {
+      openPanel(work, false);
+      pushed = cataloguePushed;     // Forward onto an entry this page made: closing goes back again
+    } else if (panel.classList.contains("is-open")) {
+      closePanel(true);
+    }
   });
 
   window.addEventListener("scroll", () => {

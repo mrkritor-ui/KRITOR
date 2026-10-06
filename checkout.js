@@ -249,7 +249,9 @@
           colorText: "#171716",
           colorDanger: "#8a2a20",
           fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
-          fontSizeBase: "15px",
+          /* 16px on a touch screen, or iOS zooms the page when a card field is
+             tapped, for the same reason it did the email field. */
+          fontSizeBase: window.matchMedia("(pointer: coarse)").matches ? "16px" : "15px",
           spacingUnit: "5px",
           borderRadius: "0px"
         },

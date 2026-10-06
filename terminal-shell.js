@@ -615,11 +615,26 @@
       saver.classList.remove("is-on");
     }
 
-    function poke() {
+    /* The overlay goes at pointerdown, so the click that follows the same tap
+       lands on whatever was underneath — the tile, the bar button — and a visitor
+       who only meant to wake the screen opened a work. The first click after
+       waking is swallowed. */
+    let swallowClick = false;
+    function poke(event) {
+      if (running && event && (event.type === "pointerdown" || event.type === "touchstart")) {
+        swallowClick = true;
+        setTimeout(() => { swallowClick = false; }, 600);
+      }
       stop();
       clearTimeout(idleTimer);
       idleTimer = setTimeout(start, IDLE_MS);
     }
+    document.addEventListener("click", event => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    }, true);
 
     ["pointermove", "pointerdown", "keydown", "wheel", "touchstart", "scroll"]
       .forEach(type => window.addEventListener(type, poke, { passive: true }));

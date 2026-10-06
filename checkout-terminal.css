@@ -106,3 +106,17 @@ html, body {
 
 /* Nothing rounded anywhere, including whatever checkout.css softened. */
 .checkout *, .checkout-done * { border-radius: 0 !important; }
+
+/* On a touch screen. Safari on iOS zooms the page whenever a field under 16px
+   takes focus, and these were 11px: tapping the email box threw the checkout
+   sideways and left it zoomed. 16px of this face is about 12px of letter
+   (size-adjust), so it still reads as part of the page. The small controls get
+   a thumb's worth of target without their glyphs changing. */
+@media (hover: none), (pointer: coarse) {
+  .checkout input,
+  .checkout select,
+  .checkout textarea { font-size: 16px; }
+  .checkout-back { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+  .order-qty button { min-width: 44px; min-height: 44px; }
+  .order-remove { min-height: 44px; padding: 0 var(--u); }
+}
