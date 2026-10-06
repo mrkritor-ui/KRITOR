@@ -49,19 +49,18 @@ docstring for how the calibration works and for `--photo`.
 Without them the pages still work — tiles fall back to the original images —
 but the catalogue downloads megabytes instead of kilobytes.
 
-Deep links (`/work-01/`) need their directories, which the deploy also writes:
+Deep links (`/work-01/`, `/shop/<id>/`) need their directories, which the deploy
+also writes:
 
 ```sh
-node -e 'const fs=require("fs"),p=require("path");const s=fs.readFileSync("artworks.js","utf8");
-JSON.parse(s.slice(s.indexOf("["),s.lastIndexOf("]")+1)).forEach(w=>{fs.mkdirSync(w.id,{recursive:true});
-fs.writeFileSync(p.join(w.id,"index.html"),fs.readFileSync("work.html"))});'
+node tools/build-routes.js          # run from anywhere; it works on the repo root
 ```
 
-The same build step also bakes each work's and shop item's own `<title>`,
-description, canonical link, Open Graph/Twitter tags, and JSON-LD directly
-into its generated `index.html` (see `.github/workflows/pages.yml`), and
-writes `sitemap.xml` from the same data. A fresh clone's `/work-01/` and
-`/shop/<id>/` carry only the generic template's tags until that build runs.
+That one build step writes each work's and shop item's own page, bakes its
+`<title>`, description, canonical link, Open Graph/Twitter tags and JSON-LD
+directly into it, and writes `sitemap.xml` and `products.json` from the same
+data. A fresh clone's `/work-01/` and `/shop/<id>/` do not exist until it has
+run, and the generated files are git-ignored.
 
 ## How it fits together
 
