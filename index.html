@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="google-site-verification" content="UZFRJQgWi9M4SiScBFeFrrXOIG56L3-ulbAOxEjGrcc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>KRITOR — Contemporary Artist</title>
   <meta name="description" content="KRITOR is a contemporary artist working in expressionism and mixed media. Browse the art catalogue, architecture studies, and shop original work.">
-  <link rel="canonical" href="/">
+  <link rel="canonical" href="https://kritor.au/">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-title" content="KRITOR">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#e3e3e3" data-dark="#1c2318">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.png">
@@ -75,6 +75,7 @@
        it read as one system. -->
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/landing.css?v=__ASSET_VERSION__">
+  <noscript><style>.boot{display:none!important}</style></noscript>
   <!-- The drawn cursor. cursor.css asks the browser for it; cursor.js draws
        it, which is the half that cannot be silently declined. -->
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
@@ -124,9 +125,9 @@
   </div>
 
   <!-- Empty on purpose. Nothing arrives here until something is chosen. -->
-  <main class="landing" id="landing"></main>
+  <main class="landing" id="landing"><h1 class="sr-only">KRITOR — contemporary artist, Melbourne</h1><!--NOSCRIPT--></main>
 
-  <div class="bar bar-landing" id="bar">
+  <div class="bar bar-landing" id="bar" role="navigation" aria-label="Rooms">
     <div class="bar-row" id="menu-options">
       <a class="bar-btn" href="/art/" data-nav="/art/">ART</a>
       <a class="bar-btn" href="/architecture/" data-nav="/architecture/">ARCHITECTURE</a>
@@ -142,6 +143,17 @@
       <div class="bar-progress"><span id="loading-fill"></span></div>
     </div>
   </div>
+
+  <!-- The front page still owes a visitor three things the three doors do not
+       give them: who this is, how to reach them, and what the site does with
+       their visit. Same box as the bar, at the foot instead of the top. -->
+  <nav class="bar bar-links" aria-label="About and contact">
+    <div class="bar-row">
+      <a class="bar-btn" href="/about/">ABOUT</a>
+      <a class="bar-btn" href="mailto:info@kritor.au">CONTACT</a>
+      <a class="bar-btn" href="/privacy/">PRIVACY</a>
+    </div>
+  </nav>
 
   <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
   <script src="/landing.js?v=__ASSET_VERSION__"></script>

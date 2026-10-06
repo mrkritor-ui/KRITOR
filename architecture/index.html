@@ -2,21 +2,26 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Architecture — KRITOR</title>
-  <meta name="description" content="Architectural work and studies by KRITOR, a contemporary artist working in expressionism and mixed media.">
-  <link rel="canonical" href="/architecture/">
+  <meta name="description" content="KRITOR architecture. Nothing published yet.">
+  <link rel="canonical" href="https://kritor.au/architecture/">
+  <!-- Nothing is published here yet, and a page that is only the sentence saying
+       so is not worth a place in a search index. Out of the sitemap too (see
+       staticRoutes in .github/workflows/pages.yml). Take both out together
+       when the first work goes up. -->
+  <meta name="robots" content="noindex,follow">
   <link rel="manifest" href="/manifest.json">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="KRITOR">
   <meta property="og:title" content="Architecture — KRITOR">
-  <meta property="og:description" content="Architectural work and studies by KRITOR, a contemporary artist working in expressionism and mixed media.">
+  <meta property="og:description" content="KRITOR architecture. Nothing published yet.">
   <meta property="og:url" content="https://kritor.au/architecture/">
   <meta property="og:image" content="https://kritor.au/icon.png">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Architecture — KRITOR">
-  <meta name="twitter:description" content="Architectural work and studies by KRITOR, a contemporary artist working in expressionism and mixed media.">
+  <meta name="twitter:description" content="KRITOR architecture. Nothing published yet.">
   <meta name="twitter:image" content="https://kritor.au/icon.png">
 
   <script type="application/ld+json">
@@ -25,7 +30,7 @@
     "@type": "CollectionPage",
     "name": "Architecture — KRITOR",
     "url": "https://kritor.au/architecture/",
-    "description": "Architectural work and studies by KRITOR, a contemporary artist.",
+    "description": "KRITOR architecture. Nothing published yet.",
     "isPartOf": {"@type": "WebSite", "name": "KRITOR", "url": "https://kritor.au/"},
     "about": {"@type": "Person", "name": "KRITOR", "url": "https://kritor.au/"}
   }
@@ -44,13 +49,10 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-title" content="KRITOR">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#e3e3e3" data-dark="#1c2318">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.png">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <!-- The site face, served from this origin. Preloaded rather than left to
        the stylesheet to discover: it is 4 KB, and font-display: block means
@@ -64,6 +66,9 @@
   <link rel="preload" href="/architecture-loader-frames.webp" as="image" type="image/webp" fetchpriority="high">
 
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
+  <!-- Without script there is no boot to wait for and no bar to use; the plain
+       list in the <noscript> below is the page. -->
+  <noscript><style>.boot,.bar,.catalogue-crt{display:none!important}</style></noscript>
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
   <!-- Google tag (GA4) — see analytics.js. -->
@@ -72,15 +77,20 @@
 </head>
 <body>
 
+  <a class="skip" href="#grid">Skip to the content</a>
+  <header class="sr-only"><h1>Architecture</h1></header>
+
   <!-- The way back to the directory. Not part of the door's ceremony — hidden
        for as long as html.is-booting is set (terminal.css), since the gate
        is already the one thing on screen worth clicking while it's up. A
        pixel icon on a pointer; the word HOME on a touch screen, where the
        icon alone would be too small to trust. -->
-  <a class="home-tab" href="/" aria-label="Back to KRITOR">
+  <nav aria-label="Back to KRITOR">
+    <a class="home-tab" href="/" aria-label="Home, back to KRITOR">
     <svg class="ico home-tab-icon" viewBox="0 0 9 8" width="18" height="16" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="4" y="0" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/></svg>
     <span class="home-tab-word">HOME</span>
   </a>
+  </nav>
 
   <!-- Same optics as the catalogue's own gate — see art/index.html for the
        full account of why this is an SVG filter and not a CSS one. Each
@@ -129,7 +139,7 @@
   <!-- The bar. Identical rule system to the catalogue's — the views, the
        filters, the drawer — wired against an empty ARTWORKS instead of a
        real one, at the bottom of the page. -->
-  <div class="bar" id="bar">
+  <div class="bar" id="bar" role="region" aria-label="Controls">
     <button class="bar-tab" id="bar-tab" type="button" aria-label="Show filters"><svg class="ico" viewBox="0 0 7 4" width="14" height="8" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/></svg></button>
 
     <div class="bar-row" id="info-row" hidden>
@@ -159,16 +169,18 @@
       <div class="filters" id="filters-pane"></div>
       <div class="info-pane" id="info-pane" hidden>
         <p>ARCHITECTURE IS NOT YET PUBLISHED. THIS SECTION WILL HOLD KRITOR'S ARCHITECTURAL WORK ONCE THERE IS SOMETHING HERE TO SHOW.</p>
-        <p>CONTACT: <a href="mailto:info@kritor.au">INFO@KRITOR.AU</a></p>
+        <p>CONTACT: <a href="mailto:info@kritor.au">INFO@KRITOR.AU</a> · <a href="/about/">ABOUT THE ARTIST</a></p>
       </div>
     </div>
 
     <div class="bar-scroll"><span id="scroll-fill"></span></div>
   </div>
 
-  <main class="grid view-grid" id="grid" aria-label="Architecture catalogue"></main>
+  <!--NOSCRIPT-->
+  <main class="grid view-grid" id="grid" aria-label="Architecture catalogue" tabindex="-1"></main>
   <footer class="foot">
     <p>KRITOR ARCHITECTURE.<br>NOTHING PUBLISHED YET.</p>
+    <p><a href="/about/">ABOUT</a> · <a href="mailto:info@kritor.au">CONTACT</a> · <a href="/privacy/">PRIVACY</a></p>
     <p>ALL RIGHTS RESERVED. &copy; 2026 KRITOR.</p>
   </footer>
 

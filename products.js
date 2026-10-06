@@ -37,7 +37,7 @@ const SHOP_ITEMS = [
   {
     id: "artshed-original",
     title: "ArtShed",
-    year: 2025,
+    year: 2022,
     price: 320000,
     currency: "AUD",
     images: ["images/work-05.png"],

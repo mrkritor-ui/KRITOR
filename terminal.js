@@ -30,6 +30,28 @@
   const materialOf = w => (w.materials || "—").toUpperCase();
   const titleOf = w => (w.title || "UNTITLED").toUpperCase();
 
+  /* A work's name as a person, a screen reader, a tab and an analytics report
+     should have it. titleOf() is the shouting version the grid and the list
+     draw; this is what goes in the accessible names, the alt text and the
+     document title — natural case, because a screen reader may spell an
+     all-capitals word out letter by letter, and CSS already handles how it
+     looks. Several works share a name ("Untitled Head" twice) and a visitor,
+     a bookmark or a report cannot tell them apart by it, so those and the
+     untitled ones carry their number. The same rule builds each work's own
+     page in .github/workflows/pages.yml: keep the two in step. */
+  const workNumber = w => (String(w.id).match(/(\d+)/) || [])[1] || w.id;
+  const titleCounts = new Map();
+  ARTWORKS.forEach(w => {
+    const t = (w.title || "").trim();
+    titleCounts.set(t, (titleCounts.get(t) || 0) + 1);
+  });
+  const workLabel = w => {
+    const t = (w.title || "").trim();
+    if (!t || t === "Untitled") return "Untitled — Work " + workNumber(w);
+    return titleCounts.get(t) > 1 ? t + " — Work " + workNumber(w) : t;
+  };
+  const CATALOGUE_TITLE = "Art Catalogue — KRITOR";
+
   /* work.year is either a single number or a "YYYY-YYYY" range string, so
      sorting and the year filter both go through the range it spans. */
   const yearSpan = w => {
@@ -69,7 +91,7 @@
     const bits = document.createElement("div");
     bits.className = "tile-bits";
     bits.setAttribute("role", "img");
-    bits.setAttribute("aria-label", titleOf(work));
+    bits.setAttribute("aria-label", workLabel(work));
     const entry = bitsEntry(work.image);
     bits.style.setProperty("--bits", 'url("' + bitsUrl(work.image) + '")');
     bits.style.aspectRatio = entry ? entry.w + " / " + entry.h : "1 / 1";
@@ -81,7 +103,7 @@
     a.className = "tile";
     a.href = "/" + encodeURIComponent(work.id) + "/";
     a.dataset.workId = work.id;
-    a.setAttribute("aria-label", titleOf(work) + ", " + (work.year || ""));
+    a.setAttribute("aria-label", workLabel(work) + ", " + (work.year || ""));
 
     const figure = document.createElement("figure");
     figure.className = "tile-figure";
@@ -199,8 +221,10 @@
      [data-view] would hand it the class meant for the control. */
   function markView(name) {
     VIEWS.forEach(v => grid.classList.toggle("view-" + v, v === name));
-    document.querySelectorAll("button[data-view]").forEach(b =>
-      b.classList.toggle("is-active", b.dataset.view === name));
+    document.querySelectorAll("button[data-view]").forEach(b => {
+      b.classList.toggle("is-active", b.dataset.view === name);
+      b.setAttribute("aria-pressed", String(b.dataset.view === name));
+    });
     root.dataset.view = name;
   }
 
@@ -429,6 +453,22 @@
   let cancelReveal = null;
   let wallClose = null;   // reverses an open "view on wall" transition
   let wallRoot = null;    // that transition's root, for an instant close on navigation
+  let wallModal = null;   // gives the wall view's focus back (see modalOpen in terminal-shell.js)
+  let panelModal = null;  // the same for the panel
+  let returnId = null;    // the work focus goes back to if whatever opened the panel is gone
+
+  /* History. Opening a work from the grid pushes one entry (/work-xx/) on top of
+     the catalogue's own. Stepping to the next work replaces that entry rather
+     than adding another, and closing goes back to the catalogue's entry rather
+     than pushing a third — so the browser's Back button leaves the catalogue
+     the way it arrived, instead of reopening the work that was just closed and
+     then needing a press for every work walked past.
+       pushed          the current entry is one this page put on top of the
+                       catalogue, so closing can simply go back
+       cataloguePushed this page has pushed at least once, so the entry below a
+                       /work-xx/ one is the catalogue's own (not another site) */
+  let pushed = false;
+  let cataloguePushed = false;
 
   /* The order the panel walks, which is not the grid's. Works are grouped by
      series so stepping through takes you along a body of work before moving
@@ -503,7 +543,7 @@
       root.className = "wall-transition";
       root.setAttribute("role", "dialog");
       root.setAttribute("aria-modal", "true");
-      root.setAttribute("aria-label", titleOf(work) + " on a wall");
+      root.setAttribute("aria-label", workLabel(work) + " on a wall");
 
       const fadeEl = document.createElement("div");
       fadeEl.className = "wall-fade";
@@ -523,13 +563,14 @@
 
       const stage = document.createElement("div");
       stage.className = "wall-stage";
+      mockupImg.alt = workLabel(work) + ", shown on a wall at its true size";
       stage.appendChild(mockupImg);
       root.appendChild(stage);
 
       const close = document.createElement("button");
       close.type = "button";
       close.className = "panel-esc wall-close";
-      close.setAttribute("aria-label", "Close");
+      close.setAttribute("aria-label", "Close wall view");
       close.innerHTML = document.getElementById("panel-esc").innerHTML;
       root.appendChild(close);
 
@@ -550,6 +591,7 @@
         cleaned = true;
         root.remove();
         if (wallRoot === root) wallRoot = null;
+        if (wallModal) { wallModal(); wallModal = null; }
       }
 
       /* Closing does not reverse the opening move — flying the artwork back
@@ -588,7 +630,9 @@
                    WALL_SETTLE_AT + WALL_MOCKUP_MS + 30);
       }
 
-      close.focus();
+      /* A dialog, so focus goes into it, the panel behind stops being
+         reachable, and closing it hands focus back to VIEW ON WALL. */
+      wallModal = T.modalOpen({ behind: ["#panel"], focus: close });
     });
   }
 
@@ -600,9 +644,11 @@
     if (wallRoot) wallRoot.remove();
     wallRoot = null;
     wallClose = null;
+    if (wallModal) { wallModal(); wallModal = null; }
   }
 
   function openPanel(work, push) {
+    const walking = panel.classList.contains("is-open");
     wallForceClose();
     if (cancelReveal) cancelReveal();
     /* Only the work is replaced. The two halves that walk the sequence are
@@ -614,7 +660,7 @@
     /* The panel shows the real work. The bitmap is the catalogue's language,
        not a way of hiding the painting from someone who asked to see it. */
     img.src = realFor(work.image, 1440);
-    img.alt = titleOf(work);
+    img.alt = workLabel(work) + (work.year ? ", " + work.year : "");
     panelArt.appendChild(img);
 
     /* The name is set apart from the record: it goes under the work in the
@@ -624,11 +670,13 @@
     /* Series and format are how the catalogue is *sorted* — they are in the
        bar's parameters and in LIST, where they do work. Beside the painting
        they were two lines of filing between the name and the object itself. */
-    const lines = [
-      String(work.year || ""),
-      "MATERIAL: " + materialOf(work),
-      "SIZE: " + (work.size || "—"),
-    ];
+    /* A line the record cannot fill is left out rather than printed as a
+       dash: "MATERIAL: —" under every painting reads as the catalogue
+       admitting it was never finished. LIST keeps its dashes, where a column
+       needs something to stand in the cell. */
+    const lines = [String(work.year || "")];
+    if (work.materials) lines.push("MATERIAL: " + materialOf(work));
+    if (/\d/.test(work.size || "")) lines.push("SIZE: " + work.size);
     if (work.text) lines.push("", work.text.toUpperCase());
 
     /* Where this work sits in the walk, and the AR model when the work has
@@ -638,14 +686,21 @@
     const list = sequence();
     const at = list.findIndex(w => w.id === work.id);
     panelFoot.textContent = "";
-    if (work.ar && work.ar.enabled && work.ar.file) {
+    /* rel="ar" is Apple's Quick Look; it is the only thing that opens these
+       USDZ files. Offered elsewhere it was a button that downloaded a file the
+       phone could do nothing with, so it is offered only where the browser
+       says it understands it. */
+    const canAr = (() => { const probe = document.createElement("a"); return !!(probe.relList && probe.relList.supports && probe.relList.supports("ar")); })();
+    if (canAr && work.ar && work.ar.enabled && work.ar.file) {
       const ar = document.createElement("a");
       ar.className = "panel-ar";
       ar.href = "/" + String(work.ar.file).replace(/^\//, "");
       ar.rel = "ar";
       ar.textContent = "VIEW IN AR";
       /* Quick Look needs an <img> child to take over the link on iOS. */
-      ar.appendChild(document.createElement("img"));
+      const arImg = document.createElement("img");
+      arImg.alt = "";
+      ar.appendChild(arImg);
       panelFoot.appendChild(ar);
     }
     if (work.wall && work.wall.enabled && work.wall.image) {
@@ -667,26 +722,62 @@
     panelFoot.appendChild(index);
 
     hidePreview();
+    returnId = work.id;
     panel.classList.add("is-open");
     bar.classList.add("is-hidden");          // only ever two things to click
+    /* Once, however many times the walk steps through it: the opener is whatever
+       had focus when the panel first appeared, not the close button it moved to. */
+    if (!panelModal) {
+      panelModal = T.modalOpen({
+        behind: ["#grid", ".foot", ".home-tab", "#bar", ".skip"],
+        focus: document.getElementById("panel-esc"),
+        returnTo: () => grid.querySelector('[data-work-id="' + returnId + '"]'),
+      });
+    }
     document.body.style.overflow = "hidden";
     cancelReveal = T.revealWork({
       image: img, title: panelTitle, meta: panelMeta, text: lines.join("\n"),
     });
 
-    if (push) history.pushState({ workId: work.id }, "", "/" + encodeURIComponent(work.id) + "/");
+    /* Before the push, not after: the address changes to /work-xx/ and the tab,
+       the history entry and the page view an analytics tag records for it
+       should all say which work that is, not still "Art Catalogue". */
+    document.title = workLabel(work) + " — KRITOR Art";
+    if (push) {
+      const url = "/" + encodeURIComponent(work.id) + "/";
+      if (walking) {
+        history.replaceState({ workId: work.id }, "", url);
+      } else {
+        history.pushState({ workId: work.id }, "", url);
+        pushed = cataloguePushed = true;
+      }
+    }
   }
 
   function closePanel(pop) {
     wallForceClose();
     current = null;
+    /* Before the bar comes back and before the address changes: focus returns to
+       the tile the visitor opened, or to the one for the work they ended on. */
+    if (panelModal) { const give = panelModal; panelModal = null; give(); }
     if (cancelReveal) { cancelReveal(); cancelReveal = null; }
     T.stopTyping();
     panel.classList.remove("is-open");
     bar.classList.remove("is-hidden");
     barUI.measure();
     document.body.style.overflow = "";
-    if (!pop) history.pushState({}, "", "/art/");
+    document.title = CATALOGUE_TITLE;
+    if (!pop) history.replaceState({}, "", "/art/");
+    pushed = false;
+  }
+
+  /* What every way of closing a work asks for (the X, the backdrop, Escape).
+     When the work's entry is one this page pushed, going back is the close: the
+     popstate it fires does the rest. Otherwise (a deep link, a reload) there is
+     nothing below to go back to, so the address is simply rewritten. */
+  function requestClose() {
+    if (pushed) history.back();
+    else closePanel(false);
   }
 
   /* ── Wiring ────────────────────────────────────────────────────────────── */
@@ -751,7 +842,7 @@
     openPanel(work, true);
   });
 
-  document.getElementById("panel-esc").addEventListener("click", () => closePanel(false));
+  document.getElementById("panel-esc").addEventListener("click", requestClose);
   document.getElementById("shuffle-btn").addEventListener("click", randomise);
 
   /* The eye drops the bitmap and shows every work in its real colours, and
@@ -781,7 +872,7 @@
   });
   /* Clicking the backdrop closes it: the panel is a box on the catalogue, so
      the catalogue around it should still be a way out. */
-  panel.addEventListener("click", e => { if (e.target === panel) closePanel(false); });
+  panel.addEventListener("click", e => { if (e.target === panel) requestClose(); });
   /* Buttons only: the root carries data-view now, and binding this to it would
      make every click anywhere on the page a view switch. */
   document.querySelectorAll("button[data-view]").forEach(b =>
@@ -790,7 +881,7 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       if (wallClose) wallClose();
-      else if (panel.classList.contains("is-open")) closePanel(false);
+      else if (panel.classList.contains("is-open")) requestClose();
       else barUI.rest();
       return;
     }
@@ -806,8 +897,12 @@
   window.addEventListener("popstate", () => {
     const id = location.pathname.replace(/\/+$/, "").split("/").pop();
     const work = works.find(w => w.id === id);
-    if (work) openPanel(work, false);
-    else if (panel.classList.contains("is-open")) closePanel(true);
+    if (work) {
+      openPanel(work, false);
+      pushed = cataloguePushed;     // Forward onto an entry this page made: closing goes back again
+    } else if (panel.classList.contains("is-open")) {
+      closePanel(true);
+    }
   });
 
   window.addEventListener("scroll", () => {

@@ -12,14 +12,6 @@
 (function () {
   "use strict";
 
-  /* The font stylesheet is parked on media="print" so a slow or blocked font
-     host cannot hold up rendering. Switching it back to "all" once it has
-     arrived used to be an inline onload attribute on the tag itself, which the
-     page's Content-Security-Policy now refuses to run. The swap happens here
-     instead, above the guards below, so an empty bag still gets the typeface. */
-  const fontSheet = document.getElementById("font-css");
-  if (fontSheet) fontSheet.media = "all";
-
   const config = window.KRITOR_STORE_CONFIG || {};
   const cart = window.KritorCart;
 
@@ -41,7 +33,7 @@
   function showEmpty() {
     const order = document.querySelector(".order");
     if (order) order.hidden = true;
-    showNotice(`<p>Your bag is empty.</p><p><a href="/store/">Return to store</a></p>`);
+    showNotice(`<h1 class="section-head">Checkout</h1><p>Your bag is empty.</p><p><a href="/store/">Return to store</a></p>`);
   }
 
   function fail(message) {
@@ -165,6 +157,14 @@
       return;
     }
     renderSummary();
+    /* The line was rebuilt, and the button just pressed went with it. Focus goes
+       to its replacement, or to the line's other control when that one has
+       reached its limit, or to the first one left when the line was removed. */
+    const own = `#summary-lines [data-order-id="${CSS.escape(id)}"]:not(:disabled)`;
+    const again = document.querySelector(`${own}[data-order-action="${action}"]`)
+      || document.querySelector(own)
+      || document.querySelector("#summary-lines button:not(:disabled)");
+    if (again) again.focus({preventScroll: true});
     repriceIntent();
   });
 
@@ -249,7 +249,9 @@
           colorText: "#171716",
           colorDanger: "#8a2a20",
           fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
-          fontSizeBase: "15px",
+          /* 16px on a touch screen, or iOS zooms the page when a card field is
+             tapped, for the same reason it did the email field. */
+          fontSizeBase: window.matchMedia("(pointer: coarse)").matches ? "16px" : "15px",
           spacingUnit: "5px",
           borderRadius: "0px"
         },
@@ -354,6 +356,14 @@
       ? `Your order is confirmed. A receipt is on its way to ${email}.`
       : "Your order is confirmed.";
     done.hidden = false;
+    /* The pay button the visitor was on has just been hidden with the form, which
+       drops focus to <body> and leaves a screen-reader user with a silent page.
+       Focus goes to the confirmation, which reads it out. */
+    const heading = done.querySelector("h1");
+    if (heading) {
+      heading.setAttribute("tabindex", "-1");
+      heading.focus({preventScroll: true});
+    }
     window.scrollTo(0, 0);
   }
 

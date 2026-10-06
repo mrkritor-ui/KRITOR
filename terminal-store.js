@@ -52,7 +52,6 @@
     a.href = "/shop/" + encodeURIComponent(item.id) + "/";
     a.dataset.itemId = item.id;
     if (soldOut(item)) a.classList.add("is-sold-out");
-    a.setAttribute("aria-label", nameOf(item) + ", " + money(item.price));
 
     const figure = document.createElement("figure");
     figure.className = "tile-figure";
@@ -93,6 +92,12 @@
 
     const caption = document.createElement("span");
     caption.className = "tile-caption";
+    /* The tile is named by what it says on screen — the name, the facts and the
+       price — rather than by a label written separately, which had to be kept
+       in step with the caption and was not: a voice-control user saying what
+       they read got nothing. */
+    caption.id = "tile-caption-" + item.id;
+    a.setAttribute("aria-labelledby", caption.id);
     const name = document.createElement("span");
     name.className = "tile-name";
     name.textContent = nameOf(item);
@@ -123,6 +128,9 @@
   let cancelReveal = null;
   let panelItem = null;
   let panelQty = 1;
+  let panelModal = null;   // a real dialog: see modalOpen in terminal-shell.js
+  let bagModal = null;     // the bag takes focus when it opens and gives it back
+  let returnId = null;     // the tile focus goes back to if what opened the panel is gone
 
   /* The store walks in the order the shopfront is laid out — there are no
      series here to hold together, and an order that did not match the grid
@@ -150,10 +158,11 @@
 
     panelTitle.textContent = nameOf(item);
 
+    /* A line the record cannot fill is left out, not printed as a dash. */
     const lines = [
       String(item.year || ""),
-      "MATERIAL: " + String(item.materials || "—").toUpperCase(),
-      "SIZE: " + String(item.size || "—").toUpperCase(),
+      item.materials ? "MATERIAL: " + String(item.materials).toUpperCase() : "",
+      /\d/.test(item.size || "") ? "SIZE: " + String(item.size).toUpperCase() : "",
       "EDITION: " + String(item.edition || "ORIGINAL").toUpperCase(),
       soldOut(item) ? "SOLD OUT" : money(item.price),
     ].filter(Boolean);
@@ -167,9 +176,17 @@
       index.textContent = T.walkLabel(items.findIndex(i => i.id === item.id), items.length);
       panelFoot.appendChild(index);
     }
+    returnId = item.id;
     panel.classList.add("is-open");
     document.getElementById("bar").classList.add("is-hidden");
     document.body.style.overflow = "hidden";
+    if (!panelModal) {
+      panelModal = T.modalOpen({
+        behind: ["#grid", ".foot", ".home-tab", "#bar", "#bag", ".skip"],
+        focus: document.getElementById("panel-esc"),
+        returnTo: () => grid.querySelector('[data-item-id="' + returnId + '"]'),
+      });
+    }
     cancelReveal = T.revealWork({
       image: img, title: panelTitle, meta: panelMeta, text: lines.join("\n"),
     });
@@ -179,6 +196,10 @@
      the cap is the item's stock less whatever is already in the bag. */
   function paintBuy() {
     if (!panelItem) return;
+    T.keepFocus(panelBuy, buildBuy);
+  }
+
+  function buildBuy() {
     panelBuy.textContent = "";
     if (soldOut(panelItem)) {
       const out = document.createElement("span");
@@ -226,6 +247,7 @@
 
   function closePanel() {
     if (cancelReveal) { cancelReveal(); cancelReveal = null; }
+    if (panelModal) { const give = panelModal; panelModal = null; give(); }
     panelItem = null;
     panel.classList.remove("is-open");
     document.getElementById("bar").classList.remove("is-hidden");
@@ -248,12 +270,38 @@
   function openBag() {
     barUI.rest();
     bag.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
+    const wasOpen = bag.classList.contains("is-open");
     bag.classList.add("is-open");
+    bagBtn.setAttribute("aria-expanded", "true");
+    /* Focus goes into the bag the first time it opens — a keyboard or
+       screen-reader user who pressed "add" would otherwise be left on a button
+       with no sign anything happened — and comes back to where it was when the
+       bag closes. Adding a second item to a bag that is already open leaves
+       focus alone. */
+    if (!wasOpen && !bagModal) bagModal = T.modalOpen({ focus: bag });
   }
 
-  const closeBag = () => bag.classList.remove("is-open");
+  function closeBag() {
+    bag.classList.remove("is-open");
+    bagBtn.setAttribute("aria-expanded", "false");
+    if (bagModal) { const give = bagModal; bagModal = null; give(); }
+  }
+
+  const bagStatus = document.getElementById("bag-status");
+  let announced = null;
 
   function paintBag() {
+    T.keepFocus(bagLines, buildBag);
+    const n = cart.count();
+    /* The visible count says "02"; the button's own name has to say the same
+       thing, or a voice-control user saying what they see gets nothing. */
+    bagBtn.setAttribute("aria-label", "Bag, " + String(n).padStart(2, "0") + (n === 1 ? " item" : " items"));
+    const message = n ? "Bag: " + n + (n === 1 ? " item, " : " items, ") + money(cart.subtotal()) : "Bag is empty";
+    if (bagStatus && announced !== null && message !== announced) bagStatus.textContent = message;
+    announced = message;
+  }
+
+  function buildBag() {
     const all = cart.lines();
     bagCount.textContent = String(cart.count()).padStart(2, "0");
 
@@ -321,6 +369,10 @@
     go.href = "/checkout/";
     go.textContent = "CHECKOUT";
     go.classList.toggle("is-disabled", !all.length);
+    /* Not followable with nothing in the bag: say so to the accessibility tree
+       as well as to the eye, and take the address away so it cannot be tabbed to
+       or opened — there is nothing at the checkout for an empty bag. */
+    if (!all.length) { go.removeAttribute("href"); go.setAttribute("aria-disabled", "true"); }
 
     bagFoot.append(total, go);
     if (panelItem) paintBuy();
@@ -348,7 +400,7 @@
   }));
   filtersPane.appendChild(T.filterColumn("SHIPPING", list => {
     line(list, "AUSTRALIA");
-    line(list, "WORLDWIDE");
+    line(list, "SELECTED COUNTRIES");
   }));
 
   /* ── SEO ───────────────────────────────────────────────────────────────── */

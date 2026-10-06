@@ -16,12 +16,9 @@
    work.html, product.html and checkout/. Nothing else reads a font name
    directly.
 
-   The webfonts that are still remote — the blackletter and VT323, both of them
-   heading faces — are NOT imported here. An @import is render-blocking, and a
-   pending stylesheet blocks classic scripts from executing, so a slow or
-   unreachable fonts.googleapis.com would leave pages blank rather than merely
-   unstyled. Each page loads them through an async <link> that cannot gate
-   parsing. */
+   The two heading faces — the blackletter and VT323 — are declared in
+   terminal.css, which is the only place either is used. They are served from
+   /fonts/ like this one; nothing on the site is fetched from a font host. */
 
 /* The descriptors are explained in full at the top of terminal.css: 78% puts
    Chicago's 1.124 em cap height onto the 0.875 em the sizes were set against,

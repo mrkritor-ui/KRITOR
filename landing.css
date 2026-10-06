@@ -21,6 +21,16 @@
 
 .bar-landing .bar-row { justify-content: center; }
 
+/* About, contact, privacy — the bar's own box, at the foot of the door. */
+.bar-links {
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + var(--u));
+  right: auto;
+  left: var(--page-pad);
+  width: auto;
+}
+.bar-links .bar-row { gap: calc(var(--u) * 2); }
+
 #menu-options { gap: calc(var(--u) * 3); }
 
 .bar-btn:disabled {

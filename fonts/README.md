@@ -48,8 +48,31 @@ codebase are all in source comments, not in anything rendered — and no `−`
 mono. Digits are proportional, not tabular: `1` is three pixels wide where `0`
 is seven, which is how Chicago was drawn.
 
-## The remaining hosted faces
+## Jacquarda Bastarda 9 and VT323
 
-Headings only, still from Google Fonts: **Jacquarda Bastarda 9** (a work's own
-name, and KRITOR's voice on the boot screens) and **VT323** (item names on the
-shopfront). Both are loaded through the async `<link>` in each page's head.
+Headings only: **Jacquarda Bastarda 9** (a work's own name, and KRITOR's voice
+on the boot screens) and **VT323** (item names on the shopfront).
+
+| Face | Designer | Licence | Files |
+|---|---|---|---|
+| Jacquarda Bastarda 9 | Sarah Cadigan-Fried (The Soft Type Project) | SIL OFL 1.1 | `jacquarda-bastarda-9-latin.woff2`, `-latin-ext.woff2`, `OFL-jacquarda-bastarda-9.txt` |
+| VT323 | Peter Hull | SIL OFL 1.1 | `vt323-latin.woff2`, `-latin-ext.woff2`, `OFL-vt323.txt` |
+
+These used to be loaded from Google Fonts. They are served from this origin now
+because a request to Google in front of every work's name is a third party the
+site does not need — and, for a visitor in Europe, a transfer of their address
+to Google that a privacy policy would have to explain, and that the Munich
+Regional Court held unlawful without consent in 2022. The `@font-face` rules are in
+`terminal.css`.
+
+The `.woff2` files are exactly what Google Fonts serves for the `latin` and
+`latin-ext` unicode-range subsets, unmodified, which is what the OFL allows
+provided the copyright notice and licence travel with them (the two `OFL-*.txt`
+files). Characters outside those subsets — the maths and symbol blocks —
+fall back to the next face in the stack. To refresh them:
+
+```sh
+curl -A "Mozilla/5.0 Chrome/130" \
+  "https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&family=VT323&display=swap"
+# then download the woff2 named under each /* latin */ and /* latin-ext */ block
+```

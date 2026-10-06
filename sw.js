@@ -76,7 +76,9 @@ const STABLE_FILES = [
   "/icon.png",
 ];
 
-const IMMUTABLE_PREFIXES = ["/derived/", "/derived-1bit/"];
+/* The fonts are in here with the renditions: neither changes under its own
+   name, and neither should be evicted by a deploy. */
+const IMMUTABLE_PREFIXES = ["/derived/", "/derived-1bit/", "/fonts/"];
 
 /* The catalogue database and the price list. Everything else on the site is
    immutable at its URL; these two are the only files where being a deploy
@@ -84,8 +86,6 @@ const IMMUTABLE_PREFIXES = ["/derived/", "/derived-1bit/"];
 const LIVE_DATA = /\/(artworks|products)\.js$|\/products\.json$/;
 
 const STATIC_TYPES = /\.(css|js|png|jpe?g|gif|svg|webp|avif|woff2?|json|usdz)$/i;
-
-const FONT_HOSTS = /^fonts\.(googleapis|gstatic)\.com$/;
 
 /* ── Install / activate ─────────────────────────────────────────────────── */
 
@@ -130,15 +130,8 @@ function trim(cacheName, limit) {
   );
 }
 
-/* An opaque response (status 0) is a cross-origin fetch made without CORS —
-   the Google font files. It is storable and replayable even though its body
-   cannot be read here, so it is worth keeping; a failed one is not, and there
-   is no way to tell the two apart, which is why only the font hosts get this
-   benefit of the doubt. */
-function storable(response, url) {
-  if (!response) return false;
-  if (response.status === 200) return true;
-  return response.type === "opaque" && FONT_HOSTS.test(url.hostname);
+function storable(response) {
+  return !!response && response.status === 200;
 }
 
 function put(cacheName, request, response, limit) {
@@ -153,11 +146,10 @@ function put(cacheName, request, response, limit) {
    name — a versioned asset, a hashed rendition, the face. */
 function cacheFirst(event, cacheName, limit) {
   const request = event.request;
-  const url = new URL(request.url);
   return caches.match(request).then(cached => {
     if (cached) return cached;
     return fetch(request).then(response => {
-      if (storable(response, url)) put(cacheName, request, response.clone(), limit);
+      if (storable(response)) put(cacheName, request, response.clone(), limit);
       return response;
     });
   });
@@ -168,10 +160,9 @@ function cacheFirst(event, cacheName, limit) {
    page is at most one visit behind. */
 function staleWhileRevalidate(event, cacheName, limit) {
   const request = event.request;
-  const url = new URL(request.url);
   return caches.match(request).then(cached => {
     const fresh = fetch(request).then(response => {
-      if (storable(response, url)) put(cacheName, request, response.clone(), limit);
+      if (storable(response)) put(cacheName, request, response.clone(), limit);
       return response;
     }).catch(() => cached);
 
@@ -192,9 +183,8 @@ function staleWhileRevalidate(event, cacheName, limit) {
    the two data files, where being a deploy behind is the failure. */
 function networkFirst(event, cacheName, fallback) {
   const request = event.request;
-  const url = new URL(request.url);
   return fetch(request).then(response => {
-    if (storable(response, url)) put(cacheName, request, response.clone());
+    if (storable(response)) put(cacheName, request, response.clone());
     return response;
   }).catch(() =>
     caches.match(request).then(cached =>
@@ -228,7 +218,6 @@ function bypassed(request, url) {
 function immutable(url) {
   if (url.searchParams.has("v")) return true;
   if (IMMUTABLE_PREFIXES.some(prefix => url.pathname.startsWith(prefix))) return true;
-  if (url.pathname.startsWith("/fonts/")) return true;
   if (url.pathname.endsWith("-loader-frames.webp")) return true;
   return false;
 }
@@ -239,17 +228,9 @@ self.addEventListener("fetch", event => {
 
   if (bypassed(request, url)) return;
 
-  const sameOrigin = url.origin === self.location.origin;
-
-  /* The Google-hosted heading faces. Cached so the second visit does not wait
-     on a third party, and revalidated in the background so a change to the
-     served face still arrives. */
-  if (!sameOrigin) {
-    if (FONT_HOSTS.test(url.hostname)) {
-      event.respondWith(staleWhileRevalidate(event, RENDITIONS, RENDITION_LIMIT));
-    }
-    return;
-  }
+  /* Everything the site needs is its own. A third party's request — Google's
+     tag, Stripe — is the browser's to make, not the cache's. */
+  if (url.origin !== self.location.origin) return;
 
   /* A page. Always tried on the network first, so a deploy is live the moment
      it lands, with the cached copy behind it for a dead connection. */

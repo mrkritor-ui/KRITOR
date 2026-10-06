@@ -85,6 +85,7 @@
 
   function setTheme(theme, animate) {
     root.dataset.theme = theme;
+    if (window.KritorTheme) window.KritorTheme.paintChrome(theme);
     document.querySelectorAll("[data-theme-btn]").forEach(b =>
       b.setAttribute("aria-pressed", String(b.dataset.themeBtn === theme)));
     try { localStorage.setItem("kritor-theme", theme); } catch (e) {}
@@ -198,6 +199,21 @@
     const started = performance.now();
     let ended = false;
 
+    /* The ceremony plays on every page, for five to seven seconds, with every
+       control behind it — and a keyboard user finds Tab going nowhere. A key or
+       a touch hurries it: the bar fills at once and the scene, which keeps its
+       own clock, is no longer waited for. What follows end() — the picture
+       dissolving, the name, the way out, about a second — still plays, so
+       nothing is cut, only the waiting. Left alone it is exactly as it was. */
+    let hurried = false;
+    const hurry = () => {
+      if (hurried || ended) return;
+      hurried = true;
+      fillMs = 1;
+    };
+    const HURRY_EVENTS = ["keydown", "pointerdown"];
+    HURRY_EVENTS.forEach(type => window.addEventListener(type, hurry, { passive: true }));
+
     scene.ready.then(() => {
       sceneReady = true;
       /* Resolved before the bar had filled — a fast scene, or a slow one
@@ -218,7 +234,7 @@
          the scene — on its own clock, and there is deliberately no timeout
          on it beyond the 8s below, which exists only for real loading
          hanging on a dead connection. */
-      if (scripted >= 1 && sceneReady && (loadsDone() || elapsed > 8000)) return end();
+      if (scripted >= 1 && (sceneReady || hurried) && (loadsDone() || hurried || elapsed > 8000)) return end();
       requestAnimationFrame(frame);
     };
 
@@ -228,6 +244,7 @@
     function end() {
       if (ended) return;
       ended = true;
+      HURRY_EVENTS.forEach(type => window.removeEventListener(type, hurry));
       loadingFill.style.width = "100%";
       loadingLabel.textContent = "WELCOME";
       /* And it flashes — the one thing still moving once the picture has
@@ -550,6 +567,15 @@
         idleTimer = setTimeout(start, IDLE_MS);
         return;
       }
+      /* Twenty seconds without a keystroke is what looking at a painting, or
+         reading about it, sounds like. An open work is the one thing on this
+         site that is being watched, and a bouncing picture over it is the
+         opposite of what the visitor came for. */
+      if (document.querySelector(".panel.is-open, .wall-transition")) {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(start, IDLE_MS);
+        return;
+      }
       running = true;
       pick();
       x = Math.random() * Math.max(1, window.innerWidth - w);
@@ -589,11 +615,26 @@
       saver.classList.remove("is-on");
     }
 
-    function poke() {
+    /* The overlay goes at pointerdown, so the click that follows the same tap
+       lands on whatever was underneath — the tile, the bar button — and a visitor
+       who only meant to wake the screen opened a work. The first click after
+       waking is swallowed. */
+    let swallowClick = false;
+    function poke(event) {
+      if (running && event && (event.type === "pointerdown" || event.type === "touchstart")) {
+        swallowClick = true;
+        setTimeout(() => { swallowClick = false; }, 600);
+      }
       stop();
       clearTimeout(idleTimer);
       idleTimer = setTimeout(start, IDLE_MS);
     }
+    document.addEventListener("click", event => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    }, true);
 
     ["pointermove", "pointerdown", "keydown", "wheel", "touchstart", "scroll"]
       .forEach(type => window.addEventListener(type, poke, { passive: true }));
@@ -601,6 +642,62 @@
       if (document.visibilityState === "hidden") stop(); else poke();
     });
     poke();
+  }
+
+  /* ── Modal dialogs ─────────────────────────────────────────────────────── */
+
+  /* The work panel and the wall view say role="dialog" aria-modal="true", which
+     is a promise: that focus goes in, that what is behind cannot be reached
+     while it is open, and that closing it puts the visitor back where they
+     were. Without this the panel opened over a grid that kept Tab, so a keyboard
+     user pressed Enter on a tile and then tabbed through seventeen tiles they
+     could not see, and a screen reader read the page behind the dialog.
+
+     `behind` is a list of selectors to take out of play — inert removes them
+     from the tab order and the accessibility tree at once; `focus` is the
+     element that receives focus; `returnTo` names where focus goes back to when
+     the thing that opened the dialog is gone (a deep link has no opener).
+     Returns the function that closes it again. */
+  function modalOpen(options) {
+    const active = document.activeElement;
+    const opener = active && active !== document.body ? active : null;
+    const taken = [];
+    (options.behind || []).forEach(selector => {
+      document.querySelectorAll(selector).forEach(el => {
+        if (!el.inert) { el.inert = true; taken.push(el); }
+      });
+    });
+    const target = options.focus;
+    if (target) {
+      if (!target.hasAttribute("tabindex") && target.tabIndex < 0) target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+    }
+    let closed = false;
+    return function modalClose() {
+      if (closed) return;
+      closed = true;
+      taken.forEach(el => { el.inert = false; });
+      const back = opener && opener.isConnected ? opener : (options.returnTo && options.returnTo());
+      if (back && back.focus) back.focus({ preventScroll: true });
+    };
+  }
+
+  /* The bag and the panel's quantity control are rebuilt from scratch on every
+     change, which throws away whatever the visitor had focused: press "more" and
+     focus falls to <body>, so the next press needs the whole page tabbed
+     through again. This runs the rebuild and puts focus back on the control
+     that took its place — matched by its label, or, when that control is gone
+     (the last one removed, a "more" that has reached its limit), on the first
+     one that is left. */
+  function keepFocus(container, rebuild) {
+    const active = document.activeElement;
+    const had = !!active && container.contains(active);
+    const key = had ? (active.getAttribute("aria-label") || active.textContent.trim()) : "";
+    rebuild();
+    if (!had) return;
+    const controls = [...container.querySelectorAll("button:not(:disabled), a[href]")];
+    const next = controls.find(el => (el.getAttribute("aria-label") || el.textContent.trim()) === key) || controls[0];
+    if (next) next.focus({ preventScroll: true });
   }
 
   /* ── Panel navigation ──────────────────────────────────────────────────── */
@@ -879,7 +976,7 @@
   window.KritorTerminal = {
     reduceMotion, initTheme, setTheme, typeInto, stopTyping, runBoot,
     mountBar, filterColumn, revealWork, startScreensaver, flash, FLASH_MS, emerge,
-    mountPanelNav, walkLabel,
+    mountPanelNav, walkLabel, modalOpen, keepFocus,
     /* Touch has no hover and needs the bar left closed until asked for. */
     isTouch: touch,
   };

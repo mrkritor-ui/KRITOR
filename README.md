@@ -49,19 +49,18 @@ docstring for how the calibration works and for `--photo`.
 Without them the pages still work — tiles fall back to the original images —
 but the catalogue downloads megabytes instead of kilobytes.
 
-Deep links (`/work-01/`) need their directories, which the deploy also writes:
+Deep links (`/work-01/`, `/shop/<id>/`) need their directories, which the deploy
+also writes:
 
 ```sh
-node -e 'const fs=require("fs"),p=require("path");const s=fs.readFileSync("artworks.js","utf8");
-JSON.parse(s.slice(s.indexOf("["),s.lastIndexOf("]")+1)).forEach(w=>{fs.mkdirSync(w.id,{recursive:true});
-fs.writeFileSync(p.join(w.id,"index.html"),fs.readFileSync("work.html"))});'
+node tools/build-routes.js          # run from anywhere; it works on the repo root
 ```
 
-The same build step also bakes each work's and shop item's own `<title>`,
-description, canonical link, Open Graph/Twitter tags, and JSON-LD directly
-into its generated `index.html` (see `.github/workflows/pages.yml`), and
-writes `sitemap.xml` from the same data. A fresh clone's `/work-01/` and
-`/shop/<id>/` carry only the generic template's tags until that build runs.
+That one build step writes each work's and shop item's own page, bakes its
+`<title>`, description, canonical link, Open Graph/Twitter tags and JSON-LD
+directly into it, and writes `sitemap.xml` and `products.json` from the same
+data. A fresh clone's `/work-01/` and `/shop/<id>/` do not exist until it has
+run, and the generated files are git-ignored.
 
 ## How it fits together
 
@@ -125,8 +124,9 @@ left out of the writing — see the minify step in `pages.yml`, which runs last
 because every step before it reads these files as sources.
 
 **Type is pix Chicago, except a work's own name**, which is Jacquarda
-Bastarda 9 (VT323 on the shopfront). pix Chicago is served from `fonts/` —
-see the README there for where it came from and what it covers. Anything
+Bastarda 9 (VT323 on the shopfront). All three are served from `fonts/` —
+nothing on the site is fetched from a font host — and the README there says
+where each came from and what it covers. Anything
 outside those faces' character sets silently falls back and breaks the pixel
 grid, so check a glyph exists before using it: pix Chicago is Latin-1 plus the
 usual punctuation, with no box-drawing characters and no `−` (U+2212).

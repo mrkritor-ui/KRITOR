@@ -23,23 +23,25 @@
      into the page and the Elements will not render without it. It is
      deliberately NOT in script-src: allowing inline script would let an
      injected <script> run and make the rest of this close to decorative. That
-     is why the two inline handlers this page used to carry — the font swap
-     below and the thumbnail fallback in checkout.js and cart.js — were moved
-     into those files.
+     is why the inline handlers this page used to carry — a font-stylesheet
+     swap and the thumbnail fallback — were moved into checkout.js, and the
+     first of them has since gone altogether.
+
+     No font host is named: the page's own type is pix Chicago from /fonts/, and
+     the blackletter it used to fetch from Google was declared here but never
+     applied to anything.
 
      maps.googleapis.com is for the Address Element's autocomplete. The worker
      origin is named literally, so changing paymentApiBase in store-config.js
      means changing it here too or the checkout cannot reach it. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://js.stripe.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.stripe.com; connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.stripe.network https://maps.googleapis.com https://kritor-payments.kritor.workers.dev; frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.stripe.network">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://js.stripe.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://*.stripe.com; connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.stripe.network https://maps.googleapis.com https://kritor-payments.kritor.workers.dev; frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.stripe.network">
 <title>Checkout — KRITOR</title>
 <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
-<link rel="canonical" href="/checkout/">
+<link rel="canonical" href="https://kritor.au/checkout/">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- The payment intent is created from checkout.js, well after this page has
      been parsed, and it is the one request on the site a visitor is actually
      waiting on money for. The handshakes it needs are opened now instead. -->
@@ -50,13 +52,6 @@
      the stylesheet to discover: it is 4 KB, and font-display: block means
      nothing is painted in it until it lands. -->
 <link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
-<!-- Loaded async: media="print" keeps it out of the critical path, so a slow
-     or blocked font host can never delay rendering or script execution.
-     checkout.js switches the media back to "all"; that used to be an inline
-     onload attribute here, which the policy above will not run. -->
-<link id="font-css" rel="stylesheet" media="print"
-      href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&amp;display=swap"></noscript>
 <link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="/checkout.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="/checkout-terminal.css?v=__ASSET_VERSION__">
@@ -118,12 +113,13 @@
 
       <p class="fineprint">
         Payment is processed by Stripe. KRITOR never sees your card details.
+        <a href="/privacy/">Privacy</a>.
       </p>
     </form>
   </div>
 </main>
 
-<section class="checkout-done" id="checkout-done" hidden>
+<section class="checkout-done" id="checkout-done" role="status" hidden>
   <div class="done-inner">
     <h1>Thank you</h1>
     <p id="done-detail"></p>

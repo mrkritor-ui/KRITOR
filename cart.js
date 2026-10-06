@@ -1,7 +1,8 @@
 /* KRITOR BAG — cart state.
 
    State lives in localStorage so the bag survives navigation and refreshes,
-   and a change in one tab reaches the others. There is no UI here: the store's
+   and a change in one tab reaches the others (and see load/save below for
+   what happens where localStorage is refused). There is no UI here: the store's
    own bag (terminal-store.js) and the checkout's summary (checkout.js) both
    paint from this and subscribe to it. A drawer used to be injected here for
    any page that provided [data-bag-slot]; none ever did once the store moved
@@ -54,9 +55,37 @@
     listeners.forEach(fn => { try { fn(); } catch (_) {} });
   }
 
+  /* localStorage can throw on every touch — Safari with all cookies blocked,
+     some embedded browsers — and an ADD TO BAG that quietly does nothing is a
+     lost sale. When it does, the bag is kept in memory for the page and rides
+     window.name to the next one: a tab keeps that across same-site hops with
+     no storage permission at all, and the bag only ever has to get from the
+     store to the checkout. Prices are never taken from here — the worker
+     re-prices every order from its own catalogue. */
+  const CARRY = "kritor-bag=";
+  let memory = null;
+
+  function load() {
+    if (memory !== null) return memory;
+    try {
+      const stored = localStorage.getItem(KEY);
+      if (stored !== null) return stored;
+    } catch (_) {}
+    try {
+      if (window.name.indexOf(CARRY) === 0) return window.name.slice(CARRY.length);
+    } catch (_) {}
+    return null;
+  }
+
+  function save(json) {
+    try { localStorage.setItem(KEY, json); memory = null; return; } catch (_) {}
+    memory = json;
+    try { if (!window.name || window.name.indexOf(CARRY) === 0) window.name = CARRY + json; } catch (_) {}
+  }
+
   function read() {
     try {
-      const raw = JSON.parse(localStorage.getItem(KEY) || "[]");
+      const raw = JSON.parse(load() || "[]");
       if (!Array.isArray(raw)) return [];
       return raw
         .filter(l => l && typeof l.id === "string" && Number.isFinite(l.qty) && l.qty > 0)
@@ -65,7 +94,7 @@
   }
 
   function write(lines) {
-    try { localStorage.setItem(KEY, JSON.stringify(lines)); } catch (_) {}
+    save(JSON.stringify(lines));
     notify();
   }
 
@@ -83,7 +112,7 @@
       resolved.push({item, qty});
     });
     if (changed) {
-      try { localStorage.setItem(KEY, JSON.stringify(resolved.map(l => ({id: l.item.id, qty: l.qty})))); } catch (_) {}
+      save(JSON.stringify(resolved.map(l => ({id: l.item.id, qty: l.qty}))));
     }
     return resolved;
   }
