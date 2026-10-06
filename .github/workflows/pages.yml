@@ -287,6 +287,21 @@ jobs:
           cp .minified/*.js .minified/*.css .
           rm -rf .minified
 
+      # What is uploaded is what is public, and "." is the whole checkout: until
+      # this step the payment worker's source and Cloudflare config, the build
+      # tools, the READMEs and a stray icon source were all downloadable from
+      # kritor.au beside the site. None of it is referenced by a page (checked
+      # against the built output: the only mentions are a developer-facing
+      # message string in checkout.js and comments), so it goes. This runs after
+      # every step that reads those files and before the upload.
+      #
+      # The payment worker is deployed from backend/ with wrangler, not from the
+      # site, and reads products.json, which stays.
+      - name: Leave the project's own files out of the site
+        run: |
+          rm -rf backend tools scripts node_modules
+          rm -f README.md shop/README.md fonts/README.md .well-known/README.md icon-source.png .gitignore
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
