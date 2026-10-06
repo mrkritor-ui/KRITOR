@@ -46,7 +46,7 @@ shop/artshed-original/03-framed.png
 {
   id: "artshed-original",
   title: "ArtShed",
-  year: 2025,
+  year: 2022,
   price: 320000,                 // cents — 320000 = $3,200.00
   currency: "AUD",
   images: [
