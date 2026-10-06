@@ -18,11 +18,16 @@
   --border: 2px;
 }
 
+/* --dim was #2c8c52, 4.1:1 on this ground; the grey and the error colour that
+   checkout.css chose for white (--muted, the .form-error text) were 2:1 here.
+   The values below are all 6:1 or better on #0a1f12. */
 html[data-theme="dark"] {
   --bg: #0a1f12;
   --ink: #4ff08a;
-  --dim: #2c8c52;
+  --dim: #3fae6c;
+  --muted: #9a9a92;
 }
+html[data-theme="dark"] .form-error { color: #ff8a7a; }
 
 html, body {
   background: var(--bg);

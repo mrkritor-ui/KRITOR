@@ -178,6 +178,47 @@ html.is-emerging { transition: --ink 620ms ease, --dim 620ms ease; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* A visitor may zoom this page. The viewport used to forbid it
+   (user-scalable=no), which locks out anyone who needs the type larger, and was
+   never what stopped the double-tap from zooming the grid — that is this. The
+   work panel keeps its own touch-action (pan-y) and its own pinch on the
+   painting, so zooming a work is unchanged. */
+html, body { touch-action: manipulation; }
+
+/* Text for a screen reader and a search engine that has no business on screen:
+   the page heading each room needs and the status messages. Not display:none,
+   which would hide it from both. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+/* The way past the bar to the work: invisible until a keyboard lands on it,
+   then the first thing on the screen. Above the boot, so it can be reached
+   while the ceremony plays. */
+.skip {
+  position: fixed;
+  top: var(--u);
+  left: var(--u);
+  z-index: 900;
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transform: translateY(-300%);
+}
+.skip:focus { transform: none; outline: 0; background: var(--ink); color: var(--bg); }
+#grid:focus { outline: 0; }
+
 /* The panes below set their own display, and an explicit display beats the
    hidden attribute's UA rule — without this the INFO pane stacks under the
    filter table instead of replacing it. */
@@ -917,6 +958,15 @@ html.is-booting .home-tab { display: none; }
   background: var(--ink);
   color: var(--bg);
   outline: 0;
+}
+
+/* Focus, hover and "selected" are all the same inversion, so on a button that
+   is both selected and focused nothing told the two apart: the SMALL you are
+   viewing, the mode you are in. A ring, only there. */
+.bar-btn[aria-pressed="true"]:focus-visible,
+.bar-btn.is-active:focus-visible {
+  outline: var(--border) solid var(--ink);
+  outline-offset: 2px;
 }
 
 .bar-views { display: flex; gap: calc(var(--u) * 2); margin: 0 auto; min-width: 0; }
@@ -1710,9 +1760,22 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
 }
 
 /* On a touch screen the halves would answer every attempt to simply look at
-   the work, so there they are gone and the gesture is a swipe instead. */
+   the work, so there they are not a target and the gesture is a swipe instead.
+   Gone from the screen, not from the page: display:none took Previous and Next
+   out of the accessibility tree too, leaving a screen-reader user on a phone
+   with "SWIPE" as the only way to the next work. A one-pixel button in the
+   corner is still there to be found and activated. */
 @media (hover: none), (pointer: coarse) {
-  .panel-zone { display: none; }
+  .panel-zone {
+    top: auto;
+    bottom: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .panel-zone[data-zone="prev"] { left: 0; right: auto; }
+  .panel-zone[data-zone="next"] { right: 0; left: auto; }
 }
 
 /* Side by side, once there is width for two columns.
@@ -1886,11 +1949,25 @@ a.row:hover, a.row:focus-visible { background: var(--ink); color: var(--bg); out
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--dim);
-  opacity: .8;
 }
 
 .foot p { margin: 0 0 calc(var(--u) * 2.5); }
 .foot p:last-child { margin-bottom: 0; }
+
+/* ── Forced colours ──────────────────────────────────────────────────────── */
+
+/* Windows High Contrast (and any forced-colors setting) replaces every colour
+   the page chose, background-color included. The 1-bit works are a solid
+   background-color seen through a mask, so the forced background colour became
+   the colour of the page and every work — all but the one in real colour —
+   disappeared, black on black. Declared as the text colour and exempt from the
+   override, the mask paints in the colour the visitor chose for text. */
+@media (forced-colors: active) {
+  .tile-bits, .bag-thumb, .row-preview, .screensaver-cell {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
 
 /* ── Without JavaScript ──────────────────────────────────────────────────── */
 

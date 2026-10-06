@@ -221,8 +221,10 @@
      [data-view] would hand it the class meant for the control. */
   function markView(name) {
     VIEWS.forEach(v => grid.classList.toggle("view-" + v, v === name));
-    document.querySelectorAll("button[data-view]").forEach(b =>
-      b.classList.toggle("is-active", b.dataset.view === name));
+    document.querySelectorAll("button[data-view]").forEach(b => {
+      b.classList.toggle("is-active", b.dataset.view === name);
+      b.setAttribute("aria-pressed", String(b.dataset.view === name));
+    });
     root.dataset.view = name;
   }
 
@@ -451,6 +453,9 @@
   let cancelReveal = null;
   let wallClose = null;   // reverses an open "view on wall" transition
   let wallRoot = null;    // that transition's root, for an instant close on navigation
+  let wallModal = null;   // gives the wall view's focus back (see modalOpen in terminal-shell.js)
+  let panelModal = null;  // the same for the panel
+  let returnId = null;    // the work focus goes back to if whatever opened the panel is gone
 
   /* The order the panel walks, which is not the grid's. Works are grouped by
      series so stepping through takes you along a body of work before moving
@@ -545,13 +550,14 @@
 
       const stage = document.createElement("div");
       stage.className = "wall-stage";
+      mockupImg.alt = workLabel(work) + ", shown on a wall at its true size";
       stage.appendChild(mockupImg);
       root.appendChild(stage);
 
       const close = document.createElement("button");
       close.type = "button";
       close.className = "panel-esc wall-close";
-      close.setAttribute("aria-label", "Close");
+      close.setAttribute("aria-label", "Close wall view");
       close.innerHTML = document.getElementById("panel-esc").innerHTML;
       root.appendChild(close);
 
@@ -572,6 +578,7 @@
         cleaned = true;
         root.remove();
         if (wallRoot === root) wallRoot = null;
+        if (wallModal) { wallModal(); wallModal = null; }
       }
 
       /* Closing does not reverse the opening move — flying the artwork back
@@ -610,7 +617,9 @@
                    WALL_SETTLE_AT + WALL_MOCKUP_MS + 30);
       }
 
-      close.focus();
+      /* A dialog, so focus goes into it, the panel behind stops being
+         reachable, and closing it hands focus back to VIEW ON WALL. */
+      wallModal = T.modalOpen({ behind: ["#panel"], focus: close });
     });
   }
 
@@ -622,6 +631,7 @@
     if (wallRoot) wallRoot.remove();
     wallRoot = null;
     wallClose = null;
+    if (wallModal) { wallModal(); wallModal = null; }
   }
 
   function openPanel(work, push) {
@@ -667,7 +677,9 @@
       ar.rel = "ar";
       ar.textContent = "VIEW IN AR";
       /* Quick Look needs an <img> child to take over the link on iOS. */
-      ar.appendChild(document.createElement("img"));
+      const arImg = document.createElement("img");
+      arImg.alt = "";
+      ar.appendChild(arImg);
       panelFoot.appendChild(ar);
     }
     if (work.wall && work.wall.enabled && work.wall.image) {
@@ -689,8 +701,18 @@
     panelFoot.appendChild(index);
 
     hidePreview();
+    returnId = work.id;
     panel.classList.add("is-open");
     bar.classList.add("is-hidden");          // only ever two things to click
+    /* Once, however many times the walk steps through it: the opener is whatever
+       had focus when the panel first appeared, not the close button it moved to. */
+    if (!panelModal) {
+      panelModal = T.modalOpen({
+        behind: ["#grid", ".foot", ".home-tab", "#bar", ".skip"],
+        focus: document.getElementById("panel-esc"),
+        returnTo: () => grid.querySelector('[data-work-id="' + returnId + '"]'),
+      });
+    }
     document.body.style.overflow = "hidden";
     cancelReveal = T.revealWork({
       image: img, title: panelTitle, meta: panelMeta, text: lines.join("\n"),
@@ -706,6 +728,9 @@
   function closePanel(pop) {
     wallForceClose();
     current = null;
+    /* Before the bar comes back and before the address changes: focus returns to
+       the tile the visitor opened, or to the one for the work they ended on. */
+    if (panelModal) { const give = panelModal; panelModal = null; give(); }
     if (cancelReveal) { cancelReveal(); cancelReveal = null; }
     T.stopTyping();
     panel.classList.remove("is-open");

@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>KRITOR</title>
   <meta name="description" content="An original work by KRITOR, a contemporary artist working in expressionism and mixed media.">
   <link rel="canonical" href="https://kritor.au/art/">
@@ -41,6 +41,9 @@
 </head>
 <body class="crt-glass">
 
+  <a class="skip" href="#grid">Skip to the work</a>
+  <header class="sr-only"><h1>Art Catalogue</h1></header>
+
   <!-- A work permalink is the catalogue itself, deep-linked: same chrome, same
        boot, same panel — see the "opening" lookup near the bottom of
        terminal.js, which reads this page's own URL and opens straight to the
@@ -54,10 +57,12 @@
        is already the one thing on screen worth clicking while it's up. A
        pixel icon on a pointer; the word HOME on a touch screen, where the
        icon alone would be too small to trust. -->
-  <a class="home-tab" href="/" aria-label="Back to KRITOR">
+  <nav aria-label="Back to KRITOR">
+    <a class="home-tab" href="/" aria-label="Home, back to KRITOR">
     <svg class="ico home-tab-icon" viewBox="0 0 9 8" width="18" height="16" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="4" y="0" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/></svg>
     <span class="home-tab-word">HOME</span>
   </a>
+  </nav>
 
   <!-- The tube's own optics: a bright-pass bloom (threshold, blur, screen
        back over the source) and a genuine channel split for the fringe a
@@ -131,7 +136,7 @@
 
   <!-- The bar. Not a header: the only chrome on the page, and one of the only
        two things on the site that can be clicked. -->
-  <div class="bar" id="bar">
+  <div class="bar" id="bar" role="region" aria-label="Controls">
     <button class="bar-tab" id="bar-tab" type="button" aria-label="Show filters"><svg class="ico" viewBox="0 0 7 4" width="14" height="8" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/></svg></button>
 
     <div class="bar-row" id="info-row" hidden>
@@ -180,7 +185,7 @@
   </div>
 
   <!--NOSCRIPT-->
-  <main class="grid view-grid" id="grid" aria-label="Artwork catalogue"></main>
+  <main class="grid view-grid" id="grid" aria-label="Artwork catalogue" tabindex="-1"></main>
   <footer class="foot">
     <p>KRITOR MAKES THINGS.<br>A CHOICE MADE AT 17<br>TO NOT TAKE TIME FOR GRANTED.</p>
     <p>ALL RIGHTS RESERVED. &copy; 2026 KRITOR.</p>

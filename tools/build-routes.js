@@ -172,6 +172,7 @@ for (const item of SHOP_ITEMS) {
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">`)
     .replace('<link rel="canonical" href="https://kritor.au/store/">', `<link rel="canonical" href="${esc(canonicalUrl)}">`)
     .replace('<!--SEO-HEAD-->', head)
+    .replace('<h1>Store</h1>', () => `<h1>${esc(item.title || 'Original work')}</h1>`)
     .replace('<!--NOSCRIPT-->', () => nojs(plain));
 
   fs.writeFileSync(path.join(dir, 'index.html'), page);
@@ -264,6 +265,7 @@ for (const work of artworks) {
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">`)
     .replace('<link rel="canonical" href="https://kritor.au/art/">', `<link rel="canonical" href="${esc(canonicalUrl)}">`)
     .replace('<!--SEO-HEAD-->', head)
+    .replace('<h1>Art Catalogue</h1>', () => `<h1>${esc(label)}</h1>`)
     .replace('<!--NOSCRIPT-->', () => nojs(plain));
 
   fs.writeFileSync(path.join(work.id, 'index.html'), page);

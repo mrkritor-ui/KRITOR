@@ -122,3 +122,12 @@ html.kc-on .kritor-cursor { display: block; }
 .kritor-cursor .h { fill: var(--bg, #fff); }
 html[data-theme="dark"] .kritor-cursor .b { fill: var(--ink, #fff); }
 html[data-theme="dark"] .kritor-cursor .h { fill: var(--bg, #000); }
+
+/* A visitor who asked the system for forced colours or more contrast has also
+   chosen a pointer — its size, its colour, its outline — and the drawn one
+   (which hides the system's everywhere) ignores all of it. They get theirs. */
+@media (forced-colors: active), (prefers-contrast: more) {
+  html.kc-on, html.kc-on *, html.kc-on *::before, html.kc-on *::after { cursor: auto !important; }
+  .kritor-cursor { display: none !important; }
+  html, body, a, button, summary, [role="button"], label, .panel-art img { cursor: auto; }
+}
