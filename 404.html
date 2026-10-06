@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Not found — KRITOR</title>
+  <meta name="description" content="That address does not lead anywhere on kritor.au.">
+  <!-- GitHub Pages serves this file, with a 404 status, for any address that has
+       no page — at whatever depth it was asked for. So nothing on it is
+       relative, it is never indexed, and it declares no canonical. -->
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.png">
+  <link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
+  <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
+  <style>
+    /* The same two themes as every other room — paper and ink, or the dark
+       terminal — and the same inversion on hover and focus, so it reads as
+       part of the site rather than a stock error page. Small enough to live
+       here: this page is the one place a visitor arrives by mistake, and it
+       should not cost them terminal.css. */
+    :root { --u: 8px; --bg: #e3e3e3; --ink: #555555; --dim: #555555; color-scheme: light; }
+    html[data-theme="dark"] { --bg: #1c2318; --ink: #c9cac3; --dim: #8f9189; color-scheme: dark; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: var(--ui-font);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+    main {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: calc(var(--u) * 3);
+      padding: calc(var(--u) * 4) calc(var(--u) * 2);
+      padding-bottom: max(calc(var(--u) * 4), env(safe-area-inset-bottom));
+      text-align: center;
+    }
+    h1 { margin: 0; font: inherit; font-size: 24px; line-height: 1.4; }
+    p { margin: 0; font-size: 12px; line-height: 2; color: var(--dim); max-width: 36em; }
+    nav { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1.5); justify-content: center; }
+    nav a {
+      border: 2px solid var(--ink);
+      padding: calc(var(--u) * 1.5) calc(var(--u) * 2.5);
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 12px;
+    }
+    nav a:hover, nav a:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+  </style>
+  <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
+  <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
+  <!-- Google tag (GA4) — see analytics.js. A dead link somebody followed is
+       worth seeing in the reports. -->
+  <script src="/analytics.js?v=__ASSET_VERSION__" defer></script>
+</head>
+<body>
+  <main>
+    <h1>404</h1>
+    <p>There is nothing at this address. The page may have moved, or the link may be mistyped.</p>
+    <nav aria-label="Where to go">
+      <a href="/">Home</a>
+      <a href="/art/">Art</a>
+      <a href="/architecture/">Architecture</a>
+      <a href="/store/">Store</a>
+      <a href="/about/">About</a>
+    </nav>
+  </main>
+</body>
+</html>

@@ -12,14 +12,6 @@
 (function () {
   "use strict";
 
-  /* The font stylesheet is parked on media="print" so a slow or blocked font
-     host cannot hold up rendering. Switching it back to "all" once it has
-     arrived used to be an inline onload attribute on the tag itself, which the
-     page's Content-Security-Policy now refuses to run. The swap happens here
-     instead, above the guards below, so an empty bag still gets the typeface. */
-  const fontSheet = document.getElementById("font-css");
-  if (fontSheet) fontSheet.media = "all";
-
   const config = window.KRITOR_STORE_CONFIG || {};
   const cart = window.KritorCart;
 

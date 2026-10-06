@@ -125,8 +125,9 @@ left out of the writing — see the minify step in `pages.yml`, which runs last
 because every step before it reads these files as sources.
 
 **Type is pix Chicago, except a work's own name**, which is Jacquarda
-Bastarda 9 (VT323 on the shopfront). pix Chicago is served from `fonts/` —
-see the README there for where it came from and what it covers. Anything
+Bastarda 9 (VT323 on the shopfront). All three are served from `fonts/` —
+nothing on the site is fetched from a font host — and the README there says
+where each came from and what it covers. Anything
 outside those faces' character sets silently falls back and breaks the pixel
 grid, so check a glyph exists before using it: pix Chicago is Latin-1 plus the
 usual punctuation, with no box-drawing characters and no `−` (U+2212).

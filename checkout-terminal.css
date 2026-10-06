@@ -5,10 +5,9 @@
    ids it binds to, or the Stripe Elements mount — that is a live payment path,
    and a restyle is not a reason to go near it.
 
-   The page keeps its own Content-Security-Policy, which already allows
-   fonts.googleapis.com and fonts.gstatic.com for the blackletter, and 'self'
-   for the local pix Chicago that type.css declares, so the pixel faces load
-   here the same way they do everywhere else. */
+   The page keeps its own Content-Security-Policy, which allows 'self' for the
+   local pix Chicago that type.css declares, so the pixel face loads here the
+   same way it does everywhere else. */
 
 :root {
   --u: 8px;
@@ -16,7 +15,6 @@
   --ink: #000000;
   --dim: #000000;
   --face: "pix Chicago", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --title-font: "Jacquarda Bastarda 9", "pix Chicago", serif;
   --border: 2px;
 }
 
