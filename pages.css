@@ -8,11 +8,12 @@
    on the paper. Black ink on white, and white on black for a visitor who chose
    the dark theme, so the page agrees with the room they came from.
 
-   A document is a ruled form: a head, then one row per section with the
-   section's name in a narrow column on the left and what it says on the right,
-   the rows separated by the same 2px rule the bar uses between its rows. The
-   type is small on purpose — this is reference text, read once, and the face is
-   at its crispest at the sizes the bar already uses.
+   A document is a ruled, centred stack: a head, then one row per section — its
+   number and name, and under them what it says — the rows separated by the same
+   2px rule the bar uses between its rows. Everything sits on the page's centre
+   line, and a short page sits in the middle of the screen as well as of its
+   width. The type is small on purpose — this is reference text, read once, and
+   the face is at its crispest at the sizes the bar already uses.
 
    The face and the variables come from type.css, which every page here loads
    first. */
@@ -181,7 +182,15 @@ body {
 
 /* ── The document ────────────────────────────────────────────────────────── */
 
+/* The page is as tall as the screen at least, and the document sits in the
+   middle of whatever room that leaves under the chrome. A long one is simply
+   taller than the screen and starts at the top. */
 .doc {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: calc(var(--u) * 13) var(--page-pad) calc(var(--u) * 8);
 }
 
@@ -190,11 +199,13 @@ body {
 }
 
 .doc-box {
+  width: 100%;
   max-width: 760px;
   margin: 0 auto;
   border: var(--border) solid var(--ink);
   font-size: 14px;
   line-height: 1.8;
+  text-align: center;
 }
 
 .doc-head { padding: calc(var(--u) * 3); }
@@ -217,17 +228,13 @@ body {
 
 .doc-lede { margin: calc(var(--u) * 2) 0 0; }
 
-/* One row per section: its name on the left, what it says on the right. */
-.doc-sec {
-  display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  border-top: var(--border) solid var(--ink);
-}
+/* One row per section: its number and name, then what it says, centred, with
+   the text held to a line length a centred paragraph can be read at. */
+.doc-sec { border-top: var(--border) solid var(--ink); }
 
 .doc-sec > h2 {
   margin: 0;
-  padding: calc(var(--u) * 2.5) calc(var(--u) * 3);
-  border-right: var(--border) solid var(--ink);
+  padding: calc(var(--u) * 3) calc(var(--u) * 3) 0;
   font: inherit;
   font-size: 12px;
   line-height: 1.8;
@@ -236,26 +243,23 @@ body {
 }
 .doc-n { display: block; margin-bottom: calc(var(--u) * .5); }
 
-.doc-body { padding: calc(var(--u) * 2.5) calc(var(--u) * 3); min-width: 0; }
+.doc-body {
+  max-width: 62ch;
+  margin: 0 auto;
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 3) calc(var(--u) * 3);
+  min-width: 0;
+}
 .doc-body > :first-child { margin-top: 0; }
 .doc-body > :last-child { margin-bottom: 0; }
 .doc-body p, .doc-body ul { margin: 0 0 calc(var(--u) * 1.5); overflow-wrap: anywhere; }
 
-/* A row with nothing to name it, for text that is the whole point. */
-.doc-sec.is-wide { display: block; }
-.doc-sec.is-wide .doc-body { padding: calc(var(--u) * 3); }
+/* A section with no name — About's own words — is just the text. (A class, not
+   :has(), so an older browser does not lose the spacing.) */
+.doc-plain .doc-body { max-width: 56ch; padding-top: calc(var(--u) * 3); }
 
+/* A list, centred, is a stack of lines: no hanging markers, a gap between. */
 .doc-body ul { list-style: none; padding: 0; }
-.doc-body li { position: relative; padding-left: calc(var(--u) * 2.5); margin-bottom: var(--u); }
-.doc-body li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: .75em;
-  width: 6px;
-  height: 6px;
-  background: var(--ink);
-}
+.doc-body li { margin-bottom: calc(var(--u) * 1.25); }
 
 /* The one sentence the page turns on, set apart the way a work's record is. */
 .doc-quote {
@@ -308,8 +312,8 @@ body {
 .doc-foot {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--u) calc(var(--u) * 3);
+  justify-content: center;
+  gap: var(--u) calc(var(--u) * 4);
   padding: calc(var(--u) * 1.5) calc(var(--u) * 3);
   border-top: var(--border) solid var(--ink);
   font-size: 12px;
@@ -320,14 +324,9 @@ body {
 @media (max-width: 719px) {
   .doc-head { padding: calc(var(--u) * 2.5) calc(var(--u) * 2); }
   .doc h1 { font-size: 16px; }
-  .doc-sec { display: block; }
-  .doc-sec > h2 {
-    padding: calc(var(--u) * 2) calc(var(--u) * 2) 0;
-    border-right: 0;
-  }
-  .doc-n { display: inline; margin: 0 var(--u) 0 0; }
-  .doc-body { padding: var(--u) calc(var(--u) * 2) calc(var(--u) * 2); }
-  .doc-sec.is-wide .doc-body { padding: calc(var(--u) * 2); }
+  .doc-sec > h2 { padding: calc(var(--u) * 2.5) calc(var(--u) * 2) 0; }
+  .doc-body { padding: var(--u) calc(var(--u) * 2) calc(var(--u) * 2.5); }
+  .doc-plain .doc-body { padding-top: calc(var(--u) * 2.5); }
   .doc-foot { padding: calc(var(--u) * 1.5) calc(var(--u) * 2); }
 }
 
@@ -335,7 +334,7 @@ body {
    survive; the inverted states need a system colour pair to stay visible. */
 @media (forced-colors: active) {
   .bar-btn[aria-current="page"] { outline: var(--border) solid CanvasText; }
-  .doc-body li::before, .doc-end::after { background: CanvasText; }
+  .doc-end::after { background: CanvasText; }
 }
 
 @media print {
