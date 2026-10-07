@@ -88,6 +88,12 @@ jobs:
       - name: Build 1-bit renditions
         run: python tools/terminal-images.py
 
+      # The picture each link is shown with — one 1200x630 card per work and per
+      # shop item, and one for the site, drawn from the paintings themselves.
+      # Reads products.json, which the route step above wrote. A few seconds.
+      - name: Build share cards
+        run: python tools/build-og.py
+
       # The sources in this repo are heavily commented on purpose — that is how
       # the thing explains itself — and every one of those comments was being
       # served to every visitor along with the code. Minified here so the

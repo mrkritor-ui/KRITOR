@@ -76,3 +76,10 @@ curl -A "Mozilla/5.0 Chrome/130" \
   "https://fonts.googleapis.com/css2?family=Jacquarda+Bastarda+9&family=VT323&display=swap"
 # then download the woff2 named under each /* latin */ and /* latin-ext */ block
 ```
+
+### `tools/pix-chicago.ttf`
+
+The same outlines as the `.woff2` above, saved as TrueType. It is not served —
+`tools/build-og.py` draws the social share cards with it, because Pillow reads
+TrueType but not WOFF2. If the `.woff2` is ever redone, redo this from the same
+file: `TTFont("pix-chicago.woff2")`, `flavor = None`, save.

@@ -90,7 +90,25 @@ cart.js             cart state, in localStorage. No UI of its own — the
                     store's bag and the checkout's summary both paint
                     from it (the Stripe plumbing is checkout.js)
 analytics.js        the Google tag (GA4) — see below
+tools/build-og.py   the social share cards — see below
 ```
+
+### Share cards
+
+A shared link is shown as a picture, so every page names one: `og/<work id>.jpg`
+for each catalogue work, `og/<product id>.jpg` for each shop item and
+`og/default.jpg` for the front door, the rooms, About, Contact and Privacy. They
+are 1200×630 (what every platform asks for), drawn by `tools/build-og.py` at
+deploy time from the paintings themselves — the work trimmed to its own edges,
+set whole in a 2px frame beside its title in the site face — and never committed,
+so a card cannot outlive the painting or title it shows. `tools/build-routes.js`
+writes each page's tags (including `og:image:alt`), and `tools/check-site.js`
+fails the deploy if a card is missing, the wrong size, or over 600 KB.
+
+To change which two paintings the site card shows, edit `DEFAULT_WORKS` at the top
+of `build-og.py`. Run it locally after `build-routes.js` (it reads
+`products.json`). The face it draws with is `tools/pix-chicago.ttf` — the same
+outlines as `fonts/pix-chicago.woff2`, because Pillow cannot read WOFF2.
 
 ### Analytics
 

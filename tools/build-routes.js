@@ -84,6 +84,28 @@ function fillNoscript(file, inner) {
 
 const assetUrl = p => encodeURI('/' + String(p).replace(/^\//, ''));
 
+// The picture a link to a page is shown with: og/<id>.jpg, drawn from the
+// painting itself by tools/build-og.py (which writes one for every work and
+// shop item that has an image, and og/default.jpg for the site). A page with
+// no painting gets the site's own. The JSON-LD below keeps pointing at the
+// painting — that is what a search engine wants to index — while this is what
+// a person sees in a feed.
+function shareCard(id, hasImage, alt) {
+  const url = `${SITE}/og/${hasImage ? encodeURIComponent(id) : 'default'}.jpg`;
+  return {
+    og: [
+      `<meta property="og:image" content="${esc(url)}">`,
+      '<meta property="og:image:width" content="1200">',
+      '<meta property="og:image:height" content="630">',
+      `<meta property="og:image:alt" content="${esc(alt)}">`,
+    ],
+    twitter: [
+      `<meta name="twitter:image" content="${esc(url)}">`,
+      `<meta name="twitter:image:alt" content="${esc(alt)}">`,
+    ],
+  };
+}
+
 const seen = new Set();
 for (const item of SHOP_ITEMS) {
   if (!item.id || !/^[a-z0-9][a-z0-9-]*$/.test(item.id)) {
@@ -120,6 +142,7 @@ for (const item of SHOP_ITEMS) {
     ? `${SITE}${encodeURI(imagePath.startsWith('/') ? imagePath : '/' + imagePath)}`
     : `${SITE}/icon.png`;
   const soldOut = !Number.isFinite(item.stock) ? false : item.stock < 1;
+  const card = shareCard(item.id, Boolean(imagePath), `${item.title || 'Original work'}, an original work by KRITOR`);
 
   const plain = [
     `<h1>${esc(item.title || 'Original work')}</h1>`,
@@ -156,11 +179,11 @@ for (const item of SHOP_ITEMS) {
     `<meta property="og:title" content="${esc(title)}">`,
     `<meta property="og:description" content="${esc(desc)}">`,
     `<meta property="og:url" content="${esc(canonicalUrl)}">`,
-    `<meta property="og:image" content="${esc(imageUrl)}">`,
+    ...card.og,
     '<meta name="twitter:card" content="summary_large_image">',
     `<meta name="twitter:title" content="${esc(title)}">`,
     `<meta name="twitter:description" content="${esc(desc)}">`,
-    `<meta name="twitter:image" content="${esc(imageUrl)}">`,
+    ...card.twitter,
     `<script type="application/ld+json">${jsonLd}</script>`,
   ].join('\n');
 
@@ -225,6 +248,7 @@ for (const work of artworks) {
   const imageUrl = imagePath
     ? `${SITE}${encodeURI(imagePath.startsWith('/') ? imagePath : '/' + imagePath)}`
     : `${SITE}/icon.png`;
+  const card = shareCard(work.id, Boolean(imagePath), `${label}${work.year ? ', ' + work.year : ''}, a work by KRITOR`);
 
   const jsonLd = ldJson(Object.assign({
     '@context': 'https://schema.org',
@@ -242,11 +266,11 @@ for (const work of artworks) {
     `<meta property="og:title" content="${esc(title)}">`,
     `<meta property="og:description" content="${esc(desc)}">`,
     `<meta property="og:url" content="${esc(canonicalUrl)}">`,
-    `<meta property="og:image" content="${esc(imageUrl)}">`,
+    ...card.og,
     '<meta name="twitter:card" content="summary_large_image">',
     `<meta name="twitter:title" content="${esc(title)}">`,
     `<meta name="twitter:description" content="${esc(desc)}">`,
-    `<meta name="twitter:image" content="${esc(imageUrl)}">`,
+    ...card.twitter,
     `<script type="application/ld+json">${jsonLd}</script>`,
   ].join('\n');
 

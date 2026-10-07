@@ -12,6 +12,8 @@
      • a page with no title, description or heading to say what it is
      • structured data that does not parse
      • a sitemap entry with no page behind it
+     • a share image a page names that is missing, or not the 1200x630 the
+       tags say it is
      • a page that does not follow its own Content-Security-Policy (an inline
        script, a source the policy does not allow, no policy at all)
 
@@ -63,10 +65,55 @@ if (!pages.length) fail(rel(ROOT) || '.', 'no HTML pages found — is this the b
    it), and the old /about.html-style addresses that only send a visitor on to
    the real page. Anything else must say what it is. */
 const isRedirectStub = html => /http-equiv=["']refresh["']/i.test(html);
+const isPrivatePageName = name => ['404.html', 'checkout/index.html'].includes(name);
 const isPrivatePage = (file, html) =>
   /<meta[^>]+name=["']robots["'][^>]+noindex/i.test(html) ||
-  ['404.html', 'checkout/index.html'].includes(rel(file)) ||
+  isPrivatePageName(rel(file)) ||
   isRedirectStub(html);
+
+// The width and height of a JPEG, read from its first start-of-frame marker.
+function jpegSize(buffer) {
+  if (buffer[0] !== 0xff || buffer[1] !== 0xd8) return null;
+  let i = 2;
+  while (i + 9 < buffer.length) {
+    if (buffer[i] !== 0xff) { i++; continue; }
+    const marker = buffer[i + 1];
+    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+      return { height: buffer.readUInt16BE(i + 5), width: buffer.readUInt16BE(i + 7) };
+    }
+    i += 2 + buffer.readUInt16BE(i + 2);
+  }
+  return null;
+}
+
+/* The picture a page is shown with when its link is shared. The tags must
+   point at a file that exists, and where a size is declared the file must be
+   it — a card the wrong shape is cropped by every platform that shows it. */
+function checkShareImage(name, html) {
+  const looked = new Set();      // og:image and twitter:image are usually one file
+  for (const prop of ['og:image', 'twitter:image']) {
+    const re = new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i');
+    const url = (html.match(re) || [])[1];
+    if (!url) { if (prop === 'og:image' && !isPrivatePageName(name)) fail(name, 'no og:image'); continue; }
+    if (!url.startsWith(SITE + '/')) { fail(name, `${prop} is not on ${SITE}: ${url}`); continue; }
+    const file = resolveUrlPath(url.slice(SITE.length));
+    if (!file) { fail(name, `${prop} points at ${url}, which does not exist`); continue; }
+    if (!/\.jpe?g$/i.test(file) || looked.has(file)) continue;
+    looked.add(file);
+    const buf = fs.readFileSync(file);
+    const size = jpegSize(buf);
+    if (!size) { fail(name, `${url} is not a readable JPEG`); continue; }
+    const declared = {
+      width: Number((html.match(/<meta[^>]+property=["']og:image:width["'][^>]+content=["'](\d+)["']/i) || [])[1]),
+      height: Number((html.match(/<meta[^>]+property=["']og:image:height["'][^>]+content=["'](\d+)["']/i) || [])[1]),
+    };
+    if (prop === 'og:image' && (size.width !== declared.width || size.height !== declared.height)) {
+      fail(name, `${url} is ${size.width}x${size.height}, but the page says ${declared.width}x${declared.height}`);
+    }
+    if (url.includes('/og/') && (size.width !== 1200 || size.height !== 630)) fail(name, `${url} is ${size.width}x${size.height}, not 1200x630`);
+    if (buf.length > 600 * 1024) fail(name, `${url} is ${Math.round(buf.length / 1024)} KB — over the 600 KB a preview should stay under`);
+  }
+}
 
 /* ── Content-Security-Policy ─────────────────────────────────────────────────
    GitHub Pages cannot send headers, so every page carries its policy in a
@@ -180,6 +227,10 @@ for (const file of pages) {
   }
 
   checkCsp(name, html);
+  // work.html and product.html are templates: the build copies them once per work
+  // and item and fills the placeholder in each copy. The bare template, still
+  // carrying it, is only the address old ?id= links arrive at.
+  if (!isPrivatePage(file, html) && !html.includes('<!--SEO-HEAD-->')) checkShareImage(name, html);
 
   // The page says what it is.
   const title = (html.match(/<title>([\s\S]*?)<\/title>/i) || [])[1];
