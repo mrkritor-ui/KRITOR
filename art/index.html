@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Content-Security-Policy: scripts from this origin and the Google tag, nothing inline — see README, Security -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Art Catalogue — KRITOR</title>
   <meta name="description" content="The complete art catalogue of KRITOR — mixed media paintings and studies by a contemporary artist, filterable by format, year, and series.">
   <link rel="canonical" href="https://kritor.au/art/">
@@ -13,11 +15,15 @@
   <meta property="og:title" content="Art Catalogue — KRITOR">
   <meta property="og:description" content="The complete art catalogue of KRITOR — mixed media paintings and studies by a contemporary artist, filterable by format, year, and series.">
   <meta property="og:url" content="https://kritor.au/art/">
-  <meta property="og:image" content="https://kritor.au/images/work-05.png">
+  <meta property="og:image" content="https://kritor.au/og/default.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="KRITOR, contemporary artist, Melbourne: two expressionist paintings beside the name">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Art Catalogue — KRITOR">
   <meta name="twitter:description" content="The complete art catalogue of KRITOR — mixed media paintings and studies by a contemporary artist, filterable by format, year, and series.">
-  <meta name="twitter:image" content="https://kritor.au/images/work-05.png">
+  <meta name="twitter:image" content="https://kritor.au/og/default.jpg">
+  <meta name="twitter:image:alt" content="KRITOR, contemporary artist, Melbourne: two expressionist paintings beside the name">
 
   <script type="application/ld+json">
   {
@@ -64,7 +70,7 @@
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <!-- Without script there is no boot to wait for and no bar to use; the plain
        list in the <noscript> below is the page. -->
-  <noscript><style>.boot,.bar,.catalogue-crt{display:none!important}</style></noscript>
+  <noscript><link rel="stylesheet" href="/nojs.css?v=__ASSET_VERSION__"></noscript>
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
   <!-- Google tag (GA4) — see analytics.js. -->
@@ -105,7 +111,7 @@
        1920-pixel-wide canvas, and the transform's own upscale is a GPU
        compositing step that costs nothing extra. Hidden and sized to
        nothing: it exists only to be pointed at by url(#crt-optics). -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg class="fx-defs" width="0" height="0" aria-hidden="true">
     <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
       <feComponentTransfer in="SourceGraphic" result="bright">
         <feFuncR type="linear" slope="3" intercept="-1.6"/>
@@ -212,7 +218,7 @@
   <main class="grid view-grid" id="grid" aria-label="Artwork catalogue" tabindex="-1"></main>
   <footer class="foot">
     <p>KRITOR MAKES THINGS.<br>A CHOICE MADE AT 17<br>TO NOT TAKE TIME FOR GRANTED.</p>
-    <p><a href="/about/">ABOUT</a> · <a href="mailto:info@kritor.au">CONTACT</a> · <a href="/privacy/">PRIVACY</a></p>
+    <p><a href="/about/">ABOUT</a> · <a href="/contact/">CONTACT</a> · <a href="/privacy/">PRIVACY</a></p>
     <p>ALL RIGHTS RESERVED. &copy; 2026 KRITOR.</p>
   </footer>
 
@@ -236,6 +242,6 @@
   <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal.js?v=__ASSET_VERSION__"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+  <script src="/sw-register.js?v=__ASSET_VERSION__"></script>
 </body>
 </html>

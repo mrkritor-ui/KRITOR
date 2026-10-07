@@ -12,6 +12,8 @@
        terminal.css), so "light" is never wrong here. -->
   <meta name="color-scheme" content="light">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Content-Security-Policy: scripts from this origin and the Google tag, nothing inline — see README, Security -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>KRITOR Store — Shop Original Art</title>
   <meta name="description" content="Shop original paintings and mixed media works by KRITOR. Limited editions and one-of-a-kind pieces, shipped from Melbourne to Australia and selected countries overseas.">
   <link rel="canonical" href="https://kritor.au/store/">
@@ -22,11 +24,15 @@
   <meta property="og:title" content="KRITOR Store — Shop Original Art">
   <meta property="og:description" content="Shop original paintings and mixed media works by KRITOR. Limited editions and one-of-a-kind pieces, shipped from Melbourne to Australia and selected countries overseas.">
   <meta property="og:url" content="https://kritor.au/store/">
-  <meta property="og:image" content="https://kritor.au/images/work-05.png">
+  <meta property="og:image" content="https://kritor.au/og/default.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="KRITOR, contemporary artist, Melbourne: two expressionist paintings beside the name">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="KRITOR Store — Shop Original Art">
   <meta name="twitter:description" content="Shop original paintings and mixed media works by KRITOR. Limited editions and one-of-a-kind pieces, shipped from Melbourne to Australia and selected countries overseas.">
-  <meta name="twitter:image" content="https://kritor.au/images/work-05.png">
+  <meta name="twitter:image" content="https://kritor.au/og/default.jpg">
+  <meta name="twitter:image:alt" content="KRITOR, contemporary artist, Melbourne: two expressionist paintings beside the name">
 
   <script type="application/ld+json">
   {
@@ -66,7 +72,7 @@
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <!-- Without script there is no boot to wait for and no bar to use; the plain
        list in the <noscript> below is the page. -->
-  <noscript><style>.boot,.bar,.catalogue-crt{display:none!important}</style></noscript>
+  <noscript><link rel="stylesheet" href="/nojs.css?v=__ASSET_VERSION__"></noscript>
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
   <!-- Google tag (GA4) — see analytics.js. -->
@@ -98,7 +104,7 @@
        gate on this site points a canvas at. Defined per document, since a
        url(#id) reference doesn't cross documents. Hidden and sized to
        nothing: it exists only to be pointed at by url(#crt-optics). -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg class="fx-defs" width="0" height="0" aria-hidden="true">
     <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
       <feComponentTransfer in="SourceGraphic" result="bright">
         <feFuncR type="linear" slope="3" intercept="-1.6"/>
@@ -174,7 +180,7 @@
   <main class="grid view-grid" id="grid" aria-label="Works for sale" tabindex="-1"></main>
   <footer class="foot">
     <p>KRITOR STORE.<br>ORIGINAL WORK AND EDITIONS,<br>SHIPPED FROM MELBOURNE.</p>
-    <p><a href="/about/">ABOUT</a> · <a href="mailto:info@kritor.au">CONTACT</a> · <a href="/privacy/">PRIVACY</a></p>
+    <p><a href="/about/">ABOUT</a> · <a href="/contact/">CONTACT</a> · <a href="/privacy/">PRIVACY</a></p>
     <p>ALL RIGHTS RESERVED. &copy; 2026 KRITOR.</p>
   </footer>
 
@@ -215,6 +221,6 @@
   <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-store.js?v=__ASSET_VERSION__"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+  <script src="/sw-register.js?v=__ASSET_VERSION__"></script>
 </body>
 </html>

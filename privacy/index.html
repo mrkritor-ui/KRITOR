@@ -3,20 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Content-Security-Policy: scripts from this origin and the Google tag, nothing inline — see README, Security -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Privacy — KRITOR</title>
 <meta name="description" content="What kritor.au stores, counts and shares: preferences on your own device, visit statistics, and the details a purchase needs.">
 <link rel="canonical" href="https://kritor.au/privacy/">
-<meta name="theme-color" content="#ffffff">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/icon.png">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="KRITOR">
-<meta property="og:title" content="Privacy — KRITOR">
-<meta property="og:description" content="What kritor.au stores, counts and shares: preferences on your own device, visit statistics, and the details a purchase needs.">
-<meta property="og:url" content="https://kritor.au/privacy/">
-<meta property="og:image" content="https://kritor.au/icon-512.png">
-<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#ffffff" data-dark="#000000">
 <!--
   Written from what the site actually does — every statement here can be checked
   against analytics.js, terminal-shell.js, cart.js, checkout.js and
@@ -26,74 +18,148 @@
   (see the "Keeping it" section). Update the date at the foot when anything here
   changes.
 -->
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="KRITOR">
+<meta property="og:title" content="Privacy — KRITOR">
+<meta property="og:description" content="What kritor.au stores, counts and shares: preferences on your own device, visit statistics, and the details a purchase needs.">
+<meta property="og:url" content="https://kritor.au/privacy/">
+<meta property="og:image" content="https://kritor.au/og/default.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="KRITOR, contemporary artist, Melbourne: two expressionist paintings beside the name">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Privacy — KRITOR">
+<meta name="twitter:description" content="What kritor.au stores, counts and shares: preferences on your own device, visit statistics, and the details a purchase needs.">
+<meta name="twitter:image" content="https://kritor.au/og/default.jpg">
+<meta name="twitter:image:alt" content="KRITOR, contemporary artist, Melbourne: two expressionist paintings beside the name">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "KRITOR", "item": "https://kritor.au/"},
+    {"@type": "ListItem", "position": 2, "name": "Privacy", "item": "https://kritor.au/privacy/"}
+  ]
+}
+</script>
+
+<!-- The site face, preloaded the way the front door does it. -->
+<link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
+<!-- The paperwork's own look: the rooms' box, bar and bitmap face in black and
+     white. See the top of pages.css. -->
+<link rel="stylesheet" href="/pages.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
+<script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
 <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
 <!-- Google tag (GA4) — see analytics.js. -->
 <script src="/analytics.js?v=__ASSET_VERSION__" defer></script>
-<style>
-  * { box-sizing: border-box; }
-  html, body { margin: 0; background: #fff; color: #111; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
-  .legal { max-width: 40em; margin: 0 auto; padding: 56px 20px 96px; font-size: 17px; line-height: 1.6; }
-  .legal nav { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 56px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
-  .legal a { color: inherit; text-underline-offset: 3px; }
-  .legal nav a { text-decoration: none; border-bottom: 1px solid #111; }
-  .legal nav a:hover, .legal nav a:focus-visible { background: #111; color: #fff; outline: 0; }
-  h1 { margin: 0 0 12px; font-size: clamp(34px, 7vw, 56px); line-height: 1.02; font-weight: 800; letter-spacing: -.03em; text-transform: uppercase; }
-  h2 { margin: 44px 0 8px; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
-  p, ul { margin: 0 0 14px; }
-  ul { padding-left: 1.2em; }
-  li { margin-bottom: 6px; }
-  .lede { font-size: 20px; line-height: 1.45; }
-  code { font-size: .9em; background: #f0f0f0; padding: 1px 5px; }
-  .updated { margin-top: 48px; font-size: 14px; color: #555; }
-</style>
 </head>
 <body>
-<main class="legal">
-  <nav aria-label="Elsewhere on KRITOR">
-    <a href="/">Home</a>
-    <a href="/art/">Art</a>
-    <a href="/store/">Store</a>
-    <a href="/about/">About</a>
-  </nav>
+<a class="skip" href="#main">Skip to the text</a>
 
-  <h1>Privacy</h1>
-  <p class="lede">No accounts, no newsletter, no advertising, and nothing sold. The site remembers a few preferences on your own device, counts visits with Google Analytics, and takes payments through Stripe. This page says what that means.</p>
+<nav aria-label="Back to KRITOR">
+  <a class="home-tab" href="/" aria-label="Home, back to KRITOR">
+    <svg class="ico home-tab-icon" viewBox="0 0 9 8" width="18" height="16" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="4" y="0" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/></svg>
+    <span class="home-tab-word">HOME</span>
+  </a>
+</nav>
 
-  <h2>Who this is</h2>
-  <p>kritor.au is the website of KRITOR, the practice name of Melbourne artist Kristian Torcasio. Any question about this page, or about information the site holds about you, goes to <a href="mailto:info@kritor.au">info@kritor.au</a>.</p>
+<nav class="bar" aria-label="Pages">
+  <div class="bar-row">
+    <a class="bar-btn" href="/art/">ART</a>
+    <a class="bar-btn" href="/store/">STORE</a>
+  </div>
+  <div class="bar-row">
+    <a class="bar-btn" href="/about/">ABOUT</a>
+    <a class="bar-btn" href="/contact/">CONTACT</a>
+    <a class="bar-btn" href="/privacy/" aria-current="page">PRIVACY</a>
+  </div>
+</nav>
 
-  <h2>On your own device</h2>
-  <p>To work as it should, the site keeps a few small settings in your browser. They are not cookies, they are never sent to anyone, and clearing your browser's site data removes them:</p>
-  <ul>
-    <li><code>kritor-theme</code> — whether you chose paper or terminal mode.</li>
-    <li><code>kritor-view</code> — whether you last looked at the catalogue large, small or as a list.</li>
-    <li><code>kritor-bag</code> — what is in your bag, so it is still there on the next page.</li>
-    <li><code>kritor-last-page</code> — which room you were last in (for the length of one visit), so the right opening plays.</li>
-  </ul>
+<main class="doc" id="main">
+  <article class="doc-box">
+    <header class="doc-head">
+      <p class="doc-kicker">KRITOR / PRIVACY</p>
+      <h1>Privacy</h1>
+      <p class="doc-lede">No accounts, no newsletter, no advertising, and nothing sold. The site remembers a few preferences on your own device, counts visits with Google Analytics, and takes payments through Stripe. This page says what that means.</p>
+    </header>
 
-  <h2>Counting visits (Google Analytics)</h2>
-  <p>The site uses Google Analytics 4 to see which pages and works get looked at. It records the pages you view, the type of device and browser, roughly where in the world the visit came from (worked out from your IP address, which Google Analytics does not store), and how you arrived. It sets two cookies, <code>_ga</code> and <code>_ga_…</code>, to tell one browser from another over time. Advertising features and Google signals are switched off, and nothing from analytics is used to show you ads or to follow you elsewhere.</p>
-  <p>If you are in the European Economic Area, the United Kingdom or Switzerland, analytics cookies are off unless you have agreed to them: Google Analytics runs in a mode that sets no cookies and sends only anonymous pings with no identifier. The checkout page does not load Google Analytics at all.</p>
-  <p>To opt out everywhere, use <a href="https://tools.google.com/dlpage/gaoptout">Google's opt-out browser add-on</a>; blocking analytics in your browser works too, and the site does not need it to function. Google's own account of how it handles this data is at <a href="https://policies.google.com/technologies/partner-sites">policies.google.com/technologies/partner-sites</a>.</p>
+    <section class="doc-sec" aria-labelledby="p1">
+      <h2 id="p1"><span class="doc-n" aria-hidden="true">01</span>Who this is</h2>
+      <div class="doc-body">
+        <p>kritor.au is the website of KRITOR, the practice name of Melbourne artist Kristian Torcasio. Any question about this page, or about information the site holds about you, goes to <a href="mailto:info@kritor.au">info@kritor.au</a>.</p>
+      </div>
+    </section>
 
-  <h2>Buying a work</h2>
-  <p>To buy something you give an email address (for the receipt), a delivery name and address, and, if you choose to, a phone number. Your card details go straight into fields supplied by <a href="https://stripe.com/privacy">Stripe</a>, who take the payment; KRITOR never sees your card number. Address suggestions as you type are provided through Google Maps, which receives what you have typed so far.</p>
-  <p>The order is priced by a small service running on <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare</a>. It receives what is in your bag and your delivery country, creates the payment with Stripe, and keeps a record of which one-off works have sold. It uses your IP address only to limit abuse. KRITOR uses the order details to take payment, send the work to you, send a receipt, and keep the records the law requires. They are not used for marketing.</p>
+    <section class="doc-sec" aria-labelledby="p2">
+      <h2 id="p2"><span class="doc-n" aria-hidden="true">02</span>On your own device</h2>
+      <div class="doc-body">
+        <p>To work as it should, the site keeps a few small settings in your browser. They are not cookies, they are never sent to anyone, and clearing your browser's site data removes them:</p>
+        <ul>
+          <li><code>kritor-theme</code> — whether you chose paper or terminal mode.</li>
+          <li><code>kritor-view</code> — whether you last looked at the catalogue large, small or as a list.</li>
+          <li><code>kritor-bag</code> — what is in your bag, so it is still there on the next page.</li>
+          <li><code>kritor-last-page</code> — which room you were last in (for the length of one visit), so the right opening plays.</li>
+        </ul>
+      </div>
+    </section>
 
-  <h2>Where the site comes from</h2>
-  <p>The pages are delivered by GitHub Pages (GitHub, Inc.), which — like any web host — sees your IP address and basic technical details when your browser asks for a page. The site's fonts, scripts and images are all served from kritor.au itself; there is no font or script network in between.</p>
+    <section class="doc-sec" aria-labelledby="p3">
+      <h2 id="p3"><span class="doc-n" aria-hidden="true">03</span>Counting visits (Google Analytics)</h2>
+      <div class="doc-body">
+        <p>The site uses Google Analytics 4 to see which pages and works get looked at. It records the pages you view, the type of device and browser, roughly where in the world the visit came from (worked out from your IP address, which Google Analytics does not store), and how you arrived. It sets two cookies, <code>_ga</code> and <code>_ga_…</code>, to tell one browser from another over time. Advertising features and Google signals are switched off, and nothing from analytics is used to show you ads or to follow you elsewhere.</p>
+        <p>If you are in the European Economic Area, the United Kingdom or Switzerland, analytics cookies are off unless you have agreed to them: Google Analytics runs in a mode that sets no cookies and sends only anonymous pings with no identifier. The checkout page does not load Google Analytics at all.</p>
+        <p>To opt out everywhere, use <a href="https://tools.google.com/dlpage/gaoptout">Google's opt-out browser add-on</a>; blocking analytics in your browser works too, and the site does not need it to function. Google's own account of how it handles this data is at <a href="https://policies.google.com/technologies/partner-sites">policies.google.com/technologies/partner-sites</a>.</p>
+      </div>
+    </section>
 
-  <h2>Who else sees it</h2>
-  <p>Only the services named above, for the job described: Google (analytics, and address suggestions at checkout), Stripe (payments), Cloudflare (pricing the order) and GitHub (delivering the pages). Nothing is sold, and nothing is shared for advertising.</p>
+    <section class="doc-sec" aria-labelledby="p4">
+      <h2 id="p4"><span class="doc-n" aria-hidden="true">04</span>Buying a work</h2>
+      <div class="doc-body">
+        <p>To buy something you give an email address (for the receipt), a delivery name and address, and, if you choose to, a phone number. Your card details go straight into fields supplied by <a href="https://stripe.com/privacy">Stripe</a>, who take the payment; KRITOR never sees your card number. Address suggestions as you type are provided through Google Maps, which receives what you have typed so far.</p>
+        <p>The order is priced by a small service running on <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare</a>. It receives what is in your bag and your delivery country, creates the payment with Stripe, and keeps a record of which one-off works have sold. It uses your IP address only to limit abuse. KRITOR uses the order details to take payment, send the work to you, send a receipt, and keep the records the law requires. They are not used for marketing.</p>
+      </div>
+    </section>
 
-  <h2>Keeping it</h2>
-  <p>Order details are kept for as long as they are needed to deliver the work, deal with any problem with it, and meet legal and tax obligations. Analytics data is kept for a limited period set in the analytics account and is then deleted by Google.</p>
+    <section class="doc-sec" aria-labelledby="p5">
+      <h2 id="p5"><span class="doc-n" aria-hidden="true">05</span>Where the site comes from</h2>
+      <div class="doc-body">
+        <p>The pages are delivered by GitHub Pages (GitHub, Inc.), which — like any web host — sees your IP address and basic technical details when your browser asks for a page. The site's fonts, scripts and images are all served from kritor.au itself; there is no font or script network in between.</p>
+      </div>
+    </section>
 
-  <h2>Your rights</h2>
-  <p>You can ask to see the personal information held about you, to have it corrected, or to have it deleted where the law allows, by writing to <a href="mailto:info@kritor.au">info@kritor.au</a>. This applies under Australian privacy law and, if you are in the European Economic Area or the United Kingdom, under the GDPR, including the right to object. If you are not satisfied with the answer you can complain to the <a href="https://www.oaic.gov.au/privacy/privacy-complaints">Office of the Australian Information Commissioner</a> or to the data-protection authority where you live.</p>
+    <section class="doc-sec" aria-labelledby="p6">
+      <h2 id="p6"><span class="doc-n" aria-hidden="true">06</span>Who else sees it</h2>
+      <div class="doc-body">
+        <p>Only the services named above, for the job described: Google (analytics, and address suggestions at checkout), Stripe (payments), Cloudflare (pricing the order) and GitHub (delivering the pages). Nothing is sold, and nothing is shared for advertising.</p>
+      </div>
+    </section>
 
-  <p class="updated">Last updated 6 October 2026.</p>
+    <section class="doc-sec" aria-labelledby="p7">
+      <h2 id="p7"><span class="doc-n" aria-hidden="true">07</span>Keeping it</h2>
+      <div class="doc-body">
+        <p>Order details are kept for as long as they are needed to deliver the work, deal with any problem with it, and meet legal and tax obligations. Analytics data is kept for a limited period set in the analytics account and is then deleted by Google.</p>
+      </div>
+    </section>
+
+    <section class="doc-sec" aria-labelledby="p8">
+      <h2 id="p8"><span class="doc-n" aria-hidden="true">08</span>Your rights</h2>
+      <div class="doc-body">
+        <p class="doc-end">You can ask to see the personal information held about you, to have it corrected, or to have it deleted where the law allows, by writing to <a href="mailto:info@kritor.au">info@kritor.au</a>. This applies under Australian privacy law and, if you are in the European Economic Area or the United Kingdom, under the GDPR, including the right to object. If you are not satisfied with the answer you can complain to the <a href="https://www.oaic.gov.au/privacy/privacy-complaints">Office of the Australian Information Commissioner</a> or to the data-protection authority where you live.</p>
+      </div>
+    </section>
+
+    <footer class="doc-foot">
+      <span>KRITOR — MELBOURNE</span>
+      <span>LAST UPDATED 6 OCTOBER 2026</span>
+    </footer>
+  </article>
 </main>
 </body>
 </html>

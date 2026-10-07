@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Content-Security-Policy: scripts from this origin and the Google tag, nothing inline — see README, Security -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>KRITOR</title>
   <meta name="description" content="An original work by KRITOR, a contemporary artist working in expressionism and mixed media.">
   <link rel="canonical" href="https://kritor.au/art/">
@@ -32,7 +34,7 @@
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <!-- Without script there is no boot to wait for and no bar to use; the plain
        list in the <noscript> below is the page. -->
-  <noscript><style>.boot,.bar,.catalogue-crt{display:none!important}</style></noscript>
+  <noscript><link rel="stylesheet" href="/nojs.css?v=__ASSET_VERSION__"></noscript>
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
   <!-- Google tag (GA4) — see analytics.js. -->
@@ -81,7 +83,7 @@
        1920-pixel-wide canvas, and the transform's own upscale is a GPU
        compositing step that costs nothing extra. Hidden and sized to
        nothing: it exists only to be pointed at by url(#crt-optics). -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg class="fx-defs" width="0" height="0" aria-hidden="true">
     <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
       <feComponentTransfer in="SourceGraphic" result="bright">
         <feFuncR type="linear" slope="3" intercept="-1.6"/>
@@ -188,7 +190,7 @@
   <main class="grid view-grid" id="grid" aria-label="Artwork catalogue" tabindex="-1"></main>
   <footer class="foot">
     <p>KRITOR MAKES THINGS.<br>A CHOICE MADE AT 17<br>TO NOT TAKE TIME FOR GRANTED.</p>
-    <p><a href="/about/">ABOUT</a> · <a href="mailto:info@kritor.au">CONTACT</a> · <a href="/privacy/">PRIVACY</a></p>
+    <p><a href="/about/">ABOUT</a> · <a href="/contact/">CONTACT</a> · <a href="/privacy/">PRIVACY</a></p>
     <p>ALL RIGHTS RESERVED. &copy; 2026 KRITOR.</p>
   </footer>
 
@@ -211,14 +213,7 @@
        reads the path, so that id is folded into a clean /work-01/ address
        here, before terminal.js runs, rather than teaching the shared file
        about a query string every other page that loads it never has. -->
-  <script>
-  (function(){
-    var id=new URLSearchParams(location.search).get('id');
-    if(id && /^work-[A-Za-z0-9_-]+$/.test(id)){
-      history.replaceState(history.state,'','/' + encodeURIComponent(id) + '/');
-    }
-  })();
-  </script>
+  <script src="/legacy-id.js?v=__ASSET_VERSION__" data-room="work"></script>
 
   <script src="/artworks.js?v=__ASSET_VERSION__"></script>
   <script src="/image-manifest.js?v=__ASSET_VERSION__"></script>
@@ -228,6 +223,6 @@
   <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal.js?v=__ASSET_VERSION__"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+  <script src="/sw-register.js?v=__ASSET_VERSION__"></script>
 </body>
 </html>

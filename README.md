@@ -76,6 +76,8 @@ architecture/index.html  the same catalogue rule system — views, filters,
                     signal) instead of the catalogue's (the mosaic).
 store/index.html    the shopfront
 checkout/index.html the checkout — Stripe, its own CSP
+about/ contact/ privacy/   the paperwork pages — one look, in pages.css:
+                    the rooms' own box, bar and face in black and white
 
 terminal-shell.js   the chrome every terminal page shares: theme, bar, boot
                     sequence, typing, screensaver
@@ -88,14 +90,32 @@ cart.js             cart state, in localStorage. No UI of its own — the
                     store's bag and the checkout's summary both paint
                     from it (the Stripe plumbing is checkout.js)
 analytics.js        the Google tag (GA4) — see below
+tools/build-og.py   the social share cards — see below
 ```
+
+### Share cards
+
+A shared link is shown as a picture, so every page names one: `og/<work id>.jpg`
+for each catalogue work, `og/<product id>.jpg` for each shop item and
+`og/default.jpg` for the front door, the rooms, About, Contact and Privacy. They
+are 1200×630 (what every platform asks for), drawn by `tools/build-og.py` at
+deploy time from the paintings themselves — the work trimmed to its own edges,
+set whole in a 2px frame beside its title in the site face — and never committed,
+so a card cannot outlive the painting or title it shows. `tools/build-routes.js`
+writes each page's tags (including `og:image:alt`), and `tools/check-site.js`
+fails the deploy if a card is missing, the wrong size, or over 600 KB.
+
+To change which two paintings the site card shows, edit `DEFAULT_WORKS` at the top
+of `build-og.py`. Run it locally after `build-routes.js` (it reads
+`products.json`). The face it draws with is `tools/pix-chicago.ttf` — the same
+outlines as `fonts/pix-chicago.woff2`, because Pillow cannot read WOFF2.
 
 ### Analytics
 
 The Google tag lives in `analytics.js` and nowhere else; the measurement ID is
 the one `ID` constant at the top of it. Every public page loads the file with a
 single `<script … defer>` line (`/`, `/art/`, `/architecture/`, `/store/`,
-`/about/`, and the `work.html` / `product.html` templates every `/work-xx/` and
+`/about/`, `/contact/`, `/privacy/`, and the `work.html` / `product.html` templates every `/work-xx/` and
 `/shop/<id>/` is built from) — a new page gets the tag by adding that one line.
 
 It is skipped on `localhost` so local testing never reaches the reports, and it
@@ -104,6 +124,44 @@ names Stripe and nothing else as a script source, and letting Google in there is
 a decision to make on purpose rather than a side effect. Opening a work pushes
 `/work-xx/` onto the history, which GA4's enhanced measurement already reports
 as a page view, so nothing needs to call `gtag()` for that.
+
+### Security: the Content-Security-Policy
+
+Every public page carries the same policy in a `<meta http-equiv>` tag (GitHub
+Pages cannot send headers), and the checkout carries its own, stricter one:
+
+```
+default-src 'self';
+script-src  'self' https://*.googletagmanager.com;
+style-src   'self';
+img-src     'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com;
+font-src    'self';
+connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com;
+manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'
+```
+
+Scripts come from this origin and the Google tag, and nothing is written into
+the HTML: no inline `<script>`, no inline `<style>`, no `style="…"` attribute, no
+`onclick=`, no `eval`. That is why the service-worker registration, the old
+`?id=` link folding and the architecture room's start-up values are the small
+files `sw-register.js`, `legacy-id.js` and `architecture-boot.js`, and why the
+no-JavaScript rules live in `nojs.css`. Setting `element.style.x = …` from a
+script is fine; writing markup with a `style` attribute is not. The two old
+redirect pages (`/about.html`, `/store.html`) keep one inline script each,
+allowed by its hash.
+
+`tools/check-site.js` reads every built page against its own policy before
+anything is published, and fails the deploy on an inline script, a source the
+policy does not allow, a missing policy, or a policy that lets script in.
+
+What a meta policy cannot do: `frame-ancestors` and reporting are ignored in a
+`<meta>`, so this stops injected script and data theft but is not
+clickjacking protection and cannot tell you when it blocks something. To use a
+new service, add its host to the right directive in every page (the checker will
+list the ones you miss) rather than loosening anything. The Google hosts are the
+ones Google's own guidance lists for the Google tag with Analytics 4; they could
+not be exercised against the live tag from the build sandbox, so after changing
+them look in the browser console and in Analytics' real-time report.
 
 ### Three rules worth knowing before editing
 

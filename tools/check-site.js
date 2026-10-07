@@ -12,6 +12,10 @@
      • a page with no title, description or heading to say what it is
      • structured data that does not parse
      • a sitemap entry with no page behind it
+     • a share image a page names that is missing, or not the 1200x630 the
+       tags say it is
+     • a page that does not follow its own Content-Security-Policy (an inline
+       script, a source the policy does not allow, no policy at all)
 
    Usage: node tools/check-site.js [siteDir]   (default: the current folder)
    Run it on the finished tree, before the project's own files are removed. */
@@ -61,10 +65,157 @@ if (!pages.length) fail(rel(ROOT) || '.', 'no HTML pages found — is this the b
    it), and the old /about.html-style addresses that only send a visitor on to
    the real page. Anything else must say what it is. */
 const isRedirectStub = html => /http-equiv=["']refresh["']/i.test(html);
+const isPrivatePageName = name => ['404.html', 'checkout/index.html'].includes(name);
 const isPrivatePage = (file, html) =>
   /<meta[^>]+name=["']robots["'][^>]+noindex/i.test(html) ||
-  ['404.html', 'checkout/index.html'].includes(rel(file)) ||
+  isPrivatePageName(rel(file)) ||
   isRedirectStub(html);
+
+// The width and height of a JPEG, read from its first start-of-frame marker.
+function jpegSize(buffer) {
+  if (buffer[0] !== 0xff || buffer[1] !== 0xd8) return null;
+  let i = 2;
+  while (i + 9 < buffer.length) {
+    if (buffer[i] !== 0xff) { i++; continue; }
+    const marker = buffer[i + 1];
+    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+      return { height: buffer.readUInt16BE(i + 5), width: buffer.readUInt16BE(i + 7) };
+    }
+    i += 2 + buffer.readUInt16BE(i + 2);
+  }
+  return null;
+}
+
+/* The picture a page is shown with when its link is shared. The tags must
+   point at a file that exists, and where a size is declared the file must be
+   it — a card the wrong shape is cropped by every platform that shows it. */
+function checkShareImage(name, html) {
+  const looked = new Set();      // og:image and twitter:image are usually one file
+  for (const prop of ['og:image', 'twitter:image']) {
+    const re = new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i');
+    const url = (html.match(re) || [])[1];
+    if (!url) { if (prop === 'og:image' && !isPrivatePageName(name)) fail(name, 'no og:image'); continue; }
+    if (!url.startsWith(SITE + '/')) { fail(name, `${prop} is not on ${SITE}: ${url}`); continue; }
+    const file = resolveUrlPath(url.slice(SITE.length));
+    if (!file) { fail(name, `${prop} points at ${url}, which does not exist`); continue; }
+    if (!/\.jpe?g$/i.test(file) || looked.has(file)) continue;
+    looked.add(file);
+    const buf = fs.readFileSync(file);
+    const size = jpegSize(buf);
+    if (!size) { fail(name, `${url} is not a readable JPEG`); continue; }
+    const declared = {
+      width: Number((html.match(/<meta[^>]+property=["']og:image:width["'][^>]+content=["'](\d+)["']/i) || [])[1]),
+      height: Number((html.match(/<meta[^>]+property=["']og:image:height["'][^>]+content=["'](\d+)["']/i) || [])[1]),
+    };
+    if (prop === 'og:image' && (size.width !== declared.width || size.height !== declared.height)) {
+      fail(name, `${url} is ${size.width}x${size.height}, but the page says ${declared.width}x${declared.height}`);
+    }
+    if (url.includes('/og/') && (size.width !== 1200 || size.height !== 630)) fail(name, `${url} is ${size.width}x${size.height}, not 1200x630`);
+    if (buf.length > 600 * 1024) fail(name, `${url} is ${Math.round(buf.length / 1024)} KB — over the 600 KB a preview should stay under`);
+  }
+}
+
+/* ── Content-Security-Policy ─────────────────────────────────────────────────
+   GitHub Pages cannot send headers, so every page carries its policy in a
+   <meta http-equiv> tag. A policy nobody re-reads decays: somebody adds an
+   inline <script> for a quick fix, and the page either breaks in a browser or
+   — worse — the policy is quietly loosened to let it through. So each page is
+   read against its own policy here:
+
+     • it has one, with no 'unsafe-inline' / 'unsafe-eval' for script
+     • every <script> is either from a source the policy allows, or inline and
+       named by its hash
+     • no inline event handlers
+     • every stylesheet, image and font it asks for is allowed, and inline
+       style is only there if the policy says so (the checkout's Stripe fields
+       need it; the public pages do not) */
+const sha256 = text => 'sha256-' + require('crypto').createHash('sha256').update(text).digest('base64');
+
+function parsePolicy(content) {
+  const directives = {};
+  for (const part of content.split(';')) {
+    const [name, ...sources] = part.trim().split(/\s+/);
+    if (name) directives[name.toLowerCase()] = sources;
+  }
+  return directives;
+}
+
+const FALLBACK = { 'script-src': 'default-src', 'style-src': 'default-src', 'img-src': 'default-src', 'font-src': 'default-src', 'connect-src': 'default-src' };
+const sourcesFor = (policy, directive) => policy[directive] || policy[FALLBACK[directive]] || null;
+
+// Does a CSP source list allow this URL? `url` is a path (same site) or absolute.
+function allows(sources, url) {
+  if (!sources) return true;                       // no directive and no fallback: unrestricted
+  if (sources.includes("'none'")) return false;
+  let u;
+  try { u = new URL(url, SITE + '/'); } catch { return false; }
+  return sources.some(src => {
+    if (src === "'self'") return u.origin === SITE;
+    if (/^[a-z][a-z0-9+.-]*:$/i.test(src)) return u.protocol === src.toLowerCase();       // data: blob: https:
+    if (src.startsWith("'")) return false;                                                 // nonce / hash / keywords
+    const m = src.match(/^(?:([a-z][a-z0-9+.-]*):\/\/)?(\*\.)?([^/:*]+)(?::(\d+|\*))?(\/.*)?$/i);
+    if (!m) return false;
+    if (m[1] && u.protocol !== m[1].toLowerCase() + ':') return false;
+    const host = m[3].toLowerCase();
+    return m[2] ? u.hostname.toLowerCase().endsWith('.' + host) : u.hostname.toLowerCase() === host;
+  });
+}
+
+// What each page declared, so the copies can be compared once they have all been read.
+const publicPolicies = new Map();
+
+function checkCsp(name, source) {
+  // Comments explain the policy in prose and mention <script> tags; they are not markup.
+  const html = source.replace(/<!--[\s\S]*?-->/g, '');
+  const tag = html.match(/<meta[^>]+http-equiv=["']Content-Security-Policy["'][^>]*>/i);
+  // The value holds apostrophes ('self'), so it ends at the quote that opened it.
+  const content = tag && (tag[0].match(/content=(["'])(.*?)\1/i) || [])[2];
+  if (!content) { fail(name, 'no Content-Security-Policy <meta>'); return; }
+  publicPolicies.set(name, content);
+  const policy = parsePolicy(content);
+  const scriptSources = sourcesFor(policy, 'script-src') || [];
+  const styleSources = sourcesFor(policy, 'style-src') || [];
+
+  if (scriptSources.includes("'unsafe-inline'") || scriptSources.includes("'unsafe-eval'") || scriptSources.includes('*')) {
+    fail(name, "its policy lets script in through 'unsafe-inline', 'unsafe-eval' or '*'");
+  }
+  if (!(policy['object-src'] || policy['default-src'] || []).includes("'none'")) fail(name, "its policy does not close object-src (or default-src) with 'none'");
+  if (!policy['base-uri']) fail(name, 'its policy has no base-uri');
+
+  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    const attrs = m[1];
+    if (/type=["'](?:application\/ld\+json|application\/json|importmap|speculationrules)["']/i.test(attrs)) continue;   // data, not run
+    const src = (attrs.match(/\bsrc=["']([^"']+)["']/i) || [])[1];
+    if (src) {
+      if (!allows(scriptSources, src)) fail(name, `its policy does not allow the script ${src}`);
+    } else if (m[2].trim() && !scriptSources.includes(`'${sha256(m[2])}'`)) {
+      fail(name, 'has an inline <script> its policy does not name by hash — move it to a file');
+    }
+  }
+  if (/<[a-z][^>]*\son[a-z]+\s*=/i.test(html)) fail(name, 'has an inline event handler (onclick=, …)');
+
+  const inlineStyleOk = styleSources.includes("'unsafe-inline'");
+  for (const m of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
+    if (m[1].trim() && !inlineStyleOk && !styleSources.includes(`'${sha256(m[1])}'`)) fail(name, 'has an inline <style> its policy does not allow — move it to a file');
+  }
+  if (!inlineStyleOk && /<[a-z][^>]*\sstyle\s*=/i.test(html)) fail(name, 'has a style="…" attribute its policy does not allow');
+
+  for (const m of html.matchAll(/<link\b[^>]*>/gi)) {
+    const tagText = m[0];
+    const href = (tagText.match(/\bhref=["']([^"']+)["']/i) || [])[1];
+    const relAttr = ((tagText.match(/\brel=["']([^"']+)["']/i) || [])[1] || '').toLowerCase();
+    const as = ((tagText.match(/\bas=["']([^"']+)["']/i) || [])[1] || '').toLowerCase();
+    if (!href || /^(?:#|mailto:|tel:)/.test(href)) continue;
+    const directive = relAttr.includes('stylesheet') || as === 'style' ? 'style-src'
+      : as === 'font' ? 'font-src'
+      : (as === 'image' || /icon/.test(relAttr)) ? 'img-src'
+      : as === 'script' ? 'script-src' : null;
+    if (directive && !allows(sourcesFor(policy, directive), href)) fail(name, `its policy does not allow ${href} (${directive})`);
+  }
+  for (const m of html.matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
+    if (!allows(sourcesFor(policy, 'img-src'), m[1])) fail(name, `its policy does not allow the image ${m[1]}`);
+  }
+}
 
 for (const file of pages) {
   const name = rel(file);
@@ -74,6 +225,12 @@ for (const file of pages) {
   for (const token of ['__ASSET_VERSION__', '__BUILD_VERSION__', '<!--NOSCRIPT-->']) {
     if (html.includes(token)) fail(name, `still contains ${token}`);
   }
+
+  checkCsp(name, html);
+  // work.html and product.html are templates: the build copies them once per work
+  // and item and fills the placeholder in each copy. The bare template, still
+  // carrying it, is only the address old ?id= links arrive at.
+  if (!isPrivatePage(file, html) && !html.includes('<!--SEO-HEAD-->')) checkShareImage(name, html);
 
   // The page says what it is.
   const title = (html.match(/<title>([\s\S]*?)<\/title>/i) || [])[1];
@@ -107,6 +264,18 @@ for (const file of pages) {
     const urlPath = clean.startsWith('/') ? clean : '/' + path.posix.join(path.posix.dirname('/' + name), clean);
     if (!resolveUrlPath(urlPath)) fail(name, `points at ${ref}, which does not exist`);
   }
+}
+
+/* The public pages share one policy, written out in each (a <meta> cannot
+   include another file). The checkout has its own, and the two old redirect
+   pages carry a hash policy for their one script. Everything else must match,
+   so a host added to one page and forgotten on the rest is caught here. */
+{
+  const shared = [...publicPolicies].filter(([name, content]) => name !== 'checkout/index.html' && !/^default-src 'none'/.test(content));
+  const counts = new Map();
+  for (const [, content] of shared) counts.set(content, (counts.get(content) || 0) + 1);
+  const [usual] = [...counts].sort((a, b) => b[1] - a[1])[0] || [];
+  for (const [name, content] of shared) if (content !== usual) fail(name, 'its Content-Security-Policy differs from the one the other pages share');
 }
 
 // The service worker and manifest carry the same placeholders and references.
