@@ -1,0 +1,345 @@
+/* KRITOR — the plain pages: About, Contact, Privacy.
+
+   The rooms are a machine; these three are the paperwork that comes with it.
+   They keep everything the rooms are drawn with — pix Chicago on the 8px grid,
+   2px black boxes, no radii and no shadows, the boxed HOME tab and the ruled
+   bar, inversion as the only way anything announces itself — and drop what is
+   atmosphere: no CRT glass, no red and cyan fringe on the type, no grey wash
+   on the paper. Black ink on white, and white on black for a visitor who chose
+   the dark theme, so the page agrees with the room they came from.
+
+   A document is a ruled form: a head, then one row per section with the
+   section's name in a narrow column on the left and what it says on the right,
+   the rows separated by the same 2px rule the bar uses between its rows. The
+   type is small on purpose — this is reference text, read once, and the face is
+   at its crispest at the sizes the bar already uses.
+
+   The face and the variables come from type.css, which every page here loads
+   first. */
+
+:root {
+  --u: 8px;
+  --bg: #ffffff;
+  --ink: #000000;
+  --border: 2px;
+  --page-pad: calc(var(--u) * 2);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --bg: #000000;
+  --ink: #ffffff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--face);
+  /* A bitmap face anti-aliased back into greys is mud; plotted is the point. */
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  touch-action: manipulation;
+}
+
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
+}
+
+/* Text for a screen reader that has no business on screen. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+/* The way past the chrome to the page: invisible until a keyboard lands on it. */
+.skip {
+  position: fixed;
+  top: var(--u);
+  left: var(--u);
+  z-index: 900;
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transform: translateY(-300%);
+}
+.skip:focus { transform: none; outline: 0; background: var(--ink); color: var(--bg); }
+
+/* ── Chrome: the way home, and the bar ───────────────────────────────────── */
+
+/* The same box as the rooms' own, in the same place. */
+.home-tab {
+  position: fixed;
+  z-index: 450;
+  top: calc(env(safe-area-inset-top) + var(--u));
+  left: max(var(--page-pad), env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: calc(var(--u) * 1) calc(var(--u) * 1.25);
+}
+.home-tab:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+.home-tab-icon { display: inline-block; vertical-align: -2px; }
+.home-tab-word { display: none; }
+
+/* Where the rooms show a house, a touch screen gets the word: drawn this small
+   it reads as a smudge at arm's length. */
+@media (hover: none), (pointer: coarse) {
+  .home-tab-icon { display: none; }
+  .home-tab-word { display: inline; }
+  .home-tab { min-height: 44px; min-width: 44px; }
+}
+
+/* The bar: two ruled rows, the rooms above and the pages below. The page you
+   are on is the one that is inverted — inversion is how the whole site says
+   "this one". */
+.bar {
+  position: fixed;
+  z-index: 450;
+  top: calc(env(safe-area-inset-top) + var(--u));
+  right: max(var(--page-pad), env(safe-area-inset-right));
+  border: var(--border) solid var(--ink);
+  background: var(--bg);
+  font-size: 12px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+}
+.bar-row + .bar-row { border-top: var(--border) solid var(--ink); }
+
+.bar-btn {
+  display: inline-block;
+  border: 0;
+  padding: calc(var(--u) * .5);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bar-btn[aria-current="page"],
+.bar-btn:active,
+.bar-btn:focus-visible {
+  background: var(--ink);
+  color: var(--bg);
+  outline: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .bar-btn:hover { background: var(--ink); color: var(--bg); }
+}
+
+/* On a touch screen the bar sits beside the HOME tab, not over it, and every
+   control gets a real 44px box without changing how it looks. */
+@media (hover: none), (pointer: coarse) {
+  .bar {
+    left: calc(var(--page-pad) + 76px);
+    max-width: none;
+  }
+  .bar-row { gap: 0; padding: 0 calc(var(--u) * .5); }
+  .bar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 var(--u);
+  }
+}
+
+/* ── The document ────────────────────────────────────────────────────────── */
+
+.doc {
+  padding: calc(var(--u) * 13) var(--page-pad) calc(var(--u) * 8);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .doc { padding-top: calc(var(--u) * 17); }
+}
+
+.doc-box {
+  max-width: 760px;
+  margin: 0 auto;
+  border: var(--border) solid var(--ink);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.doc-head { padding: calc(var(--u) * 3); }
+
+.doc-kicker {
+  margin: 0 0 calc(var(--u) * 2);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.doc h1 {
+  margin: 0;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1.5;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.doc-lede { margin: calc(var(--u) * 2) 0 0; }
+
+/* One row per section: its name on the left, what it says on the right. */
+.doc-sec {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  border-top: var(--border) solid var(--ink);
+}
+
+.doc-sec > h2 {
+  margin: 0;
+  padding: calc(var(--u) * 2.5) calc(var(--u) * 3);
+  border-right: var(--border) solid var(--ink);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.8;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.doc-n { display: block; margin-bottom: calc(var(--u) * .5); }
+
+.doc-body { padding: calc(var(--u) * 2.5) calc(var(--u) * 3); min-width: 0; }
+.doc-body > :first-child { margin-top: 0; }
+.doc-body > :last-child { margin-bottom: 0; }
+.doc-body p, .doc-body ul { margin: 0 0 calc(var(--u) * 1.5); overflow-wrap: anywhere; }
+
+/* A row with nothing to name it, for text that is the whole point. */
+.doc-sec.is-wide { display: block; }
+.doc-sec.is-wide .doc-body { padding: calc(var(--u) * 3); }
+
+.doc-body ul { list-style: none; padding: 0; }
+.doc-body li { position: relative; padding-left: calc(var(--u) * 2.5); margin-bottom: var(--u); }
+.doc-body li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .75em;
+  width: 6px;
+  height: 6px;
+  background: var(--ink);
+}
+
+/* The one sentence the page turns on, set apart the way a work's record is. */
+.doc-quote {
+  margin: 0 0 calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
+  border: var(--border) solid var(--ink);
+}
+
+.doc-body code {
+  font: inherit;
+  padding: 0 calc(var(--u) * .75);
+  border: 1px solid var(--ink);
+  white-space: nowrap;
+}
+
+/* Inline links are underlined and invert on a pointer, like everything else. */
+.doc a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.doc a:focus-visible { background: var(--ink); color: var(--bg); outline: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .doc a:hover { background: var(--ink); color: var(--bg); }
+}
+
+/* A link that does a job, drawn as the button it is. */
+.doc a.doc-action {
+  display: inline-block;
+  padding: calc(var(--u) * 1) calc(var(--u) * 2);
+  border: var(--border) solid var(--ink);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+/* The block the panels end their text with. */
+.doc-end::after {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  margin-left: var(--u);
+  vertical-align: -2px;
+  background: var(--ink);
+}
+
+.doc-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--u) calc(var(--u) * 3);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 3);
+  border-top: var(--border) solid var(--ink);
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 719px) {
+  .doc-head { padding: calc(var(--u) * 2.5) calc(var(--u) * 2); }
+  .doc h1 { font-size: 16px; }
+  .doc-sec { display: block; }
+  .doc-sec > h2 {
+    padding: calc(var(--u) * 2) calc(var(--u) * 2) 0;
+    border-right: 0;
+  }
+  .doc-n { display: inline; margin: 0 var(--u) 0 0; }
+  .doc-body { padding: var(--u) calc(var(--u) * 2) calc(var(--u) * 2); }
+  .doc-sec.is-wide .doc-body { padding: calc(var(--u) * 2); }
+  .doc-foot { padding: calc(var(--u) * 1.5) calc(var(--u) * 2); }
+}
+
+/* Windows high-contrast and forced colours: the boxes are borders, so they
+   survive; the inverted states need a system colour pair to stay visible. */
+@media (forced-colors: active) {
+  .bar-btn[aria-current="page"] { outline: var(--border) solid CanvasText; }
+  .doc-body li::before, .doc-end::after { background: CanvasText; }
+}
+
+@media print {
+  .home-tab, .bar, .skip { display: none; }
+  .doc { padding: 0; }
+  .doc-box { border-width: 1px; }
+}

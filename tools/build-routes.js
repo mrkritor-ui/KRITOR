@@ -55,11 +55,8 @@ function ldJson(data) {
 // <noscript>, so a browser that runs script never shows it. The pages carry a
 // <!--NOSCRIPT--> placeholder where it goes, and the build refuses to run
 // without one rather than ship a page that is quietly blank.
-const CONTACT = 'info@kritor.au';
-const NOJS_LINKS = [['/', 'Home'], ['/art/', 'Art'], ['/store/', 'Store'], ['/about/', 'About'], ['/privacy/', 'Privacy']];
-const NOJS_NAV = NOJS_LINKS.map(([href, label]) => `<a href="${href}">${label}</a>`)
-  .concat(`<a href="mailto:${CONTACT}">Contact</a>`)
-  .join(' · ');
+const NOJS_LINKS = [['/', 'Home'], ['/art/', 'Art'], ['/store/', 'Store'], ['/about/', 'About'], ['/contact/', 'Contact'], ['/privacy/', 'Privacy']];
+const NOJS_NAV = NOJS_LINKS.map(([href, label]) => `<a href="${href}">${label}</a>`).join(' · ');
 
 function nojs(inner) {
   return `<noscript><div class="nojs">\n${inner}\n<p class="nojs-nav">${NOJS_NAV}</p>\n</div></noscript>`;
@@ -318,7 +315,7 @@ fillNoscript('store/index.html', [
 // (listed, in-stock-or-not) shop route. robots.txt (checked into the
 // repo root) points crawlers at this file.
 // /architecture/ joins this list, and loses its noindex, when it has work in it.
-const staticRoutes = ['/', '/about/', '/art/', '/store/', '/privacy/'];
+const staticRoutes = ['/', '/about/', '/contact/', '/art/', '/store/', '/privacy/'];
 const workRoutes = artworks.map(w => `/${encodeURIComponent(w.id)}/`);
 const shopRoutes = SHOP_ITEMS.filter(i => !i.unlisted).map(i => `/shop/${encodeURIComponent(i.id)}/`);
 const urls = [...staticRoutes, ...workRoutes, ...shopRoutes];
