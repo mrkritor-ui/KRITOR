@@ -210,6 +210,11 @@ html, body { touch-action: manipulation; }
   clip-path: inset(50%);
 }
 
+/* The SVG that holds the CRT filter definitions: in the page so the filters can
+   be referenced by id, and out of the layout. A class rather than a style
+   attribute because the Content-Security-Policy allows no inline style. */
+.fx-defs { position: absolute; }
+
 /* The way past the bar to the work: invisible until a keyboard lands on it,
    then the first thing on the screen. Above the boot, so it can be reached
    while the ceremony plays. */

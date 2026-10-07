@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="google-site-verification" content="UZFRJQgWi9M4SiScBFeFrrXOIG56L3-ulbAOxEjGrcc" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Content-Security-Policy: scripts from this origin and the Google tag, nothing inline — see README, Security -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>KRITOR — Contemporary Artist</title>
   <meta name="description" content="KRITOR is a contemporary artist working in expressionism and mixed media. Browse the art catalogue, architecture studies, and shop original work.">
   <link rel="canonical" href="https://kritor.au/">
@@ -75,7 +77,7 @@
        it read as one system. -->
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <link rel="stylesheet" href="/landing.css?v=__ASSET_VERSION__">
-  <noscript><style>.boot{display:none!important}</style></noscript>
+  <noscript><link rel="stylesheet" href="/nojs.css?v=__ASSET_VERSION__"></noscript>
   <!-- The drawn cursor. cursor.css asks the browser for it; cursor.js draws
        it, which is the half that cannot be silently declined. -->
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
@@ -88,7 +90,7 @@
 
   <!-- Same optics as the catalogue's own gate — see art/index.html for the
        full account of why this is an SVG filter and not a CSS one. -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg class="fx-defs" width="0" height="0" aria-hidden="true">
     <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
       <feComponentTransfer in="SourceGraphic" result="bright">
         <feFuncR type="linear" slope="3" intercept="-1.6"/>
@@ -157,6 +159,6 @@
 
   <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
   <script src="/landing.js?v=__ASSET_VERSION__"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+  <script src="/sw-register.js?v=__ASSET_VERSION__"></script>
 </body>
 </html>

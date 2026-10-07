@@ -1,0 +1,10 @@
+/* For a visitor with scripts off, loaded from inside <noscript>.
+
+   The boot screen, the CRT glass and the bar are all drawn and driven by
+   script; with none running they would sit over the plain page the build puts
+   in <noscript> and hide it. The front door keeps its bar — it is plain links
+   and is all the door has. */
+.boot,
+.catalogue-crt { display: none !important; }
+
+html:not([data-page="landing"]) .bar { display: none !important; }

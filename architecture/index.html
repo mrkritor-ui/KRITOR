@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Content-Security-Policy: scripts from this origin and the Google tag, nothing inline — see README, Security -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Architecture — KRITOR</title>
   <meta name="description" content="KRITOR architecture. Nothing published yet.">
   <link rel="canonical" href="https://kritor.au/architecture/">
@@ -68,7 +70,7 @@
   <link rel="stylesheet" href="/terminal.css?v=__ASSET_VERSION__">
   <!-- Without script there is no boot to wait for and no bar to use; the plain
        list in the <noscript> below is the page. -->
-  <noscript><style>.boot,.bar,.catalogue-crt{display:none!important}</style></noscript>
+  <noscript><link rel="stylesheet" href="/nojs.css?v=__ASSET_VERSION__"></noscript>
   <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
   <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
   <!-- Google tag (GA4) — see analytics.js. -->
@@ -96,7 +98,7 @@
        full account of why this is an SVG filter and not a CSS one. Each
        page that wants the CRT skin carries its own copy: a url(#id) filter
        reference only resolves within the document that declares it. -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg class="fx-defs" width="0" height="0" aria-hidden="true">
     <filter id="crt-optics" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
       <feComponentTransfer in="SourceGraphic" result="bright">
         <feFuncR type="linear" slope="3" intercept="-1.6"/>
@@ -201,14 +203,11 @@
        catalogue rather than an error. KRITOR_BOOT_PAGE is the one thing
        terminal.js needed taught to it, so this page's boot asks for
        "architecture" instead of the default "catalogue". -->
-  <script>
-    window.ARTWORKS = [];
-    window.KRITOR_BOOT_PAGE = "architecture";
-  </script>
+  <script src="/architecture-boot.js?v=__ASSET_VERSION__"></script>
   <script src="/pixel-fx.js?v=__ASSET_VERSION__"></script>
   <script src="/boot-scene.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal-shell.js?v=__ASSET_VERSION__"></script>
   <script src="/terminal.js?v=__ASSET_VERSION__"></script>
-  <script>if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+  <script src="/sw-register.js?v=__ASSET_VERSION__"></script>
 </body>
 </html>

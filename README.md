@@ -107,6 +107,44 @@ a decision to make on purpose rather than a side effect. Opening a work pushes
 `/work-xx/` onto the history, which GA4's enhanced measurement already reports
 as a page view, so nothing needs to call `gtag()` for that.
 
+### Security: the Content-Security-Policy
+
+Every public page carries the same policy in a `<meta http-equiv>` tag (GitHub
+Pages cannot send headers), and the checkout carries its own, stricter one:
+
+```
+default-src 'self';
+script-src  'self' https://*.googletagmanager.com;
+style-src   'self';
+img-src     'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com;
+font-src    'self';
+connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com;
+manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'
+```
+
+Scripts come from this origin and the Google tag, and nothing is written into
+the HTML: no inline `<script>`, no inline `<style>`, no `style="…"` attribute, no
+`onclick=`, no `eval`. That is why the service-worker registration, the old
+`?id=` link folding and the architecture room's start-up values are the small
+files `sw-register.js`, `legacy-id.js` and `architecture-boot.js`, and why the
+no-JavaScript rules live in `nojs.css`. Setting `element.style.x = …` from a
+script is fine; writing markup with a `style` attribute is not. The two old
+redirect pages (`/about.html`, `/store.html`) keep one inline script each,
+allowed by its hash.
+
+`tools/check-site.js` reads every built page against its own policy before
+anything is published, and fails the deploy on an inline script, a source the
+policy does not allow, a missing policy, or a policy that lets script in.
+
+What a meta policy cannot do: `frame-ancestors` and reporting are ignored in a
+`<meta>`, so this stops injected script and data theft but is not
+clickjacking protection and cannot tell you when it blocks something. To use a
+new service, add its host to the right directive in every page (the checker will
+list the ones you miss) rather than loosening anything. The Google hosts are the
+ones Google's own guidance lists for the Google tag with Analytics 4; they could
+not be exercised against the live tag from the build sandbox, so after changing
+them look in the browser console and in Analytics' real-time report.
+
 ### Three rules worth knowing before editing
 
 **Asset URLs carry `?v=__ASSET_VERSION__`.** The deploy replaces the token, the
