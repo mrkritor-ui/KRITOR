@@ -76,8 +76,8 @@ architecture/index.html  the same catalogue rule system — views, filters,
                     signal) instead of the catalogue's (the mosaic).
 store/index.html    the shopfront
 checkout/index.html the checkout — Stripe, its own CSP
-about/ contact/ privacy/   the paperwork pages — one look, in pages.css:
-                    the rooms' own box, bar and face in black and white
+about/ contact/ privacy/ shipping/ 404.html   the plain pages — one look, in
+                    pages.css: monospace capitals, black and white, no boxes
 
 terminal-shell.js   the chrome every terminal page shares: theme, bar, boot
                     sequence, typing, screensaver
@@ -115,7 +115,7 @@ outlines as `fonts/pix-chicago.woff2`, because Pillow cannot read WOFF2.
 The Google tag lives in `analytics.js` and nowhere else; the measurement ID is
 the one `ID` constant at the top of it. Every public page loads the file with a
 single `<script … defer>` line (`/`, `/art/`, `/architecture/`, `/store/`,
-`/about/`, `/contact/`, `/privacy/`, and the `work.html` / `product.html` templates every `/work-xx/` and
+`/about/`, `/contact/`, `/privacy/`, `/shipping/`, and the `work.html` / `product.html` templates every `/work-xx/` and
 `/shop/<id>/` is built from) — a new page gets the tag by adding that one line.
 
 It is skipped on `localhost` so local testing never reaches the reports, and it

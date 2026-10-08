@@ -1,42 +1,52 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <!-- Content-Security-Policy: scripts from this origin and the Google tag, nothing inline — see README, Security -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
-  <title>Not found — KRITOR</title>
-  <meta name="description" content="That address does not lead anywhere on kritor.au.">
-  <!-- GitHub Pages serves this file, with a 404 status, for any address that has
-       no page — at whatever depth it was asked for. So nothing on it is
-       relative, it is never indexed, and it declares no canonical. -->
-  <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#e3e3e3" data-dark="#1c2318">
-  <link rel="icon" href="/favicon.ico" sizes="32x32">
-  <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/icon.png">
-  <link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
-
-  <link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
-  <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
-  <link rel="stylesheet" href="/not-found.css?v=__ASSET_VERSION__">
-  <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
-  <script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
-  <!-- Google tag (GA4) — see analytics.js. A dead link somebody followed is
-       worth seeing in the reports. -->
-  <script src="/analytics.js?v=__ASSET_VERSION__" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Content-Security-Policy: scripts from this origin and the Google tag, nothing inline — see README, Security -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Not found — KRITOR</title>
+<meta name="description" content="That address does not lead anywhere on kritor.au.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#ffffff" data-dark="#000000">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.png">
+<!-- GitHub Pages serves this file, with a 404 status, for any address that has
+     no page — at whatever depth it was asked for. So nothing on it is
+     relative, it is never indexed, and it declares no canonical. -->
+<!-- The plain pages' own look: monospace capitals, black and white, no boxes.
+     See the top of pages.css. -->
+<link rel="stylesheet" href="/pages.css?v=__ASSET_VERSION__">
+<link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
+<script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
+<script src="/cursor.js?v=__ASSET_VERSION__" defer></script>
+<!-- Google tag (GA4) — see analytics.js. -->
+<script src="/analytics.js?v=__ASSET_VERSION__" defer></script>
 </head>
 <body>
-  <main>
+<a class="skip" href="#main">Skip to the text</a>
+
+<header class="doc-top">
+  <a href="/" aria-label="KRITOR, home">KRITOR</a>
+  <nav class="doc-nav" aria-label="Pages">
+    <a href="/art/">Art</a>
+    <a href="/store/">Store</a>
+    <a href="/about/">About</a>
+    <a href="/contact/">Contact</a>
+    <a href="/privacy/">Privacy</a>
+    <a href="/shipping/">Shipping and returns</a>
+  </nav>
+</header>
+
+<main class="doc" id="main">
+  <article class="doc-box">
     <h1>404</h1>
-    <p>There is nothing at this address. The page may have moved, or the link may be mistyped.</p>
-    <nav aria-label="Where to go">
-      <a href="/">Home</a>
-      <a href="/art/">Art</a>
-      <a href="/architecture/">Architecture</a>
-      <a href="/store/">Store</a>
-      <a href="/about/">About</a>
-    </nav>
-  </main>
+
+    <section>
+      <p>There is nothing at this address. The page may have moved, or the link may be mistyped.</p>
+    </section>
+  </article>
+</main>
 </body>
 </html>
