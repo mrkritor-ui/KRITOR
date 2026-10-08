@@ -51,12 +51,8 @@
   ]
 }
 </script>
-
-<!-- The site face, preloaded the way the front door does it. -->
-<link rel="preload" href="/fonts/pix-chicago.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/type.css?v=__ASSET_VERSION__">
-<!-- The paperwork's own look: the rooms' box, bar and bitmap face in black and
-     white. See the top of pages.css. -->
+<!-- The plain pages' own look: monospace capitals, black and white, no boxes.
+     See the top of pages.css. -->
 <link rel="stylesheet" href="/pages.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="/cursor.css?v=__ASSET_VERSION__">
 <script src="/theme-boot.js?v=__ASSET_VERSION__"></script>
@@ -67,45 +63,28 @@
 <body>
 <a class="skip" href="#main">Skip to the text</a>
 
-<nav aria-label="Back to KRITOR">
-  <a class="home-tab" href="/" aria-label="Home, back to KRITOR">
-    <svg class="ico home-tab-icon" viewBox="0 0 9 8" width="18" height="16" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges"><rect x="4" y="0" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/></svg>
-    <span class="home-tab-word">HOME</span>
-  </a>
-</nav>
-
-<nav class="bar" aria-label="Pages">
-  <div class="bar-row">
-    <a class="bar-btn" href="/art/">ART</a>
-    <a class="bar-btn" href="/store/">STORE</a>
-  </div>
-  <div class="bar-row">
-    <a class="bar-btn" href="/about/" aria-current="page">ABOUT</a>
-    <a class="bar-btn" href="/contact/">CONTACT</a>
-    <a class="bar-btn" href="/privacy/">PRIVACY</a>
-  </div>
-</nav>
+<header class="doc-top">
+  <a href="/" aria-label="KRITOR, home">KRITOR</a>
+  <nav class="doc-nav" aria-label="Pages">
+    <a href="/art/">Art</a>
+    <a href="/store/">Store</a>
+    <a href="/about/" aria-current="page">About</a>
+    <a href="/contact/">Contact</a>
+    <a href="/privacy/">Privacy</a>
+    <a href="/shipping/">Shipping and returns</a>
+  </nav>
+</header>
 
 <main class="doc" id="main">
   <article class="doc-box">
-    <header class="doc-head">
-      <p class="doc-kicker">KRITOR / ABOUT</p>
-      <h1>ABOUT THE ARTIST, THE WORK, THE PRACTICE, AND THE KRITOR PROJECT</h1>
-    </header>
+    <h1>About the artist, the work, the practice, and the KRITOR project</h1>
 
-    <div class="doc-sec doc-plain">
-      <div class="doc-body">
-        <p>KRITOR IS THE PRACTICE NAME OF MELBOURNE ARTIST KRISTIAN TORCASIO.</p>
-        <p class="doc-quote">[KRITOR MAKES THINGS, A CHOICE MADE AT 17 TO NOT TAKE TIME FOR GRANTED.]</p>
-        <p>I IDENTIFY WITH EXPRESSIONISM. I LAYER MEDIUMS UNTIL A PICTURE ARRIVES, THEN LIVE WITH THE WORK FOR MONTHS, WATCHING IT DEVELOP AND ALLOWING THE PROCESS TO BECOME REFLECTIVE.</p>
-        <p class="doc-end">I OFTEN PLACE MYSELF WITHIN THE WORK, SURROUNDED BY AN EVENT, PLACE, OR MOMENT FROM MY LIFE. I TRAVEL FINDING THE NEXT STORY TO TELL, FULL OF LOVE, HATRED, REGRET AND REMORSE. GUILT MAY EAT ME ALIVE BUT MY WORK WILL.</p>
-      </div>
-    </div>
-
-    <footer class="doc-foot">
-      <span>KRITOR — MELBOURNE</span>
-      <a href="mailto:info@kritor.au">INFO@KRITOR.AU</a>
-    </footer>
+    <section>
+      <p>KRITOR IS THE PRACTICE NAME OF MELBOURNE ARTIST KRISTIAN TORCASIO.</p>
+      <p>[KRITOR MAKES THINGS, A CHOICE MADE AT 17 TO NOT TAKE TIME FOR GRANTED.]</p>
+      <p>I IDENTIFY WITH EXPRESSIONISM. I LAYER MEDIUMS UNTIL A PICTURE ARRIVES, THEN LIVE WITH THE WORK FOR MONTHS, WATCHING IT DEVELOP AND ALLOWING THE PROCESS TO BECOME REFLECTIVE.</p>
+      <p>I OFTEN PLACE MYSELF WITHIN THE WORK, SURROUNDED BY AN EVENT, PLACE, OR MOMENT FROM MY LIFE. I TRAVEL FINDING THE NEXT STORY TO TELL, FULL OF LOVE, HATRED, REGRET AND REMORSE. GUILT MAY EAT ME ALIVE BUT MY WORK WILL.</p>
+    </section>
   </article>
 </main>
 </body>
